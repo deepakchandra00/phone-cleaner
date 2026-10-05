@@ -10,6 +10,7 @@ import { usePremiumStore } from "@/stores/usePremiumStore";
 import { storage, KEYS } from "@/lib/storage";
 import { setAnalyticsEnabled } from "@/lib/analytics";
 import { formatSizeCompact, formatRelativeTime } from "@/lib/format";
+import { ThemeColors } from "@/theme/colors";
 
 interface Row {
   icon: IconName;
@@ -29,13 +30,13 @@ function SettingRow({ icon, label, value, onPress, destructive, rightIcon = true
       <View
         className={`w-9 h-9 rounded-lg items-center justify-center ${destructive ? "bg-destructive/10" : "bg-muted"}`}
       >
-        <Icon name={icon} size={16} color={destructive ? "rgb(var(--destructive))" : "rgb(var(--foreground))"} />
+        <Icon name={icon} size={16} color={destructive ? ThemeColors.destructive : ThemeColors.foreground} />
       </View>
       <Text className={`flex-1 text-sm font-medium ${destructive ? "text-destructive" : "text-foreground"}`}>
         {label}
       </Text>
       {value && <Text className="text-muted-foreground text-sm">{value}</Text>}
-      {rightIcon && onPress && <Icon name="chevron-forward" size={16} color="rgb(var(--muted-foreground))" />}
+      {rightIcon && onPress && <Icon name="chevron-forward" size={16} color={ThemeColors.mutedForeground} />}
     </Pressable>
   );
 }
@@ -44,7 +45,7 @@ function ToggleRow({ icon, label, value, onToggle }: { icon: IconName; label: st
   return (
     <Pressable onPress={onToggle} className="flex-row items-center gap-3 py-3 active:opacity-70">
       <View className="w-9 h-9 rounded-lg bg-muted items-center justify-center">
-        <Icon name={icon} size={16} color="rgb(var(--foreground))" />
+        <Icon name={icon} size={16} color={ThemeColors.foreground} />
       </View>
       <Text className="flex-1 text-sm font-medium text-foreground">{label}</Text>
       <View
@@ -119,7 +120,7 @@ export default function SettingsScreen() {
         <Card>
           <View className="flex-row items-center gap-3">
             <View className={`w-12 h-12 rounded-xl items-center justify-center ${isPro ? "bg-primary/10" : "bg-muted"}`}>
-              <Icon name="diamond" size={24} color={isPro ? "rgb(var(--primary))" : "rgb(var(--muted-foreground))"} />
+              <Icon name="diamond" size={24} color={isPro ? ThemeColors.primary : ThemeColors.mutedForeground} />
             </View>
             <View className="flex-1">
               <Text className="text-foreground font-bold">
@@ -178,7 +179,7 @@ export default function SettingsScreen() {
           <ToggleRow icon="calendar" label="Weekly scheduled scan" value={scheduledOn} onToggle={handleToggleScheduled} />
           {!isPro && scheduledOn === false && (
             <View className="flex-row items-center gap-1.5 px-1 pb-2">
-              <Icon name="lock-closed" size={11} color="rgb(var(--muted-foreground))" />
+              <Icon name="lock-closed" size={11} color={ThemeColors.mutedForeground} />
               <Text className="text-muted-foreground text-xs">Pro feature</Text>
             </View>
           )}
@@ -204,7 +205,7 @@ export default function SettingsScreen() {
       {/* Privacy promise */}
       <View className="px-4 mb-4">
         <View className="flex-row items-start gap-2 bg-accent/50 border border-primary/20 rounded-xl p-3.5">
-          <Icon name="lock-closed" size={16} color="rgb(var(--primary))" />
+          <Icon name="lock-closed" size={16} color={ThemeColors.primary} />
           <Text className="text-accent-foreground text-xs flex-1 leading-5">
             Phone Cleaner never uploads your files. All scanning happens on your device. No account, no cloud, no tracking of your photos.
           </Text>

@@ -18,7 +18,7 @@ export default function TabsLayout() {
   const activeKey = (last && TAB_KEYS[last]) ?? "home";
 
   return (
-    <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: "rgb(var(--background))" }}>
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <Stack
         screenOptions={{
           headerShown: false,

@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Icon, type IconName } from "./Icon";
 import { cn } from "@/lib/utils";
+import { ThemeColors } from "@/theme/colors";
 
 interface TabItem {
   key: string;
@@ -58,7 +59,7 @@ export function BottomNav({ activeKey }: BottomNavProps) {
                 <Icon
                   name={isActive ? tab.activeIcon : tab.icon}
                   size={24}
-                  color={isActive ? "rgb(var(--primary))" : "rgb(var(--muted-foreground))"}
+                  color={isActive ? ThemeColors.primary : ThemeColors.mutedForeground}
                 />
               )}
               <Text

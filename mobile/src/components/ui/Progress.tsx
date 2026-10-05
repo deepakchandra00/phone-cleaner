@@ -10,6 +10,8 @@ interface ProgressProps {
   trackColor?: string;
 }
 
+import { ThemeColors } from "@/theme/colors";
+
 export function Progress({
   value,
   className,
@@ -22,13 +24,13 @@ export function Progress({
   return (
     <View
       className={cn("w-full rounded-full overflow-hidden", className)}
-      style={{ height, backgroundColor: trackColor ?? "rgb(var(--muted))" }}
+      style={{ height, backgroundColor: trackColor ?? ThemeColors.muted }}
     >
       <View
         className={cn("h-full rounded-full", barClassName)}
         style={{
           width: `${pct}%`,
-          backgroundColor: color ?? "rgb(var(--primary))",
+          backgroundColor: color ?? ThemeColors.primary,
         }}
       />
     </View>

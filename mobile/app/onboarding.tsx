@@ -9,7 +9,7 @@ import { track } from "@/lib/analytics";
 import { usePermissions, type PermissionStatus } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
-import { CategoryColors } from "@/theme/colors";
+import { CategoryColors, ThemeColors } from "@/theme/colors";
 
 const { width } = Dimensions.get("window");
 
@@ -153,7 +153,7 @@ export default function Onboarding() {
                   {s.bullets.map((b, bi) => (
                     <View key={bi} className="flex-row items-center gap-3 bg-card border border-border rounded-xl p-3.5">
                       <View className="w-9 h-9 rounded-lg bg-accent items-center justify-center">
-                        <Icon name={b.icon} size={18} color="rgb(var(--primary))" />
+                        <Icon name={b.icon} size={18} color={ThemeColors.primary} />
                       </View>
                       <Text className="text-foreground text-sm font-medium flex-1">{b.text}</Text>
                     </View>
@@ -171,7 +171,7 @@ export default function Onboarding() {
                     You can still use the app, but photo features won't work until you enable access in Settings.
                   </Text>
                   <Pressable onPress={openSystemSettings} className="mt-3 flex-row items-center gap-1">
-                    <Icon name="open-outline" size={14} color="rgb(var(--primary))" />
+                    <Icon name="open-outline" size={14} color={ThemeColors.primary} />
                     <Text className="text-primary text-sm font-semibold">Open Settings</Text>
                   </Pressable>
                 </View>
@@ -191,7 +191,7 @@ export default function Onboarding() {
               className="h-2 rounded-full transition-all"
               style={{
                 width: i === page ? 24 : 8,
-                backgroundColor: i === page ? "rgb(var(--primary))" : "rgb(var(--muted))",
+                backgroundColor: i === page ? ThemeColors.primary : ThemeColors.muted,
               }}
             />
           ))}

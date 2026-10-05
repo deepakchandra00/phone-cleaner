@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type ComponentProps } from "react";
 
+import { ThemeColors } from "@/theme/colors";
+
 export type IconName = ComponentProps<typeof Ionicons>["name"];
 
 interface IconProps {
@@ -10,7 +12,7 @@ interface IconProps {
   className?: string;
 }
 
-export function Icon({ name, size = 24, color = "rgb(var(--foreground))" }: IconProps) {
+export function Icon({ name, size = 24, color = ThemeColors.foreground }: IconProps) {
   return <Ionicons name={name} size={size} color={color} />;
 }
 

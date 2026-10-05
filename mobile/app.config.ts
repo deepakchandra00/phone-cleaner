@@ -76,6 +76,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     runtimeVersion: "1.0.0",
+    splash: {
+      image: "./src/assets/icon.png",
+      resizeMode: "contain",
+      backgroundColor: "#0F172A",
+    },
     assetBundlePatterns: ["**/*"],
     ios: {
       supportsTablet: false,

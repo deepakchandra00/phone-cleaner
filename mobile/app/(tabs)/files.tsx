@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { useAppStore, useSelectedBytes } from "@/stores/useAppStore";
-import { CategoryColors } from "@/theme/colors";
+import { CategoryColors, ThemeColors } from "@/theme/colors";
 import { formatSizeCompact, formatRelativeTime, formatCount } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey, ScannedFile, AppItem } from "@/lib/types";
@@ -59,7 +59,7 @@ export default function FilesScreen() {
                 }}
               >
                 <View className="flex-row items-center gap-1.5">
-                  <Icon name={s.icon} size={15} color={active ? s.color : "rgb(var(--muted-foreground))"} />
+                  <Icon name={s.icon} size={15} color={active ? s.color : ThemeColors.mutedForeground} />
                   <Text
                     className={`text-xs font-semibold ${active ? "text-foreground" : "text-muted-foreground"}`}
                   >
@@ -342,7 +342,7 @@ function AppsSection() {
       </View>
 
       <View className="px-4 mt-4 flex-row items-center gap-2">
-        <Icon name="information-circle-outline" size={13} color="rgb(var(--muted-foreground))" />
+        <Icon name="information-circle-outline" size={13} color={ThemeColors.mutedForeground} />
         <Text className="text-xs text-muted-foreground">
           Uninstalling opens Android's system uninstall flow.
         </Text>
@@ -482,7 +482,7 @@ function NoScanState() {
   return (
     <View className="flex-1 items-center justify-center px-8">
       <View className="w-20 h-20 rounded-full bg-accent items-center justify-center mb-4">
-        <Icon name="folder-open" size={36} color="rgb(var(--primary))" />
+        <Icon name="folder-open" size={36} color={ThemeColors.primary} />
       </View>
       <Text className="text-foreground font-semibold text-lg">No files yet</Text>
       <Text className="text-muted-foreground text-sm text-center mt-1">

@@ -8,7 +8,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { formatSizeCompact, bytesToGB } from "@/lib/format";
-import { CategoryColors, type CategoryKey } from "@/theme/colors";
+import { CategoryColors, ThemeColors, type CategoryKey } from "@/theme/colors";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -76,7 +76,7 @@ export function StorageRing({
           cx={cx}
           cy={cy}
           r={r}
-          stroke="rgb(var(--muted))"
+          stroke={ThemeColors.muted}
           strokeWidth={strokeWidth}
           fill="none"
         />

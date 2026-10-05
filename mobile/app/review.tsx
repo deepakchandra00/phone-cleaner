@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { useAppStore, useSelectedBytes } from "@/stores/useAppStore";
-import { CategoryColors } from "@/theme/colors";
+import { CategoryColors, ThemeColors } from "@/theme/colors";
 import { formatSizeCompact, bytesToGB } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey, ScannedFile } from "@/lib/types";
@@ -118,7 +118,7 @@ export default function Review() {
         <ScreenHeader title="Review cleanup" showBack />
         <View className="flex-1 items-center justify-center px-8">
           <View className="w-20 h-20 rounded-full bg-accent items-center justify-center mb-4">
-            <Icon name="checkmark-circle" size={40} color="rgb(var(--primary))" />
+            <Icon name="checkmark-circle" size={40} color={ThemeColors.primary} />
           </View>
           <Text className="text-foreground font-semibold text-lg">Nothing selected</Text>
           <Text className="text-muted-foreground text-sm text-center mt-1">
@@ -153,7 +153,7 @@ export default function Review() {
         {/* Warning */}
         <Animated.View entering={FadeInDown.delay(60).springify()} className="px-4 mt-3">
           <View className="flex-row items-start gap-2 bg-warning/10 border border-warning/30 rounded-xl p-3">
-            <Icon name="warning" size={16} color="rgb(var(--warning))" />
+            <Icon name="warning" size={16} color={ThemeColors.warning} />
             <Text className="text-warning-foreground text-xs flex-1 leading-5">
               Files will be permanently deleted. We never delete anything without your confirmation.
             </Text>
@@ -193,7 +193,7 @@ export default function Review() {
                     {f.name}
                   </Text>
                   <Text className="text-muted-foreground text-xs">{formatSizeCompact(f.sizeBytes)}</Text>
-                  <Icon name="close-circle" size={16} color="rgb(var(--muted-foreground))" />
+                  <Icon name="close-circle" size={16} color={ThemeColors.mutedForeground} />
                 </Pressable>
               ))}
               {g.files.length > 3 && (

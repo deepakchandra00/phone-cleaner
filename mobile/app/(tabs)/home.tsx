@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { Icon, CategoryIcons } from "@/components/ui/Icon";
 import { useAppStore } from "@/stores/useAppStore";
 import { usePremiumStore } from "@/stores/usePremiumStore";
-import { CategoryColors } from "@/theme/colors";
+import { CategoryColors, ThemeColors } from "@/theme/colors";
 import { formatSizeCompact, bytesToGB } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey } from "@/lib/types";
@@ -57,7 +57,7 @@ export default function HomeScreen() {
       className="flex-1 bg-background"
       contentContainerStyle={{ paddingBottom: 100 }}
       refreshControl={
-        <RefreshControl refreshing={refreshing.current} onRefresh={loadStorage} tintColor="rgb(var(--primary))" />
+        <RefreshControl refreshing={refreshing.current} onRefresh={loadStorage} tintColor={ThemeColors.primary} />
       }
     >
       {/* Greeting */}
@@ -200,7 +200,7 @@ export default function HomeScreen() {
       {/* Trust banner */}
       <Animated.View entering={FadeInDown.delay(300).springify()} className="px-4 mt-4">
         <View className="flex-row items-center gap-2 px-1">
-          <Icon name="shield-checkmark" size={14} color="rgb(var(--muted-foreground))" />
+          <Icon name="shield-checkmark" size={14} color={ThemeColors.mutedForeground} />
           <Text className="text-xs text-muted-foreground">
             No login · On-device scanning · Your files stay private
           </Text>
@@ -220,7 +220,7 @@ export default function HomeScreen() {
           >
             <View className="flex-row items-center gap-3">
               <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
-                <Icon name="diamond" size={20} color="rgb(var(--primary))" />
+                <Icon name="diamond" size={20} color={ThemeColors.primary} />
               </View>
               <View className="flex-1">
                 <Text className="text-foreground font-semibold">Upgrade to Pro</Text>
@@ -228,7 +228,7 @@ export default function HomeScreen() {
                   Similar photos, scheduled scans, no ads
                 </Text>
               </View>
-              <Icon name="chevron-forward" size={18} color="rgb(var(--muted-foreground))" />
+              <Icon name="chevron-forward" size={18} color={ThemeColors.mutedForeground} />
             </View>
           </Pressable>
         </Animated.View>

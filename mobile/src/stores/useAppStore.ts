@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { storage, KEYS } from "@/lib/storage";
 import { getRealStorageSummary, runRealScan, performRealCleanup } from "@/lib/realScanner";
+import { getStorageSummary } from "@/lib/mockData";
 import type { ScanResult, StorageSummary, CategoryKey } from "@/lib/types";
 import { track } from "@/lib/analytics";
 
@@ -36,7 +37,7 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
-  storage: null,
+  storage: getStorageSummary(),
   scanResult: null,
   scanPhase: "idle",
   scanProgress: 0,

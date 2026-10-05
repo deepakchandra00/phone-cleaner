@@ -11,6 +11,7 @@ import { useAppStore, useSelectedBytes } from "@/stores/useAppStore";
 import { useFeatureGate } from "@/stores/usePremiumStore";
 import { formatSizeCompact } from "@/lib/format";
 import { getDuplicateStages } from "@/lib/mockData";
+import { ThemeColors } from "@/theme/colors";
 import { track } from "@/lib/analytics";
 import type { DuplicateGroup } from "@/lib/types";
 
@@ -46,7 +47,7 @@ export default function PhotosScreen() {
         <ScreenHeader title="Duplicate photos" subtitle="Find exact & similar copies" />
         <View className="flex-1 items-center justify-center px-8">
           <View className="w-20 h-20 rounded-full bg-accent items-center justify-center mb-4">
-            <Icon name="images" size={36} color="rgb(var(--primary))" />
+            <Icon name="images" size={36} color={ThemeColors.primary} />
           </View>
           <Text className="text-foreground font-semibold text-lg">No duplicates found</Text>
           <Text className="text-muted-foreground text-sm text-center mt-1">
@@ -99,11 +100,11 @@ export default function PhotosScreen() {
             onPress={() => router.push("/premium")}
             className="flex-row items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl p-3 active:opacity-95"
           >
-            <Icon name="diamond" size={16} color="rgb(var(--primary))" />
+            <Icon name="diamond" size={16} color={ThemeColors.primary} />
             <Text className="text-primary text-xs font-medium flex-1">
               {similarGroups.length} similar-photo groups are a Pro feature
             </Text>
-            <Icon name="chevron-forward" size={14} color="rgb(var(--primary))" />
+            <Icon name="chevron-forward" size={14} color={ThemeColors.primary} />
           </Pressable>
         </View>
       )}
@@ -217,7 +218,7 @@ function DuplicateGroupCard({
         </Pressable>
         {locked && (
           <View className="flex-row items-center gap-1 bg-primary/10 px-2 py-1 rounded-full">
-            <Icon name="lock-closed" size={11} color="rgb(var(--primary))" />
+            <Icon name="lock-closed" size={11} color={ThemeColors.primary} />
             <Text className="text-primary text-[10px] font-semibold">PRO</Text>
           </View>
         )}
@@ -285,7 +286,7 @@ function DuplicateGroupCard({
 
       {/* Keep-best explanation */}
       <View className="px-3.5 py-2.5 bg-accent/50 border-t border-border flex-row items-center gap-2">
-        <Icon name="information-circle" size={13} color="rgb(var(--primary))" />
+        <Icon name="information-circle" size={13} color={ThemeColors.primary} />
         <Text className="text-accent-foreground text-xs flex-1">
           {groupSelectedFiles > 0
             ? `${groupSelectedFiles} of ${group.files.length - 1} marked for deletion`

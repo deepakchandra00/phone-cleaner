@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { useAppStore, useSelectedBytes } from "@/stores/useAppStore";
-import { CategoryColors } from "@/theme/colors";
+import { CategoryColors, ThemeColors } from "@/theme/colors";
 import { formatSizeCompact, formatRelativeTime } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey, ScannedFile } from "@/lib/types";
@@ -70,7 +70,7 @@ export default function CategoryDetail() {
       {files.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <View className="w-20 h-20 rounded-full bg-accent items-center justify-center mb-4">
-            <Icon name={iconName} size={36} color="rgb(var(--primary))" />
+            <Icon name={iconName} size={36} color={ThemeColors.primary} />
           </View>
           <Text className="text-foreground font-semibold">Nothing here</Text>
           <Text className="text-muted-foreground text-sm text-center mt-1">

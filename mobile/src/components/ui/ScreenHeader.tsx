@@ -27,7 +27,7 @@ export function ScreenHeader({ title, subtitle, rightIcon, onRightPress, showBac
           className="mr-3 w-9 h-9 items-center justify-center rounded-full bg-muted"
           hitSlop={12}
         >
-          <Icon name="chevron-back" size={22} color="rgb(var(--foreground))" />
+          <Icon name="chevron-back" size={22} />
         </Pressable>
       )}
       <View className={cn("flex-1", centered && "items-center")}>
@@ -40,7 +40,7 @@ export function ScreenHeader({ title, subtitle, rightIcon, onRightPress, showBac
           className="w-9 h-9 items-center justify-center rounded-full bg-muted"
           hitSlop={12}
         >
-          <Icon name={rightIcon} size={20} color="rgb(var(--foreground))" />
+          <Icon name={rightIcon} size={20} />
         </Pressable>
       )}
     </View>

@@ -24,3 +24,23 @@ export const StatusColors = {
   danger: "#ef4444",
   info: "#14b8a6",
 } as const;
+
+export const ThemeColors = {
+  primary: "#10b981",
+  primaryDark: "#059669",
+  background: "#f8fafc",
+  backgroundDark: "#020617",
+  card: "#ffffff",
+  cardDark: "#0f172a",
+  foreground: "#0f172a",
+  foregroundDark: "#f8fafc",
+  muted: "#f1f5f9",
+  mutedDark: "#1e293b",
+  mutedForeground: "#64748b",
+  mutedForegroundDark: "#94a3b8",
+  border: "#e2e8f0",
+  borderDark: "#334155",
+  destructive: "#ef4444",
+  warning: "#f59e0b",
+  accent: "#f0fdf4",
+} as const;

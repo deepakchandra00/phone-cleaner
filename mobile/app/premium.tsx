@@ -8,6 +8,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { usePremiumStore } from "@/stores/usePremiumStore";
 import { PLANS, PRO_FEATURES, purchase, restorePurchases } from "@/lib/revenuecat";
 import { track } from "@/lib/analytics";
+import { ThemeColors } from "@/theme/colors";
 
 type Plan = "yearly" | "monthly";
 
@@ -66,14 +67,14 @@ export default function Premium() {
         style={{ top: insets.top + 8 }}
         hitSlop={12}
       >
-        <Icon name="close" size={20} color="rgb(var(--foreground))" />
+        <Icon name="close" size={20} color={ThemeColors.foreground} />
       </Pressable>
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }}>
         {/* Hero */}
         <Animated.View entering={FadeIn.springify()} className="items-center px-6 mb-6">
           <View className="w-20 h-20 rounded-3xl items-center justify-center mb-4" style={{ backgroundColor: "rgba(5,150,105,0.12)" }}>
-            <Icon name="diamond" size={40} color="rgb(var(--primary))" />
+            <Icon name="diamond" size={40} color={ThemeColors.primary} />
           </View>
           <Text className="text-foreground text-3xl font-bold text-center">Phone Cleaner Pro</Text>
           <Text className="text-muted-foreground text-sm text-center mt-2">
@@ -89,13 +90,13 @@ export default function Premium() {
               className={`flex-row items-center gap-3 py-3 ${i > 0 ? "border-t border-border" : ""}`}
             >
               <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
-                <Icon name={f.icon as IconName} size={18} color="rgb(var(--primary))" />
+                <Icon name={f.icon as IconName} size={18} color={ThemeColors.primary} />
               </View>
               <View className="flex-1">
                 <Text className="text-foreground font-semibold text-sm">{f.title}</Text>
                 <Text className="text-muted-foreground text-xs mt-0.5">{f.desc}</Text>
               </View>
-              <Icon name="checkmark-circle" size={18} color="rgb(var(--primary))" />
+              <Icon name="checkmark-circle" size={18} color={ThemeColors.primary} />
             </View>
           ))}
         </Animated.View>

@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { useAppStore } from "@/stores/useAppStore";
-import { CategoryColors } from "@/theme/colors";
+import { CategoryColors, ThemeColors } from "@/theme/colors";
 import { formatSizeCompact, bytesToGB, formatCount, formatRelativeTime } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey } from "@/lib/types";
@@ -141,7 +141,7 @@ export default function ScanScreen() {
                 >
                   <Icon name={h.icon} size={22} color={h.color} />
                 </View>
-                <Icon name="chevron-forward" size={16} color="rgb(var(--muted-foreground))" />
+                <Icon name="chevron-forward" size={16} color={ThemeColors.mutedForeground} />
               </View>
               <Text className="text-foreground font-semibold mt-3">{h.label}</Text>
               <Text className="text-2xl font-bold mt-0.5" style={{ color: h.color }}>
@@ -186,7 +186,7 @@ export default function ScanScreen() {
                   </Text>
                   <Text className="text-muted-foreground text-xs">cleanable</Text>
                 </View>
-                <Icon name="chevron-forward" size={16} color="rgb(var(--muted-foreground))" />
+                <Icon name="chevron-forward" size={16} color={ThemeColors.mutedForeground} />
               </Pressable>
             );
           })}
@@ -195,7 +195,7 @@ export default function ScanScreen() {
 
       {/* Rescan hint */}
       <View className="px-4 mt-4 flex-row items-center gap-2">
-        <Icon name="time-outline" size={14} color="rgb(var(--muted-foreground))" />
+        <Icon name="time-outline" size={14} color={ThemeColors.mutedForeground} />
         <Text className="text-xs text-muted-foreground">
           Results are cached. Rescan to detect newly added files.
         </Text>
@@ -208,7 +208,7 @@ function EmptyScan({ onScan }: { onScan: () => void }) {
   return (
     <View className="flex-1 items-center justify-center px-8">
       <View className="w-24 h-24 rounded-full bg-accent items-center justify-center mb-6">
-        <Icon name="scan" size={48} color="rgb(var(--primary))" />
+        <Icon name="scan" size={48} color={ThemeColors.primary} />
       </View>
       <Text className="text-foreground text-xl font-bold text-center">No scan yet</Text>
       <Text className="text-muted-foreground text-sm text-center mt-2">

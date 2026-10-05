@@ -8,6 +8,11 @@
     "newArchEnabled": true,
     "icon": "./src/assets/icon.png",
     "scheme": "phonecleaner",
+    "splash": {
+      "image": "./src/assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
     "android": {
       "package": "com.phonecleaner.app",
       "adaptiveIcon": {

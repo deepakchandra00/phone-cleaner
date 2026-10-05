@@ -13,9 +13,29 @@ import { initRevenueCat } from "@/lib/revenuecat";
 import { initAds } from "@/lib/ads";
 import { track } from "@/lib/analytics";
 
+import * as SplashScreen from "expo-splash-screen";
+import { View, Text } from "react-native";
+import { Button } from "@/components/ui/Button";
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 60_000 } },
 });
+
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
+  return (
+    <View style={{ flex: 1, backgroundColor: "#0F172A", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <Text style={{ color: "#fff", fontSize: 20, fontWeight: "bold", marginBottom: 12 }}>Phone Cleaner</Text>
+      <Text style={{ color: "#94a3b8", fontSize: 14, textAlign: "center", marginBottom: 24 }}>
+        {error?.message || "An error occurred while loading the app."}
+      </Text>
+      <Button variant="primary" size="md" onPress={retry}>
+        Try Again
+      </Button>
+    </View>
+  );
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -23,10 +43,15 @@ export default function RootLayout() {
   const loadCached = usePremiumStore((s) => s.loadCached);
 
   useEffect(() => {
-    loadStorage();
-    loadCached();
-    initRevenueCat();
-    initAds();
+    (async () => {
+      try {
+        await Promise.allSettled([loadStorage(), loadCached()]);
+      } finally {
+        await SplashScreen.hideAsync().catch(() => {});
+      }
+    })();
+    initRevenueCat().catch(() => {});
+    initAds().catch(() => {});
     track("app_open");
   }, [loadStorage, loadCached]);
 
