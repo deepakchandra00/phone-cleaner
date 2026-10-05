@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, Pressable, Dimensions, ScrollView } from "react-native";
 import { Image } from "expo-image";
+import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
@@ -110,28 +111,30 @@ export default function PhotosScreen() {
         </View>
       )}
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 110 }}>
-        {/* Quick action: keep best for all */}
-        <View className="px-4 mb-3">
-          <Pressable
-            onPress={selectAllKeepBest}
-            className="bg-gradient-to-br from-primary to-teal-600 rounded-2xl p-3.5 flex-row items-center justify-between active:opacity-95"
-          >
-            <View className="flex-row items-center gap-2">
-              <Icon name="sparkles" size={18} color="#fff" />
-              <View>
-                <Text className="text-white font-semibold text-sm">Keep best, delete rest</Text>
-                <Text className="text-white/80 text-xs">Auto-select across all {groups.length} groups</Text>
-              </View>
+      <View className="flex-1 px-4">
+        <FlashList
+          data={groups}
+          keyExtractor={(g) => g.id}
+          contentContainerStyle={{ paddingBottom: 130 }}
+          ListHeaderComponent={
+            <View className="mb-3">
+              <Pressable
+                onPress={selectAllKeepBest}
+                className="bg-gradient-to-br from-primary to-teal-600 rounded-2xl p-3.5 flex-row items-center justify-between active:opacity-95"
+              >
+                <View className="flex-row items-center gap-2">
+                  <Icon name="sparkles" size={18} color="#fff" />
+                  <View>
+                    <Text className="text-white font-semibold text-sm">Keep best, delete rest</Text>
+                    <Text className="text-white/80 text-xs">Auto-select across all {groups.length} groups</Text>
+                  </View>
+                </View>
+                <Icon name="arrow-forward" size={16} color="#fff" />
+              </Pressable>
             </View>
-            <Icon name="arrow-forward" size={16} color="#fff" />
-          </Pressable>
-        </View>
-
-        {/* Groups */}
-        <View className="px-4 gap-4">
-          {groups.map((g, idx) => (
-            <Animated.View key={g.id} entering={FadeInDown.delay(idx * 40).springify()}>
+          }
+          renderItem={({ item: g }) => (
+            <View className="mb-3">
               <DuplicateGroupCard
                 group={g}
                 isPro={gate.canUseSimilarPhotos}
@@ -140,10 +143,11 @@ export default function PhotosScreen() {
                 selectedFileIds={selectedFileIds}
                 onToggleFile={toggleFile}
               />
-            </Animated.View>
-          ))}
-        </View>
-      </ScrollView>
+            </View>
+          )}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
 
       {/* Sticky selection bar */}
       {selectedGroupIds.size + selectedFileIds.size > 0 && (

@@ -51,13 +51,17 @@ export default function ScanScreen() {
     },
     {
       key: "videos" as CategoryKey,
-      label: "Large videos",
+      label: "Videos",
       icon: "videocam" as IconName,
       color: CategoryColors.videos,
-      bytes: scanResult.largeFiles
-        .filter((f) => f.category === "videos")
-        .reduce((s, f) => s + f.sizeBytes, 0),
-      count: scanResult.largeFiles.filter((f) => f.category === "videos").length,
+      bytes: (scanResult.allVideos && scanResult.allVideos.length > 0)
+        ? scanResult.allVideos.reduce((s, f) => s + f.sizeBytes, 0)
+        : scanResult.largeFiles
+            .filter((f) => f.category === "videos")
+            .reduce((s, f) => s + f.sizeBytes, 0),
+      count: (scanResult.allVideos && scanResult.allVideos.length > 0)
+        ? scanResult.allVideos.length
+        : scanResult.largeFiles.filter((f) => f.category === "videos").length,
       route: "/category/videos",
     },
     {
@@ -165,7 +169,11 @@ export default function ScanScreen() {
             return (
               <Pressable
                 key={c.key}
-                onPress={() => router.push(`/category/${c.key}`)}
+                onPress={() => {
+                  if (c.key === "duplicates") router.push("/(tabs)/photos");
+                  else if (c.key === "apps") router.push("/(tabs)/files");
+                  else router.push(`/category/${c.key}`);
+                }}
                 className={`flex-row items-center gap-3 py-3 ${i > 0 ? "border-t border-border" : ""}`}
               >
                 <View

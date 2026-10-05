@@ -13,6 +13,7 @@ export const CategoryColors = {
   junk: "#64748b", // slate-500
   duplicates: "#f97316", // orange-500
   whatsapp: "#22c55e", // green-500 (brand-adjacent)
+  apks: "#e11d48", // rose-600
   other: "#94a3b8", // slate-400
 } as const;
 

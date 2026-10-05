@@ -118,6 +118,7 @@ export async function runRealScan(
   const scannedPhotos: ScannedFile[] = [];
   const scannedVideos: ScannedFile[] = [];
   const scannedAudio: ScannedFile[] = [];
+  const scannedDownloads: ScannedFile[] = [];
   const largeFiles: ScannedFile[] = [];
   const whatsappFiles: ScannedFile[] = [];
   const junkFiles: ScannedFile[] = [];
@@ -127,7 +128,7 @@ export async function runRealScan(
     // Photos
     try {
       const photoResult = await MediaLibrary.getAssetsAsync({
-        first: 500,
+        first: 1000,
         mediaType: ["photo"],
         sortBy: [MediaLibrary.SortBy.modificationTime],
       });
@@ -146,18 +147,18 @@ export async function runRealScan(
           source: "Camera",
         };
         scannedPhotos.push(file);
-        if (sizeBytes > 25 * MB) largeFiles.push(file);
+        if (sizeBytes >= 10 * MB) largeFiles.push(file);
       }
     } catch (e) {
       console.warn("[realScanner] Photo scan error:", e);
     }
 
-    onProgress?.("Scanning videos…", 0.35);
+    onProgress?.("Scanning videos…", 0.3);
 
     // Videos
     try {
       const videoResult = await MediaLibrary.getAssetsAsync({
-        first: 300,
+        first: 500,
         mediaType: ["video"],
         sortBy: [MediaLibrary.SortBy.modificationTime],
       });
@@ -177,24 +178,24 @@ export async function runRealScan(
           source: "Camera",
         };
         scannedVideos.push(file);
-        if (sizeBytes > 25 * MB) largeFiles.push(file);
+        if (sizeBytes >= 10 * MB) largeFiles.push(file);
       }
     } catch (e) {
       console.warn("[realScanner] Video scan error:", e);
     }
 
-    onProgress?.("Scanning audio…", 0.5);
+    onProgress?.("Scanning audio…", 0.45);
 
     // Audio
     try {
       const audioResult = await MediaLibrary.getAssetsAsync({
-        first: 300,
+        first: 500,
         mediaType: ["audio"],
         sortBy: [MediaLibrary.SortBy.modificationTime],
       });
       for (const asset of audioResult.assets) {
         const sizeBytes = estimateMediaSize(asset, "audio");
-        scannedAudio.push({
+        const file: ScannedFile = {
           id: asset.id,
           path: asset.uri,
           name: asset.filename || `audio_${asset.id}.mp3`,
@@ -204,29 +205,71 @@ export async function runRealScan(
           modifiedAt: asset.modificationTime || asset.creationTime,
           durationSec: asset.duration,
           source: "Music",
-        });
+        };
+        scannedAudio.push(file);
+        if (sizeBytes >= 10 * MB) largeFiles.push(file);
       }
     } catch (e) {
       console.warn("[realScanner] Audio scan error:", e);
     }
+  }
 
-    // ── Stage 3: WhatsApp ──────────────────────────────────────────────
-    onProgress?.("Scanning WhatsApp media…", 0.6);
+  // ── Stage 3: Downloads & Large Files ──────────────────────────────────
+  onProgress?.("Scanning downloaded files…", 0.55);
 
-    try {
+  try {
+    const rawDownloads = await AndroidStorage.scanDownloads();
+    for (const d of rawDownloads) {
+      const file: ScannedFile = {
+        id: d.id,
+        path: d.path,
+        name: d.name,
+        category: "downloads",
+        sizeBytes: d.sizeBytes,
+        mimeType: d.mimeType || "application/octet-stream",
+        modifiedAt: d.modifiedAt || Date.now(),
+        source: "Downloads",
+      };
+      scannedDownloads.push(file);
+      if (file.sizeBytes >= 10 * MB) largeFiles.push(file);
+    }
+  } catch (e) {
+    console.warn("[realScanner] Downloads scan error:", e);
+  }
+
+  // ── Stage 4: WhatsApp Media ──────────────────────────────────────────
+  onProgress?.("Scanning WhatsApp media…", 0.65);
+
+  try {
+    const rawWa = await AndroidStorage.scanWhatsAppMedia();
+    if (rawWa && rawWa.length > 0) {
+      for (const w of rawWa) {
+        const file: ScannedFile = {
+          id: w.id,
+          path: w.path,
+          name: w.name,
+          category: "whatsapp",
+          sizeBytes: w.sizeBytes,
+          mimeType: w.mimeType || "image/jpeg",
+          modifiedAt: w.modifiedAt || Date.now(),
+          source: w.subType || "WhatsApp",
+        };
+        whatsappFiles.push(file);
+        if (file.sizeBytes >= 10 * MB) largeFiles.push(file);
+      }
+    } else if (permissionGranted) {
+      // Fallback to MediaStore albums
       const albums = await MediaLibrary.getAlbumsAsync();
-      const waAlbums = albums.filter((a) =>
-        /whatsapp/i.test(a.title),
-      );
+      const waAlbums = albums.filter((a) => /whatsapp/i.test(a.title));
       for (const album of waAlbums) {
         const waResult = await MediaLibrary.getAssetsAsync({
           album,
-          first: 200,
+          first: 300,
           sortBy: [MediaLibrary.SortBy.modificationTime],
         });
         for (const asset of waResult.assets) {
           const sizeBytes = estimateMediaSize(asset, "photo");
-          whatsappFiles.push({
+          const file: ScannedFile = {
             id: `wa_${asset.id}`,
             path: asset.uri,
             name: asset.filename || `wa_${asset.id}.jpg`,
@@ -234,22 +277,39 @@ export async function runRealScan(
             sizeBytes,
             mimeType: "image/jpeg",
             modifiedAt: asset.modificationTime || asset.creationTime,
-            source: "WhatsApp",
-          });
+            source: album.title || "WhatsApp",
+          };
+          whatsappFiles.push(file);
+          if (file.sizeBytes >= 10 * MB) largeFiles.push(file);
         }
       }
-    } catch (e) {
-      console.warn("[realScanner] WhatsApp scan error:", e);
     }
+  } catch (e) {
+    console.warn("[realScanner] WhatsApp scan error:", e);
   }
 
-  // ── Stage 4: App cache / junk ────────────────────────────────────────
-  onProgress?.("Inspecting cache & temporary files…", 0.7);
+  // ── Stage 5: App cache, Obsolete APKs & Junk ──────────────────────────
+  onProgress?.("Inspecting junk & cache files…", 0.75);
 
   try {
+    const rawJunk = await AndroidStorage.scanJunkFiles();
+    for (const j of rawJunk) {
+      junkFiles.push({
+        id: j.id,
+        path: j.path,
+        name: j.name,
+        category: "junk",
+        sizeBytes: j.sizeBytes,
+        mimeType: j.mimeType || "application/octet-stream",
+        modifiedAt: j.modifiedAt || Date.now(),
+        source: j.subType === "apk" ? "Obsolete APK" : j.subType === "thumbnail" ? "Thumbnails" : "App Cache",
+      });
+    }
+
+    // Also check expo app's cache directory
     if (FileSystem.cacheDirectory) {
       const entries = await FileSystem.readDirectoryAsync(FileSystem.cacheDirectory);
-      for (const entry of entries.slice(0, 50)) {
+      for (const entry of entries.slice(0, 100)) {
         const fullPath = `${FileSystem.cacheDirectory}${entry}`;
         try {
           const info = await FileSystem.getInfoAsync(fullPath);
@@ -265,26 +325,26 @@ export async function runRealScan(
               source: "App Cache",
             });
           }
-        } catch {
-          // skip individual entry errors
-        }
+        } catch {}
       }
     }
   } catch (e) {
-    console.warn("[realScanner] Cache scan error:", e);
+    console.warn("[realScanner] Junk scan error:", e);
   }
 
-  // ── Stage 5: Duplicate detection ─────────────────────────────────────
-  onProgress?.("Detecting duplicate files…", 0.8);
+  // ── Stage 6: Duplicate detection ─────────────────────────────────────
+  onProgress?.("Detecting duplicate files…", 0.85);
 
   duplicateGroups = await detectDuplicates(scannedPhotos, onProgress);
 
-  // ── If device had no media at all, fall back to mock so UI stays usable ─
+  // ── If device had no media or files at all, fall back to mock so UI stays usable ─
   if (
     scannedPhotos.length === 0 &&
     scannedVideos.length === 0 &&
+    scannedAudio.length === 0 &&
     junkFiles.length === 0 &&
-    whatsappFiles.length === 0
+    whatsappFiles.length === 0 &&
+    scannedDownloads.length === 0
   ) {
     onProgress?.("Finalizing scan results…", 1);
     const mock = buildMockScanResult();
@@ -297,10 +357,16 @@ export async function runRealScan(
   // ── Apps from native module ──────────────────────────────────────────
   const apps = await getAppsFromNative();
 
+  // ── Obsolete APKs ────────────────────────────────────────────────────
+  const obsoleteApks = junkFiles.filter(
+    (j) => j.name.toLowerCase().endsWith(".apk") || j.source === "Obsolete APK",
+  );
+
   // ── Assemble result ──────────────────────────────────────────────────
   const photosBytes = sum(scannedPhotos);
   const videosBytes = sum(scannedVideos);
   const audioBytes = sum(scannedAudio);
+  const downloadsBytes = sum(scannedDownloads);
   const junkBytes = sum(junkFiles);
   const waBytes = sum(whatsappFiles);
   const largeBytes = sum(largeFiles);
@@ -308,16 +374,16 @@ export async function runRealScan(
 
   const categories: CategorySummary[] = [
     { key: "photos", label: "Photos", bytes: photosBytes, fileCount: scannedPhotos.length, cleanableBytes: dupRecoverable, cleanableCount: duplicateGroups.length },
-    { key: "videos", label: "Videos", bytes: videosBytes, fileCount: scannedVideos.length, cleanableBytes: 0, cleanableCount: 0 },
-    { key: "audio", label: "Audio", bytes: audioBytes, fileCount: scannedAudio.length, cleanableBytes: 0, cleanableCount: 0 },
-    { key: "downloads", label: "Large Files", bytes: largeBytes, fileCount: largeFiles.length, cleanableBytes: largeBytes, cleanableCount: largeFiles.length },
+    { key: "videos", label: "Videos", bytes: videosBytes, fileCount: scannedVideos.length, cleanableBytes: sum(largeFiles.filter((f) => f.category === "videos")), cleanableCount: largeFiles.filter((f) => f.category === "videos").length },
+    { key: "downloads", label: "Downloads & Files", bytes: downloadsBytes, fileCount: scannedDownloads.length, cleanableBytes: sum(obsoleteApks), cleanableCount: obsoleteApks.length },
     { key: "junk", label: "Junk & Cache", bytes: junkBytes, fileCount: junkFiles.length, cleanableBytes: junkBytes, cleanableCount: junkFiles.length },
     { key: "whatsapp", label: "WhatsApp Media", bytes: waBytes, fileCount: whatsappFiles.length, cleanableBytes: waBytes, cleanableCount: whatsappFiles.length },
-    { key: "apps", label: "Apps", bytes: apps.reduce((s, a) => s + a.sizeBytes, 0), fileCount: apps.length, cleanableBytes: 0, cleanableCount: 0 },
+    { key: "audio", label: "Audio", bytes: audioBytes, fileCount: scannedAudio.length, cleanableBytes: 0, cleanableCount: 0 },
+    { key: "apps", label: "Apps", bytes: apps.reduce((s, a) => s + a.sizeBytes, 0), fileCount: apps.length, cleanableBytes: apps.reduce((s, a) => s + a.cacheBytes, 0), cleanableCount: apps.filter((a) => a.cacheBytes > 0).length },
   ];
 
   const totalCleanableBytes =
-    junkBytes + largeBytes + dupRecoverable + waBytes;
+    junkBytes + dupRecoverable + waBytes + sum(obsoleteApks);
 
   onProgress?.("Done", 1);
 
@@ -330,14 +396,20 @@ export async function runRealScan(
       scannedPhotos.length +
       scannedVideos.length +
       scannedAudio.length +
+      scannedDownloads.length +
       junkFiles.length +
       whatsappFiles.length,
     categories,
+    allPhotos: scannedPhotos.sort((a, b) => b.modifiedAt - a.modifiedAt),
+    allVideos: scannedVideos.sort((a, b) => b.sizeBytes - a.sizeBytes),
+    allAudio: scannedAudio.sort((a, b) => b.sizeBytes - a.sizeBytes),
+    allDownloads: scannedDownloads.sort((a, b) => b.sizeBytes - a.sizeBytes),
+    obsoleteApks,
     largeFiles: largeFiles.sort((a, b) => b.sizeBytes - a.sizeBytes),
     duplicateGroups: duplicateGroups.sort((a, b) => b.recoverableBytes - a.recoverableBytes),
     apps,
-    junkFiles,
-    whatsappFiles,
+    junkFiles: junkFiles.sort((a, b) => b.sizeBytes - a.sizeBytes),
+    whatsappFiles: whatsappFiles.sort((a, b) => b.sizeBytes - a.sizeBytes),
   };
 }
 
@@ -473,17 +545,25 @@ export async function performRealCleanup(
 
   // 1. Collect selected files
   const allFiles = [
-    ...scanResult.largeFiles,
+    ...scanResult.allPhotos,
+    ...scanResult.allVideos,
+    ...scanResult.allAudio,
+    ...scanResult.allDownloads,
+    ...scanResult.obsoleteApks,
     ...scanResult.junkFiles,
     ...scanResult.whatsappFiles,
+    ...scanResult.largeFiles,
   ];
 
+  const seenIds = new Set<string>();
+
   for (const f of allFiles) {
-    if (selectedFileIds.has(f.id)) {
+    if (selectedFileIds.has(f.id) && !seenIds.has(f.id)) {
+      seenIds.add(f.id);
       freedBytes += f.sizeBytes;
       deletedCount++;
       if (f.path.startsWith("file://") || f.path.startsWith("/")) {
-        filePathsToDelete.push(f.path);
+        filePathsToDelete.push(f.path.replace("file://", ""));
       } else {
         // MediaStore asset — delete by ID
         // Strip the "wa_" prefix we added for WhatsApp assets
@@ -498,10 +578,11 @@ export async function performRealCleanup(
     if (selectedGroupIds.has(g.id)) {
       freedBytes += g.recoverableBytes;
       for (const f of g.files) {
-        if (f.id !== g.keepId) {
+        if (f.id !== g.keepId && !seenIds.has(f.id)) {
+          seenIds.add(f.id);
           deletedCount++;
           if (f.path.startsWith("file://") || f.path.startsWith("/")) {
-            filePathsToDelete.push(f.path);
+            filePathsToDelete.push(f.path.replace("file://", ""));
           } else {
             mediaIdsToDelete.push(f.id);
           }
@@ -510,21 +591,26 @@ export async function performRealCleanup(
     }
   }
 
-  // 3. Delete MediaStore assets (photos, videos)
+  // 3. Delete native filesystem files (fast & permanent)
+  if (filePathsToDelete.length > 0) {
+    try {
+      await AndroidStorage.deleteNativeFiles(filePathsToDelete);
+    } catch (e) {
+      console.warn("[realScanner] AndroidStorage delete error, fallback to FileSystem:", e);
+      for (const path of filePathsToDelete) {
+        try {
+          await FileSystem.deleteAsync(`file://${path}`, { idempotent: true });
+        } catch {}
+      }
+    }
+  }
+
+  // 4. Delete MediaStore assets (photos, videos)
   if (mediaIdsToDelete.length > 0) {
     try {
       await MediaLibrary.deleteAssetsAsync(mediaIdsToDelete);
     } catch (e) {
       console.warn("[realScanner] MediaLibrary delete warning:", e);
-    }
-  }
-
-  // 4. Delete filesystem files (cache, junk)
-  for (const path of filePathsToDelete) {
-    try {
-      await FileSystem.deleteAsync(path, { idempotent: true });
-    } catch (e) {
-      console.warn("[realScanner] FileSystem delete warning for", path, e);
     }
   }
 

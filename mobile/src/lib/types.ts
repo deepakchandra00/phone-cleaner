@@ -14,6 +14,7 @@ export type CategoryKey =
   | "junk"
   | "duplicates"
   | "whatsapp"
+  | "apks"
   | "other";
 
 export interface StorageSummary {
@@ -43,6 +44,7 @@ export interface ScannedFile {
   sizeBytes: number;
   mimeType: string;
   modifiedAt: number; // epoch ms
+  uri?: string;
   /** For media: dimensions. */
   width?: number;
   height?: number;
@@ -83,6 +85,11 @@ export interface ScanResult {
   totalCleanableBytes: number;
   filesScanned: number;
   categories: CategorySummary[];
+  allPhotos: ScannedFile[];
+  allVideos: ScannedFile[];
+  allAudio: ScannedFile[];
+  allDownloads: ScannedFile[];
+  obsoleteApks: ScannedFile[];
   largeFiles: ScannedFile[];
   duplicateGroups: DuplicateGroup[];
   apps: AppItem[];

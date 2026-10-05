@@ -141,6 +141,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       updatedResult = {
         ...currentResult,
         totalCleanableBytes: Math.max(0, currentResult.totalCleanableBytes - freedBytes),
+        allPhotos: currentResult.allPhotos.filter((f) => !deletedFileIds.has(f.id)),
+        allVideos: currentResult.allVideos.filter((f) => !deletedFileIds.has(f.id)),
+        allAudio: currentResult.allAudio.filter((f) => !deletedFileIds.has(f.id)),
+        allDownloads: currentResult.allDownloads.filter((f) => !deletedFileIds.has(f.id)),
+        obsoleteApks: currentResult.obsoleteApks.filter((f) => !deletedFileIds.has(f.id)),
         largeFiles: currentResult.largeFiles.filter((f) => !deletedFileIds.has(f.id)),
         junkFiles: currentResult.junkFiles.filter((f) => !deletedFileIds.has(f.id)),
         whatsappFiles: currentResult.whatsappFiles.filter((f) => !deletedFileIds.has(f.id)),
@@ -185,12 +190,21 @@ export function useSelectedBytes(): number {
   if (!scanResult) return 0;
   let bytes = 0;
   const allFiles = [
+    ...scanResult.allPhotos,
+    ...scanResult.allVideos,
+    ...scanResult.allAudio,
+    ...scanResult.allDownloads,
+    ...scanResult.obsoleteApks,
     ...scanResult.largeFiles,
     ...scanResult.junkFiles,
     ...scanResult.whatsappFiles,
   ];
+  const seen = new Set<string>();
   for (const f of allFiles) {
-    if (selectedFileIds.has(f.id)) bytes += f.sizeBytes;
+    if (selectedFileIds.has(f.id) && !seen.has(f.id)) {
+      seen.add(f.id);
+      bytes += f.sizeBytes;
+    }
   }
   for (const g of scanResult.duplicateGroups) {
     if (selectedGroupIds.has(g.id)) bytes += g.recoverableBytes;

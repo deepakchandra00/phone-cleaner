@@ -45,7 +45,13 @@ export default function HomeScreen() {
 
   const onCategoryPress = (key: string) => {
     track("category_viewed", { category: key });
-    router.push(`/category/${key}`);
+    if (key === "duplicates") {
+      router.push("/(tabs)/photos");
+    } else if (key === "apps") {
+      router.push("/(tabs)/files");
+    } else {
+      router.push(`/category/${key}`);
+    }
   };
 
   const featuredCategories = storage.categories.filter((c) =>

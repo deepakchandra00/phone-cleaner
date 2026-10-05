@@ -370,6 +370,11 @@ export function buildScanResult(): ScanResult {
     filesScanned:
       summary.categories.reduce((s, c) => s + c.fileCount, 0),
     categories: summary.categories,
+    allPhotos: photos,
+    allVideos: videos,
+    allAudio: audio,
+    allDownloads: downloads,
+    obsoleteApks: junk.filter((j) => j.name.endsWith(".apk")),
     largeFiles,
     duplicateGroups: duplicateGroups.sort((a, b) => b.recoverableBytes - a.recoverableBytes),
     apps: getApps().sort((a, b) => b.sizeBytes - a.sizeBytes),
@@ -398,5 +403,6 @@ export const MOCK_CATEGORY_LABELS: Record<CategoryKey, string> = {
   junk: "Junk",
   duplicates: "Duplicates",
   whatsapp: "WhatsApp",
+  apks: "APKs",
   other: "Other",
 };

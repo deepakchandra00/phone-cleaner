@@ -16,6 +16,17 @@ export interface NativeAppInfo {
   iconUri: string | null;
 }
 
+export interface NativeScannedFile {
+  id: string;
+  path: string;
+  name: string;
+  sizeBytes: number;
+  category: string;
+  subType?: string;
+  mimeType?: string;
+  modifiedAt: number;
+}
+
 export const AndroidStorage = {
   getStorageStats(): NativeStorageStats | null {
     try {
@@ -39,6 +50,38 @@ export const AndroidStorage = {
       return await module.uninstallApp(packageName);
     } catch {
       return false;
+    }
+  },
+  async scanJunkFiles(): Promise<NativeScannedFile[]> {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      return await module.scanJunkFiles();
+    } catch {
+      return [];
+    }
+  },
+  async scanWhatsAppMedia(): Promise<NativeScannedFile[]> {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      return await module.scanWhatsAppMedia();
+    } catch {
+      return [];
+    }
+  },
+  async scanDownloads(): Promise<NativeScannedFile[]> {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      return await module.scanDownloads();
+    } catch {
+      return [];
+    }
+  },
+  async deleteNativeFiles(paths: string[]): Promise<{ deletedCount: number; freedBytes: number }> {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      return await module.deleteNativeFiles(paths);
+    } catch {
+      return { deletedCount: 0, freedBytes: 0 };
     }
   },
 };

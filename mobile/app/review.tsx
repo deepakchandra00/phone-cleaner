@@ -39,9 +39,14 @@ export default function Review() {
     // Group selected files by their category
     const byCat = new Map<CategoryKey, ScannedFile[]>();
     const allFiles = [
-      ...scanResult.largeFiles,
-      ...scanResult.junkFiles,
-      ...scanResult.whatsappFiles,
+      ...(scanResult.allPhotos ?? []),
+      ...(scanResult.allVideos ?? []),
+      ...(scanResult.allAudio ?? []),
+      ...(scanResult.allDownloads ?? []),
+      ...(scanResult.obsoleteApks ?? []),
+      ...(scanResult.largeFiles ?? []),
+      ...(scanResult.junkFiles ?? []),
+      ...(scanResult.whatsappFiles ?? []),
     ];
     for (const f of allFiles) {
       if (selectedFileIds.has(f.id)) {
@@ -249,6 +254,7 @@ function labelFor(key: CategoryKey): string {
     junk: "Junk files",
     duplicates: "Duplicate photos",
     whatsapp: "WhatsApp media",
+    apks: "Installation packages (APKs)",
     other: "Other",
   };
   return m[key] ?? key;

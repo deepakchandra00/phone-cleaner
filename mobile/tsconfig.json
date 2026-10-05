@@ -8,6 +8,9 @@
       ],
       "@app/*": [
         "./app/*"
+      ],
+      "android-storage": [
+        "./modules/android-storage"
       ]
     },
     "jsx": "react-jsx",

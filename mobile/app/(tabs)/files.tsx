@@ -1,15 +1,17 @@
-import { useState, useMemo } from "react";
-import { View, Text, Pressable, ScrollView, Dimensions, Linking } from "react-native";
+import React, { useState, useMemo, useCallback } from "react";
+import { View, Text, Pressable, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { FadeInDown, FadeIn, SlideInRight } from "react-native-reanimated";
+import { FlashList } from "@shopify/flash-list";
+import { Image } from "expo-image";
+import Animated, { FadeInDown, SlideInRight } from "react-native-reanimated";
 import { AndroidStorage } from "android-storage";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { useAppStore, useSelectedBytes } from "@/stores/useAppStore";
-import { CategoryColors, ThemeColors } from "@/theme/colors";
+import { CategoryColors, ThemeColors, StatusColors } from "@/theme/colors";
 import { formatSizeCompact, formatRelativeTime, formatCount } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey, ScannedFile, AppItem } from "@/lib/types";
@@ -24,16 +26,16 @@ const SECTIONS: { key: Section; label: string; icon: IconName; color: string }[]
 
 const SIZE_FILTERS = [
   { key: "all", label: "All", min: 0 },
+  { key: "25mb", label: "> 25 MB", min: 25 * 1024 ** 2 },
+  { key: "50mb", label: "> 50 MB", min: 50 * 1024 ** 2 },
   { key: "100mb", label: "> 100 MB", min: 100 * 1024 ** 2 },
   { key: "500mb", label: "> 500 MB", min: 500 * 1024 ** 2 },
-  { key: "1gb", label: "> 1 GB", min: 1024 ** 3 },
 ] as const;
 
 type SizeFilterKey = (typeof SIZE_FILTERS)[number]["key"];
 
 export default function FilesScreen() {
   const [section, setSection] = useState<Section>("large");
-  const insets = useSafeAreaInsets();
 
   return (
     <View className="flex-1 bg-background">
@@ -89,7 +91,7 @@ function LargeFilesSection() {
   const insets = useSafeAreaInsets();
   const { scanResult, selectedFileIds, toggleFile } = useAppStore();
   const selectedBytes = useSelectedBytes();
-  const [filter, setFilter] = useState<SizeFilterKey>("100mb");
+  const [filter, setFilter] = useState<SizeFilterKey>("25mb");
 
   const files = useMemo(() => {
     if (!scanResult) return [];
@@ -99,41 +101,63 @@ function LargeFilesSection() {
       .sort((a, b) => b.sizeBytes - a.sizeBytes);
   }, [scanResult, filter]);
 
-  const totalBytes = files.reduce((s, f) => s + f.sizeBytes, 0);
-  const selectedCount = files.filter((f) => selectedFileIds.has(f.id)).length;
+  const totalBytes = useMemo(() => files.reduce((s, f) => s + f.sizeBytes, 0), [files]);
+  const selectedCount = useMemo(
+    () => files.filter((f) => selectedFileIds.has(f.id)).length,
+    [files, selectedFileIds]
+  );
+
+  const renderFileRow = useCallback(
+    ({ item }: { item: ScannedFile }) => (
+      <View className="px-4 py-1">
+        <FileRow
+          file={item}
+          selected={selectedFileIds.has(item.id)}
+          onToggle={() => toggleFile(item.id)}
+        />
+      </View>
+    ),
+    [selectedFileIds, toggleFile]
+  );
 
   if (!scanResult) return <NoScanState />;
 
   return (
     <View className="flex-1">
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 110 }}>
-        {/* Summary + filters */}
-        <View className="px-4">
-          <Card className="mb-3">
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-muted-foreground text-xs">Showing</Text>
-                <Text className="text-foreground text-xl font-bold">
-                  {formatSizeCompact(totalBytes)}
-                </Text>
-                <Text className="text-muted-foreground text-xs">{formatCount(files.length)} files</Text>
+      <FlashList
+        data={files}
+        keyExtractor={(item) => item.id}
+        renderItem={renderFileRow}
+        contentContainerStyle={{ paddingBottom: 110 }}
+        ListHeaderComponent={
+          <View className="px-4 pb-2">
+            <Card className="mb-3">
+              <View className="flex-row items-center justify-between">
+                <View>
+                  <Text className="text-muted-foreground text-xs">Total large files</Text>
+                  <Text className="text-foreground text-xl font-bold">
+                    {formatSizeCompact(totalBytes)}
+                  </Text>
+                  <Text className="text-muted-foreground text-xs">{formatCount(files.length)} files</Text>
+                </View>
+                <View
+                  className="w-12 h-12 rounded-xl items-center justify-center"
+                  style={{ backgroundColor: `${CategoryColors.videos}20` }}
+                >
+                  <Icon name="cube" size={24} color={CategoryColors.videos} />
+                </View>
               </View>
-              <View className="w-12 h-12 rounded-xl items-center justify-center" style={{ backgroundColor: `${CategoryColors.videos}20` }}>
-                <Icon name="cube" size={24} color={CategoryColors.videos} />
-              </View>
-            </View>
-          </Card>
+            </Card>
 
-          {/* Size filters */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
-            <View className="flex-row gap-2">
+            {/* Size filters */}
+            <View className="flex-row flex-wrap gap-2 mb-2">
               {SIZE_FILTERS.map((f) => {
                 const active = f.key === filter;
                 return (
                   <Pressable
                     key={f.key}
                     onPress={() => setFilter(f.key)}
-                    className={`px-3.5 py-1.5 rounded-full border ${active ? "bg-primary border-primary" : "bg-card border-border"}`}
+                    className={`px-3 py-1.5 rounded-full border ${active ? "bg-primary border-primary" : "bg-card border-border"}`}
                   >
                     <Text className={`text-xs font-medium ${active ? "text-primary-foreground" : "text-muted-foreground"}`}>
                       {f.label}
@@ -142,16 +166,16 @@ function LargeFilesSection() {
                 );
               })}
             </View>
-          </ScrollView>
-        </View>
-
-        {/* File list */}
-        <View className="px-4 gap-2">
-          {files.map((f, i) => (
-            <FileRow key={f.id} file={f} selected={selectedFileIds.has(f.id)} onToggle={() => toggleFile(f.id)} delay={i * 30} />
-          ))}
-        </View>
-      </ScrollView>
+          </View>
+        }
+        ListEmptyComponent={
+          <View className="py-12 items-center justify-center">
+            <Icon name="checkmark-circle" size={44} color={StatusColors.success} />
+            <Text className="text-foreground font-semibold text-base mt-2">No large files found</Text>
+            <Text className="text-muted-foreground text-xs mt-1">Try selecting a different filter above</Text>
+          </View>
+        }
+      />
 
       {selectedCount > 0 && (
         <SelectionBar
@@ -172,91 +196,123 @@ function WhatsAppSection() {
   const insets = useSafeAreaInsets();
   const { scanResult, selectedFileIds, toggleFile } = useAppStore();
   const selectedBytes = useSelectedBytes();
+  const [selectedSubtype, setSelectedSubtype] = useState<string>("all");
+
+  const allFiles = scanResult?.whatsappFiles ?? [];
+  const totalBytes = useMemo(() => allFiles.reduce((s, f) => s + f.sizeBytes, 0), [allFiles]);
+
+  const subtypes = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const f of allFiles) {
+      const src = f.source || "Other";
+      map.set(src, (map.get(src) ?? 0) + 1);
+    }
+    return Array.from(map.entries()).map(([label, count]) => ({ label, count }));
+  }, [allFiles]);
+
+  const filteredFiles = useMemo(() => {
+    if (selectedSubtype === "all") return allFiles;
+    return allFiles.filter((f) => (f.source || "Other") === selectedSubtype);
+  }, [allFiles, selectedSubtype]);
+
+  const selectedCount = useMemo(
+    () => filteredFiles.filter((f) => selectedFileIds.has(f.id)).length,
+    [filteredFiles, selectedFileIds]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: ScannedFile }) => (
+      <View className="px-4 py-1">
+        <FileRow
+          file={item}
+          selected={selectedFileIds.has(item.id)}
+          onToggle={() => toggleFile(item.id)}
+        />
+      </View>
+    ),
+    [selectedFileIds, toggleFile]
+  );
 
   if (!scanResult) return <NoScanState />;
 
-  const files = scanResult.whatsappFiles;
-  const totalBytes = files.reduce((s, f) => s + f.sizeBytes, 0);
-
-  // Group by source (WhatsApp Images / Video / Documents / Audio)
-  const bySource = new Map<string, ScannedFile[]>();
-  for (const f of files) {
-    const arr = bySource.get(f.source ?? "Other") ?? [];
-    arr.push(f);
-    bySource.set(f.source ?? "Other", arr);
-  }
-  const sources = Array.from(bySource.entries()).sort((a, b) => {
-    const sa = a[1].reduce((s, f) => s + f.sizeBytes, 0);
-    const sb = b[1].reduce((s, f) => s + f.sizeBytes, 0);
-    return sb - sa;
-  });
-
-  const selectedCount = files.filter((f) => selectedFileIds.has(f.id)).length;
-
   return (
     <View className="flex-1">
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 110 }}>
-        {/* WhatsApp summary card */}
-        <View className="px-4 mb-3">
-          <Pressable
-            className="rounded-2xl p-4 active:opacity-95"
-            style={{ backgroundColor: "#0b4f3c" }}
-          >
-            <View className="flex-row items-center gap-3">
-              <View className="w-12 h-12 rounded-xl bg-white/15 items-center justify-center">
-                <Icon name="logo-whatsapp" size={26} color="#25D366" />
+      <FlashList
+        data={filteredFiles}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={{ paddingBottom: 110 }}
+        ListHeaderComponent={
+          <View className="px-4 pb-2">
+            {/* WhatsApp summary card */}
+            <Pressable
+              className="rounded-2xl p-4 mb-3 active:opacity-95"
+              style={{ backgroundColor: "#0b4f3c" }}
+              onPress={() => router.push("/category/whatsapp")}
+            >
+              <View className="flex-row items-center gap-3">
+                <View className="w-12 h-12 rounded-xl bg-white/15 items-center justify-center">
+                  <Icon name="logo-whatsapp" size={26} color="#25D366" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-white font-bold text-base">WhatsApp media</Text>
+                  <Text className="text-white/80 text-xs">{formatCount(allFiles.length)} files found</Text>
+                </View>
+                <Text className="text-white text-2xl font-bold">{formatSizeCompact(totalBytes)}</Text>
               </View>
-              <View className="flex-1">
-                <Text className="text-white font-bold text-base">WhatsApp is using</Text>
-                <Text className="text-white/80 text-xs">{formatCount(files.length)} media files</Text>
-              </View>
-              <Text className="text-white text-2xl font-bold">{formatSizeCompact(totalBytes)}</Text>
-            </View>
-          </Pressable>
-        </View>
+            </Pressable>
 
-        {/* By source */}
-        <View className="px-4 gap-3">
-          {sources.map(([source, sFiles], si) => {
-            const sBytes = sFiles.reduce((s, f) => s + f.sizeBytes, 0);
-            const kind = source.replace("WhatsApp ", "");
-            const iconName = (kind === "Video" ? "videocam" : kind === "Audio" ? "musical-notes" : kind === "Documents" ? "document-text" : "images") as IconName;
-            return (
-              <Animated.View key={source} entering={FadeInDown.delay(si * 60).springify()}>
-                <Card className="p-0 overflow-hidden">
-                  <View className="flex-row items-center gap-3 p-3.5">
-                    <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: `${CategoryColors.whatsapp}20` }}>
-                      <Icon name={iconName} size={18} color={CategoryColors.whatsapp} />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-foreground font-semibold text-sm">{kind}</Text>
-                      <Text className="text-muted-foreground text-xs">{formatCount(sFiles.length)} files · {formatSizeCompact(sBytes)}</Text>
-                    </View>
-                  </View>
-                  {sFiles.slice(0, 5).map((f, i) => (
-                    <FileRow
-                      key={f.id}
-                      file={f}
-                      selected={selectedFileIds.has(f.id)}
-                      onToggle={() => toggleFile(f.id)}
-                      compact
-                      delay={i * 20}
-                    />
-                  ))}
-                  {sFiles.length > 5 && (
+            {/* Subtype Filter chips */}
+            {subtypes.length > 0 && (
+              <View className="flex-row flex-wrap gap-2 mb-2">
+                <Pressable
+                  onPress={() => setSelectedSubtype("all")}
+                  className={`px-3 py-1.5 rounded-full border ${
+                    selectedSubtype === "all" ? "bg-primary border-primary" : "bg-card border-border"
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-medium ${
+                      selectedSubtype === "all" ? "text-primary-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    All ({allFiles.length})
+                  </Text>
+                </Pressable>
+                {subtypes.map(({ label, count }) => {
+                  const active = selectedSubtype === label;
+                  return (
                     <Pressable
-                      onPress={() => router.push(`/category/whatsapp`)}
-                      className="px-4 py-3 border-t border-border active:bg-muted"
+                      key={label}
+                      onPress={() => setSelectedSubtype(label)}
+                      className={`px-3 py-1.5 rounded-full border ${
+                        active ? "bg-primary border-primary" : "bg-card border-border"
+                      }`}
                     >
-                      <Text className="text-primary text-xs font-medium">View all {sFiles.length}</Text>
+                      <Text
+                        className={`text-xs font-medium ${
+                          active ? "text-primary-foreground" : "text-muted-foreground"
+                        }`}
+                      >
+                        {label.replace("WhatsApp ", "")} ({count})
+                      </Text>
                     </Pressable>
-                  )}
-                </Card>
-              </Animated.View>
-            );
-          })}
-        </View>
-      </ScrollView>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        }
+        ListEmptyComponent={
+          <View className="py-12 items-center justify-center">
+            <Icon name="logo-whatsapp" size={44} color={CategoryColors.whatsapp} />
+            <Text className="text-foreground font-semibold text-base mt-2">No WhatsApp files found</Text>
+            <Text className="text-muted-foreground text-xs mt-1">
+              WhatsApp images, voice notes and videos will appear here
+            </Text>
+          </View>
+        }
+      />
 
       {selectedCount > 0 && (
         <SelectionBar
@@ -278,77 +334,103 @@ function AppsSection() {
 
   if (!scanResult) return <NoScanState />;
 
-  const apps = [...scanResult.apps].sort((a, b) =>
-    sort === "size" ? b.sizeBytes - a.sizeBytes : a.lastUsedAt - b.lastUsedAt,
+  const apps = useMemo(() => {
+    return [...scanResult.apps].sort((a, b) =>
+      sort === "size" ? b.sizeBytes - a.sizeBytes : a.lastUsedAt - b.lastUsedAt,
+    );
+  }, [scanResult.apps, sort]);
+
+  const totalSize = useMemo(() => apps.reduce((s, a) => s + a.sizeBytes, 0), [apps]);
+  const unusedApps = useMemo(
+    () => apps.filter((a) => Date.now() - a.lastUsedAt > 90 * 86400000),
+    [apps]
+  );
+  const unusedBytes = useMemo(() => unusedApps.reduce((s, a) => s + a.sizeBytes, 0), [unusedApps]);
+  const totalCacheBytes = useMemo(() => apps.reduce((s, a) => s + a.cacheBytes, 0), [apps]);
+
+  const renderAppRow = useCallback(
+    ({ item }: { item: AppItem }) => (
+      <View className="px-4 py-1">
+        <AppRow app={item} />
+      </View>
+    ),
+    []
   );
 
-  const totalSize = apps.reduce((s, a) => s + a.sizeBytes, 0);
-  const unusedCount = apps.filter((a) => Date.now() - a.lastUsedAt > 90 * 86400000).length;
-  const unusedBytes = apps
-    .filter((a) => Date.now() - a.lastUsedAt > 90 * 86400000)
-    .reduce((s, a) => s + a.sizeBytes, 0);
-
   return (
-    <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 110 }}>
-      {/* Summary */}
-      <View className="px-4 mb-3">
-        <Card>
-          <View className="flex-row items-center justify-between mb-3">
-            <View>
-              <Text className="text-muted-foreground text-xs">Installed apps</Text>
-              <Text className="text-foreground text-2xl font-bold">{apps.length}</Text>
-              <Text className="text-muted-foreground text-xs">using {formatSizeCompact(totalSize)}</Text>
-            </View>
-            <View className="w-12 h-12 rounded-xl items-center justify-center" style={{ backgroundColor: `${CategoryColors.apps}20` }}>
-              <Icon name="apps" size={24} color={CategoryColors.apps} />
-            </View>
-          </View>
-          <View className="flex-row gap-2 pt-3 border-t border-border">
-            <View className="flex-1 bg-warning/10 rounded-lg p-2.5">
-              <Text className="text-warning-foreground text-xs">Unused (90d+)</Text>
-              <Text className="text-foreground font-bold mt-0.5">{unusedCount} apps</Text>
-              <Text className="text-muted-foreground text-xs">{formatSizeCompact(unusedBytes)}</Text>
-            </View>
-            <View className="flex-1 bg-muted rounded-lg p-2.5">
-              <Text className="text-muted-foreground text-xs">Cache</Text>
-              <Text className="text-foreground font-bold mt-0.5">
-                {formatSizeCompact(apps.reduce((s, a) => s + a.cacheBytes, 0))}
-              </Text>
-              <Text className="text-muted-foreground text-xs">reclaimable</Text>
-            </View>
-          </View>
-        </Card>
-      </View>
+    <View className="flex-1">
+      <FlashList
+        data={apps}
+        keyExtractor={(item) => item.packageName}
+        renderItem={renderAppRow}
+        contentContainerStyle={{ paddingBottom: 110 }}
+        ListHeaderComponent={
+          <View className="px-4 pb-2">
+            <Card className="mb-3">
+              <View className="flex-row items-center justify-between mb-3">
+                <View>
+                  <Text className="text-muted-foreground text-xs">Installed apps</Text>
+                  <Text className="text-foreground text-2xl font-bold">{apps.length}</Text>
+                  <Text className="text-muted-foreground text-xs">using {formatSizeCompact(totalSize)}</Text>
+                </View>
+                <View
+                  className="w-12 h-12 rounded-xl items-center justify-center"
+                  style={{ backgroundColor: `${CategoryColors.apps}20` }}
+                >
+                  <Icon name="apps" size={24} color={CategoryColors.apps} />
+                </View>
+              </View>
+              <View className="flex-row gap-2 pt-3 border-t border-border">
+                <View className="flex-1 bg-warning/10 rounded-lg p-2.5">
+                  <Text className="text-warning-foreground text-xs">Unused (90d+)</Text>
+                  <Text className="text-foreground font-bold mt-0.5">{unusedApps.length} apps</Text>
+                  <Text className="text-muted-foreground text-xs">{formatSizeCompact(unusedBytes)}</Text>
+                </View>
+                <View className="flex-1 bg-muted rounded-lg p-2.5">
+                  <Text className="text-muted-foreground text-xs">Cache</Text>
+                  <Text className="text-foreground font-bold mt-0.5">
+                    {formatSizeCompact(totalCacheBytes)}
+                  </Text>
+                  <Text className="text-muted-foreground text-xs">reclaimable</Text>
+                </View>
+              </View>
+            </Card>
 
-      {/* Sort toggle */}
-      <View className="px-4 mb-3 flex-row gap-2">
-        {(["size", "unused"] as const).map((s) => (
-          <Pressable
-            key={s}
-            onPress={() => setSort(s)}
-            className={`flex-1 py-2 rounded-lg items-center ${sort === s ? "bg-primary" : "bg-muted"}`}
-          >
-            <Text className={`text-xs font-medium ${sort === s ? "text-primary-foreground" : "text-muted-foreground"}`}>
-              {s === "size" ? "Largest" : "Least used"}
+            {/* Sort toggle */}
+            <View className="flex-row gap-2 mb-2">
+              {(["size", "unused"] as const).map((s) => (
+                <Pressable
+                  key={s}
+                  onPress={() => setSort(s)}
+                  className={`flex-1 py-2 rounded-lg items-center ${sort === s ? "bg-primary" : "bg-muted"}`}
+                >
+                  <Text
+                    className={`text-xs font-medium ${sort === s ? "text-primary-foreground" : "text-muted-foreground"}`}
+                  >
+                    {s === "size" ? "Largest first" : "Least used first"}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        }
+        ListFooterComponent={
+          <View className="px-4 mt-4 mb-6 flex-row items-center gap-2">
+            <Icon name="information-circle-outline" size={13} color={ThemeColors.mutedForeground} />
+            <Text className="text-xs text-muted-foreground">
+              Uninstalling opens Android's system package uninstaller flow.
             </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {/* App list */}
-      <View className="px-4 gap-2">
-        {apps.map((a, i) => (
-          <AppRow key={a.packageName} app={a} delay={i * 25} />
-        ))}
-      </View>
-
-      <View className="px-4 mt-4 flex-row items-center gap-2">
-        <Icon name="information-circle-outline" size={13} color={ThemeColors.mutedForeground} />
-        <Text className="text-xs text-muted-foreground">
-          Uninstalling opens Android's system uninstall flow.
-        </Text>
-      </View>
-    </ScrollView>
+          </View>
+        }
+        ListEmptyComponent={
+          <View className="py-12 items-center justify-center">
+            <Icon name="apps" size={44} color={CategoryColors.apps} />
+            <Text className="text-foreground font-semibold text-base mt-2">No apps scanned</Text>
+            <Text className="text-muted-foreground text-xs mt-1">Run a scan to manage installed apps</Text>
+          </View>
+        }
+      />
+    </View>
   );
 }
 
@@ -358,95 +440,117 @@ function FileRow({
   file,
   selected,
   onToggle,
-  compact = false,
-  delay = 0,
 }: {
   file: ScannedFile;
   selected: boolean;
   onToggle: () => void;
-  compact?: boolean;
-  delay?: number;
 }) {
   const color = CategoryColors[file.category as CategoryKey] ?? CategoryColors.other;
   const iconName = (CategoryIcons[file.category] ?? "document") as IconName;
+
+  const isVisual =
+    file.mimeType?.startsWith("image/") ||
+    file.mimeType?.startsWith("video/") ||
+    /\.(jpe?g|png|webp|gif|bmp|heic|mp4|mov|mkv|3gp)$/i.test(file.name || file.path);
+
+  const fileUri = file.uri || (file.path ? `file://${file.path}` : undefined);
+
   return (
-    <Animated.View entering={FadeInDown.delay(delay).springify()}>
-      <Pressable
-        onPress={onToggle}
-        className={`flex-row items-center gap-3 ${compact ? "px-3.5 py-2 border-t border-border" : "p-3 rounded-xl border"} ${
-          selected ? (compact ? "bg-primary/5" : "border-primary bg-primary/5") : compact ? "" : "border-border bg-card"
-        } active:opacity-95`}
-      >
+    <Pressable
+      onPress={onToggle}
+      className={`flex-row items-center gap-3 p-3 rounded-xl border ${
+        selected ? "border-primary bg-primary/5" : "border-border bg-card"
+      } active:opacity-90`}
+    >
+      {isVisual && fileUri ? (
+        <View className="w-11 h-11 rounded-lg overflow-hidden bg-muted relative">
+          <Image
+            source={{ uri: fileUri }}
+            style={{ width: "100%", height: "100%" }}
+            contentFit="cover"
+            transition={150}
+          />
+          {file.mimeType?.startsWith("video/") && (
+            <View className="absolute inset-0 items-center justify-center bg-black/30">
+              <Icon name="videocam" size={16} color="#fff" />
+            </View>
+          )}
+        </View>
+      ) : (
         <View
-          className={`${compact ? "w-9 h-9" : "w-11 h-11"} rounded-lg items-center justify-center`}
+          className="w-11 h-11 rounded-lg items-center justify-center"
           style={{ backgroundColor: `${color}20` }}
         >
-          <Icon name={iconName} size={compact ? 16 : 20} color={color} />
+          <Icon name={iconName} size={20} color={color} />
         </View>
-        <View className="flex-1 min-w-0">
-          <Text className="text-foreground text-sm font-medium" numberOfLines={1}>
-            {file.name}
-          </Text>
-          <Text className="text-muted-foreground text-xs mt-0.5" numberOfLines={1}>
-            {formatSizeCompact(file.sizeBytes)} · {formatRelativeTime(file.modifiedAt)}
-            {file.source ? ` · ${file.source}` : ""}
-          </Text>
-        </View>
-        <View
-          className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
-            selected ? "bg-primary border-primary" : "border-muted-foreground/30"
-          }`}
-        >
-          {selected && <Icon name="checkmark" size={14} color="#fff" />}
-        </View>
-      </Pressable>
-    </Animated.View>
+      )}
+
+      <View className="flex-1 min-w-0">
+        <Text className="text-foreground text-sm font-medium" numberOfLines={1}>
+          {file.name}
+        </Text>
+        <Text className="text-muted-foreground text-xs mt-0.5" numberOfLines={1}>
+          {formatSizeCompact(file.sizeBytes)} · {formatRelativeTime(file.modifiedAt)}
+          {file.source ? ` · ${file.source}` : ""}
+        </Text>
+      </View>
+
+      <View
+        className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
+          selected ? "bg-primary border-primary" : "border-muted-foreground/30"
+        }`}
+      >
+        {selected && <Icon name="checkmark" size={14} color="#fff" />}
+      </View>
+    </Pressable>
   );
 }
 
-function AppRow({ app, delay }: { app: AppItem; delay: number }) {
+function AppRow({ app }: { app: AppItem }) {
   const daysUnused = Math.floor((Date.now() - app.lastUsedAt) / 86400000);
   const isUnused = daysUnused > 90;
+
   return (
-    <Animated.View entering={FadeInDown.delay(delay).springify()}>
-      <Card className="p-3">
-        <View className="flex-row items-center gap-3">
-          <View
-            className="w-11 h-11 rounded-xl items-center justify-center"
-            style={{ backgroundColor: `${CategoryColors.apps}20` }}
-          >
-            <Icon name={(app.iconUri as IconName) || "apps"} size={22} color={CategoryColors.apps} />
-          </View>
-          <View className="flex-1 min-w-0">
-            <Text className="text-foreground text-sm font-semibold" numberOfLines={1}>
-              {app.label}
-            </Text>
-            <Text className="text-muted-foreground text-xs mt-0.5">
-              {formatSizeCompact(app.sizeBytes)}
-              {isUnused ? ` · unused ${daysUnused}d` : ` · ${formatRelativeTime(app.lastUsedAt)}`}
-            </Text>
-            <View className="h-1 rounded-full bg-muted mt-1.5 overflow-hidden">
-              <View
-                className="h-full rounded-full"
-                style={{ width: `${Math.min(100, (app.cacheBytes / app.sizeBytes) * 100)}%`, backgroundColor: CategoryColors.apps }}
-              />
-            </View>
-          </View>
-          <Pressable
-            className="px-3 py-1.5 rounded-lg bg-destructive/10 active:opacity-70"
-            onPress={async () => {
-              track("app_uninstall_tapped", { package: app.packageName });
-              const launched = await AndroidStorage.uninstallApp(app.packageName);
-              if (!launched) {
-                Linking.openURL(`package:${app.packageName}`).catch(() => {});
-              }
-            }}
-          >
-            <Text className="text-destructive text-xs font-semibold">Uninstall</Text>
-          </Pressable>
+    <Card className="p-3">
+      <View className="flex-row items-center gap-3">
+        <View
+          className="w-11 h-11 rounded-xl items-center justify-center"
+          style={{ backgroundColor: `${CategoryColors.apps}20` }}
+        >
+          <Icon name={(app.iconUri as IconName) || "apps"} size={22} color={CategoryColors.apps} />
         </View>
-      </Card>
-    </Animated.View>
+        <View className="flex-1 min-w-0">
+          <Text className="text-foreground text-sm font-semibold" numberOfLines={1}>
+            {app.label}
+          </Text>
+          <Text className="text-muted-foreground text-xs mt-0.5">
+            {formatSizeCompact(app.sizeBytes)}
+            {isUnused ? ` · unused ${daysUnused}d` : ` · ${formatRelativeTime(app.lastUsedAt)}`}
+          </Text>
+          <View className="h-1 rounded-full bg-muted mt-1.5 overflow-hidden">
+            <View
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.min(100, (app.cacheBytes / app.sizeBytes) * 100)}%`,
+                backgroundColor: CategoryColors.apps,
+              }}
+            />
+          </View>
+        </View>
+        <Pressable
+          className="px-3 py-1.5 rounded-lg bg-destructive/10 active:opacity-70"
+          onPress={async () => {
+            track("app_uninstall_tapped", { package: app.packageName });
+            const launched = await AndroidStorage.uninstallApp(app.packageName);
+            if (!launched) {
+              Linking.openURL(`package:${app.packageName}`).catch(() => {});
+            }
+          }}
+        >
+          <Text className="text-destructive text-xs font-semibold">Uninstall</Text>
+        </Pressable>
+      </View>
+    </Card>
   );
 }
 
@@ -474,7 +578,13 @@ function SelectionBar({
         </Text>
         <Text className="text-primary font-bold">{formatSizeCompact(bytes)}</Text>
       </View>
-      <Button variant="primary" size="lg" fullWidth rightIcon={<Icon name="arrow-forward" size={18} color="#fff" />} onPress={onReview}>
+      <Button
+        variant="primary"
+        size="lg"
+        fullWidth
+        rightIcon={<Icon name="arrow-forward" size={18} color="#fff" />}
+        onPress={onReview}
+      >
         Review cleanup
       </Button>
     </View>
