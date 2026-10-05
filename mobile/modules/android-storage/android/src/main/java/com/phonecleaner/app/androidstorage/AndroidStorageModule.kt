@@ -213,8 +213,9 @@ class AndroidStorageModule : Module() {
                     if (base.exists() && base.isDirectory) {
                         base.listFiles()?.forEach { subFolder ->
                             if (subFolder.isDirectory && !subFolder.name.startsWith(".")) {
-                                subFolder.walkTopDown().maxDepth(2).forEach { file ->
+                                subFolder.walkTopDown().maxDepth(3).forEach { file ->
                                     if (file.isFile && file.length() > 0 && !file.name.startsWith(".")) {
+                                        val isSent = file.absolutePath.contains("/Sent/", ignoreCase = true)
                                         val mime = when {
                                             file.name.lowercase().endsWith(".jpg") || file.name.lowercase().endsWith(".jpeg") || file.name.lowercase().endsWith(".png") -> "image/jpeg"
                                             file.name.lowercase().endsWith(".mp4") || file.name.lowercase().endsWith(".3gp") -> "video/mp4"
@@ -229,6 +230,7 @@ class AndroidStorageModule : Module() {
                                                 "sizeBytes" to file.length(),
                                                 "category" to "whatsapp",
                                                 "subType" to subFolder.name,
+                                                "isSent" to isSent,
                                                 "mimeType" to mime,
                                                 "modifiedAt" to file.lastModified(),
                                             )

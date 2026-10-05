@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, TextInput, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
@@ -54,6 +54,7 @@ export default function CategoryDetail() {
   const color = CategoryColors[categoryKey] ?? CategoryColors.other;
   const iconName = (CategoryIcons[categoryKey] ?? "cube") as IconName;
 
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [sizeFilter, setSizeFilter] = useState<string>("all");
   const [subTypeFilter, setSubTypeFilter] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("size_desc");
@@ -84,17 +85,23 @@ export default function CategoryDetail() {
     const queryParams: StorageQueryParams = {
       minSizeBytes: minBytes > 0 ? minBytes : undefined,
       sortBy: sortOrder,
+      search: searchQuery.trim() || undefined,
       limit: 150,
       offset: 0,
     };
 
     if (categoryKey === "whatsapp") {
       queryParams.source = "whatsapp";
-      if (subTypeFilter !== "all") {
+      if (subTypeFilter === "sent") {
+        queryParams.isSent = true;
+      } else if (subTypeFilter !== "all") {
         queryParams.whatsappType = subTypeFilter as any;
       }
     } else if (categoryKey === "junk") {
       queryParams.isJunk = true;
+      if (subTypeFilter !== "all") {
+        queryParams.junkType = subTypeFilter as any;
+      }
     } else if (categoryKey === "other") {
       queryParams.isLarge = true;
     } else if (categoryKey === "duplicates") {
@@ -116,7 +123,7 @@ export default function CategoryDetail() {
     setTotalCount(res.totalCount);
     setTotalBytes(res.totalBytes);
     setLoading(false);
-  }, [categoryKey, sizeFilter, subTypeFilter, sortOrder]);
+  }, [categoryKey, sizeFilter, subTypeFilter, sortOrder, searchQuery]);
 
   useEffect(() => {
     checkPermissions();
@@ -137,10 +144,26 @@ export default function CategoryDetail() {
     }
   };
 
-  // Subtype chips for WhatsApp
-  const subTypes = useMemo(() => {
+  // Subtype chips for WhatsApp and Junk
+  const subTypes = useMemo<{ key: string; label: string }[]>(() => {
     if (categoryKey === "whatsapp") {
-      return ["all", "image", "video", "audio", "document"];
+      return [
+        { key: "all", label: "All" },
+        { key: "image", label: "Images" },
+        { key: "video", label: "Videos" },
+        { key: "audio", label: "Audio" },
+        { key: "document", label: "Documents" },
+        { key: "sent", label: "Sent files" },
+      ];
+    }
+    if (categoryKey === "junk") {
+      return [
+        { key: "all", label: "All" },
+        { key: "cache", label: "App Cache" },
+        { key: "temp", label: "Temp & Logs" },
+        { key: "apk", label: "Obsolete APKs" },
+        { key: "thumbnail", label: "Thumbnails" },
+      ];
     }
     return [];
   }, [categoryKey]);
@@ -244,49 +267,69 @@ export default function CategoryDetail() {
 
       {/* Filter Toolbar */}
       <View className="px-4 pb-2">
-        {/* Size Filters */}
-        <View className="flex-row flex-wrap gap-1.5 mb-2">
-          {SIZE_FILTERS.map((f) => {
-            const active = f.key === sizeFilter;
-            return (
-              <Pressable
-                key={f.key}
-                onPress={() => setSizeFilter(f.key)}
-                className={`px-3 py-1.5 rounded-full border ${
-                  active ? "bg-primary border-primary" : "bg-card border-border"
-                }`}
-              >
-                <Text
-                  className={`text-xs font-medium ${
-                    active ? "text-primary-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  {f.label}
-                </Text>
-              </Pressable>
-            );
-          })}
+        {/* Real-time Search Input */}
+        <View className="flex-row items-center bg-card rounded-xl px-3 py-2 mb-2 border border-border">
+          <Icon name="search" size={15} color={ThemeColors.mutedForeground} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder={`Search ${label.toLowerCase()}…`}
+            placeholderTextColor={ThemeColors.mutedForeground}
+            className="flex-1 ml-2 text-foreground text-xs py-0"
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+              <Icon name="close-circle" size={16} color={ThemeColors.mutedForeground} />
+            </Pressable>
+          )}
         </View>
 
-        {/* Subtype chips for WhatsApp */}
-        {subTypes.length > 0 && (
+        {/* Size Filters (for non-junk categories) */}
+        {categoryKey !== "junk" && (
           <View className="flex-row flex-wrap gap-1.5 mb-2">
-            {subTypes.map((type) => {
-              const active = subTypeFilter === type;
+            {SIZE_FILTERS.map((f) => {
+              const active = f.key === sizeFilter;
               return (
                 <Pressable
-                  key={type}
-                  onPress={() => setSubTypeFilter(type)}
-                  className={`px-3 py-1 rounded-full border ${
-                    active ? "bg-secondary border-secondary" : "bg-card border-border"
+                  key={f.key}
+                  onPress={() => setSizeFilter(f.key)}
+                  className={`px-3 py-1.5 rounded-full border ${
+                    active ? "bg-primary border-primary" : "bg-card border-border"
                   }`}
                 >
                   <Text
-                    className={`text-xs capitalize font-medium ${
-                      active ? "text-secondary-foreground" : "text-muted-foreground"
+                    className={`text-xs font-medium ${
+                      active ? "text-primary-foreground" : "text-muted-foreground"
                     }`}
                   >
-                    {type}
+                    {f.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Subtype chips for WhatsApp and Junk */}
+        {subTypes.length > 0 && (
+          <View className="flex-row flex-wrap gap-1.5 mb-2">
+            {subTypes.map((item) => {
+              const active = subTypeFilter === item.key;
+              return (
+                <Pressable
+                  key={item.key}
+                  onPress={() => setSubTypeFilter(item.key)}
+                  className={`px-3 py-1.5 rounded-full border ${
+                    active ? "bg-primary border-primary" : "bg-card border-border"
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-medium ${
+                      active ? "text-primary-foreground font-semibold" : "text-muted-foreground"
+                    }`}
+                  >
+                    {item.label}
                   </Text>
                 </Pressable>
               );

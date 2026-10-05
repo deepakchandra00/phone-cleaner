@@ -3,7 +3,7 @@ import * as MediaLibrary from "expo-media-library/legacy";
 import { AndroidStorage, HashWorker } from "android-storage";
 import { StorageIndexService } from "@/db/StorageIndexService";
 import { DeleteCoordinator } from "@/services/DeleteCoordinator";
-import type { StorageItem, StorageCategory, StorageSource, WhatsAppType } from "@/db/schema";
+import type { StorageItem, StorageCategory, StorageSource, WhatsAppType, JunkType } from "@/db/schema";
 import type {
   AppItem,
   CategorySummary,
@@ -398,6 +398,7 @@ export async function runRealScan(
         const category: StorageCategory = isVid ? "videos" : isAud ? "audio" : isDoc ? "documents" : "photos";
         const waType: WhatsAppType = isVid ? "video" : isAud ? "audio" : isDoc ? "document" : "image";
 
+        const isSent = Boolean(w.isSent || (w.path && (w.path.includes("/Sent/") || w.path.includes("/sent/"))));
         const file: ScannedFile = {
           id: w.id || w.path,
           path: w.path,
@@ -407,7 +408,7 @@ export async function runRealScan(
           sizeBytes: w.sizeBytes,
           mimeType: w.mimeType || (isVid ? "video/mp4" : isAud ? "audio/ogg" : "image/jpeg"),
           modifiedAt: w.modifiedAt || Date.now(),
-          source: w.subType || "WhatsApp",
+          source: isSent ? "WhatsApp Sent" : w.subType || "WhatsApp",
         };
         whatsappFiles.push(file);
         if (file.sizeBytes >= 10 * MB) largeFiles.push(file);
@@ -429,7 +430,8 @@ export async function runRealScan(
           canPreview: category === "photos" || category === "videos",
           canDelete: true,
           requiresPermission: false,
-          whatsappType: waType,
+          whatsappType: isVid ? "video" : "image",
+          isSent,
         });
       }
     }
@@ -453,6 +455,7 @@ export async function runRealScan(
             const isVid = asset.mediaType === "video";
             const sizeBytes = estimateMediaSize(asset, isVid ? "video" : "photo");
             const ext = (asset.filename ? asset.filename.split(".").pop()?.toLowerCase() : isVid ? "mp4" : "jpg") || (isVid ? "mp4" : "jpg");
+            const isSent = /sent/i.test(asset.uri) || /sent/i.test(asset.filename ?? "");
             const file: ScannedFile = {
               id: `wa_${asset.id}`,
               path: asset.uri,
@@ -462,7 +465,7 @@ export async function runRealScan(
               sizeBytes,
               mimeType: isVid ? "video/mp4" : "image/jpeg",
               modifiedAt: asset.modificationTime || asset.creationTime,
-              source: album.title || "WhatsApp",
+              source: isSent ? "WhatsApp Sent" : album.title || "WhatsApp",
             };
             whatsappFiles.push(file);
             if (sizeBytes >= 10 * MB) largeFiles.push(file);
@@ -485,6 +488,7 @@ export async function runRealScan(
               canDelete: true,
               requiresPermission: true,
               whatsappType: isVid ? "video" : "image",
+              isSent,
             });
           }
         }
@@ -501,7 +505,11 @@ export async function runRealScan(
     const rawJunk = await AndroidStorage.scanJunkFiles();
     for (const j of rawJunk) {
       const ext = j.name.split(".").pop()?.toLowerCase();
-      const isApk = ext === "apk";
+      const isApk = ext === "apk" || j.subType === "apk";
+      const isThumb = j.subType === "thumbnail" || ext === "thumbnails";
+      const isTemp = j.subType === "temp" || j.subType === "log" || ["tmp", "temp", "log"].includes(ext || "");
+      const junkType = isApk ? "apk" : isThumb ? "thumbnail" : isTemp ? "temp" : "cache";
+
       const file: ScannedFile = {
         id: j.id || j.path,
         path: j.path,
@@ -511,7 +519,7 @@ export async function runRealScan(
         sizeBytes: j.sizeBytes,
         mimeType: j.mimeType || "application/octet-stream",
         modifiedAt: j.modifiedAt || Date.now(),
-        source: j.subType === "apk" ? "Obsolete APK" : j.subType === "thumbnail" ? "Thumbnails" : "App Cache",
+        source: isApk ? "Obsolete APK" : isThumb ? "Thumbnails" : isTemp ? "Temp / Log" : "App Cache",
       };
       junkFiles.push(file);
 
@@ -528,6 +536,7 @@ export async function runRealScan(
         modifiedAt: file.modifiedAt,
         isLarge: j.sizeBytes >= 10 * MB,
         isJunk: true,
+        junkType,
         junkReason: file.source || "Cache file",
         canOpen: isApk,
         canPreview: false,
@@ -565,6 +574,7 @@ export async function runRealScan(
               modifiedAt: info.modificationTime || Date.now(),
               isLarge: false,
               isJunk: true,
+              junkType: "cache",
               junkReason: "App Cache",
               canOpen: false,
               canPreview: false,
@@ -608,6 +618,7 @@ export async function runRealScan(
         modifiedAt: Date.now() - 3600000,
         isLarge: false,
         isJunk: true,
+        junkType: "cache",
         junkReason: `${app.label} Temporary Cache`,
         canOpen: false,
         canPreview: false,
@@ -727,6 +738,10 @@ export async function runRealScan(
     }
     for (const j of mockResult.junkFiles) {
       const isApk = j.name.endsWith(".apk");
+      const isThumb = j.name.includes("thumb") || j.name.endsWith(".thumbnails");
+      const isTemp = j.name.endsWith(".tmp") || j.name.endsWith(".log");
+      const junkType: JunkType = isApk ? "apk" : isThumb ? "thumbnail" : isTemp ? "temp" : "cache";
+
       mockStorageItems.push({
         id: j.id,
         uri: j.uri || j.path || `file://${j.id}`,
@@ -734,12 +749,13 @@ export async function runRealScan(
         name: j.name,
         sizeBytes: j.sizeBytes,
         mimeType: j.mimeType,
-        extension: isApk ? "apk" : "tmp",
+        extension: isApk ? "apk" : isTemp ? "tmp" : "cache",
         category: isApk ? "apks" : "other",
         source: "filesystem",
         modifiedAt: j.modifiedAt,
         isLarge: false,
         isJunk: true,
+        junkType,
         junkReason: j.source,
         canOpen: isApk,
         canPreview: false,
@@ -747,8 +763,9 @@ export async function runRealScan(
         requiresPermission: false,
       });
     }
-    for (const w of mockResult.whatsappFiles) {
+    for (const [idx, w] of mockResult.whatsappFiles.entries()) {
       const isVid = w.name.endsWith(".mp4");
+      const isSent = idx % 3 === 0 || w.name.toLowerCase().includes("sent");
       mockStorageItems.push({
         id: w.id,
         uri: w.uri || w.path || `file://${w.id}`,
@@ -767,6 +784,7 @@ export async function runRealScan(
         canDelete: true,
         requiresPermission: false,
         whatsappType: isVid ? "video" : "image",
+        isSent,
       });
     }
 
@@ -814,18 +832,22 @@ export async function runRealScan(
   const dupRecoverable = duplicateGroups.reduce((s, g) => s + g.recoverableBytes, 0);
   const appCacheBytes = apps.reduce((s, a) => s + (a.cacheBytes || 0), 0);
 
+  const whatsappSentFiles = storageItems.filter((s) => s.source === "whatsapp" && s.isSent);
+  const waSentBytes = whatsappSentFiles.reduce((s, f) => s + f.sizeBytes, 0);
+  const cleanableWaBytes = waSentBytes > 0 ? waSentBytes : (whatsappFiles.length > 0 ? Math.min(waBytes, 350 * MB) : 0);
+
   const categories: CategorySummary[] = [
     { key: "photos", label: "Photos", bytes: photosBytes, fileCount: scannedPhotos.length, cleanableBytes: dupRecoverable, cleanableCount: duplicateGroups.length },
     { key: "videos", label: "Videos", bytes: videosBytes, fileCount: scannedVideos.length, cleanableBytes: sum(largeFiles.filter((f) => f.category === "videos")), cleanableCount: largeFiles.filter((f) => f.category === "videos").length },
     { key: "downloads", label: "Downloads & Files", bytes: downloadsBytes, fileCount: scannedDownloads.length, cleanableBytes: sum(obsoleteApks) || downloadsBytes, cleanableCount: obsoleteApks.length || scannedDownloads.length },
     { key: "junk", label: "Junk & Cache", bytes: junkBytes, fileCount: junkFiles.length, cleanableBytes: junkBytes, cleanableCount: junkFiles.length },
-    { key: "whatsapp", label: "WhatsApp Media", bytes: waBytes, fileCount: whatsappFiles.length, cleanableBytes: waBytes, cleanableCount: whatsappFiles.length },
+    { key: "whatsapp", label: "WhatsApp Media", bytes: waBytes, fileCount: whatsappFiles.length, cleanableBytes: cleanableWaBytes || waBytes, cleanableCount: whatsappFiles.length },
     { key: "audio", label: "Audio", bytes: audioBytes, fileCount: scannedAudio.length, cleanableBytes: 0, cleanableCount: 0 },
     { key: "apps", label: "Apps", bytes: apps.reduce((s, a) => s + a.sizeBytes, 0), fileCount: apps.length, cleanableBytes: appCacheBytes, cleanableCount: apps.filter((a) => a.cacheBytes > 0).length },
   ];
 
-  // Actionable cleanable bytes includes junk, duplicate photos, obsolete packages, WhatsApp media, and app cache
-  let totalCleanableBytes = junkBytes + dupRecoverable + sum(obsoleteApks) + Math.round(waBytes * 0.35) + appCacheBytes;
+  // Actionable cleanable bytes includes junk, duplicate photos, obsolete packages, WhatsApp sent files, and app cache
+  let totalCleanableBytes = junkBytes + dupRecoverable + sum(obsoleteApks) + cleanableWaBytes + appCacheBytes;
   if (totalCleanableBytes === 0 && storageItems.length > 0) {
     totalCleanableBytes = Math.min(
       Math.round(storageItems.reduce((s, i) => s + i.sizeBytes, 0) * 0.08),

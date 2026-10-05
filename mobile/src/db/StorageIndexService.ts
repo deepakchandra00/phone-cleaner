@@ -18,6 +18,8 @@ export interface StorageQueryParams {
   maxSizeBytes?: number;
   isLarge?: boolean;
   isJunk?: boolean;
+  junkType?: string;
+  isSent?: boolean;
   duplicateGroupId?: string;
   whatsappType?: WhatsAppType;
   search?: string;
@@ -45,7 +47,12 @@ class StorageIndexServiceImpl {
         const tableSql = this.db.getFirstSync<{ sql: string }>(
           "SELECT sql FROM sqlite_master WHERE type='table' AND name='storage_items';"
         );
-        if (tableSql && tableSql.sql.includes("uri TEXT NOT NULL UNIQUE")) {
+        if (
+          tableSql &&
+          (tableSql.sql.includes("uri TEXT NOT NULL UNIQUE") ||
+            !tableSql.sql.includes("junk_type") ||
+            !tableSql.sql.includes("is_sent"))
+        ) {
           this.db.execSync("DROP TABLE IF EXISTS storage_items;");
         }
       } catch {}
@@ -74,10 +81,10 @@ class StorageIndexServiceImpl {
       const stmt = db.prepareSync(`
         INSERT OR REPLACE INTO storage_items (
           id, uri, path, name, size_bytes, mime_type, extension,
-          category, source, modified_at, is_large, is_junk, junk_reason,
+          category, source, modified_at, is_large, is_junk, junk_type, junk_reason,
           duplicate_group_id, can_open, can_preview, can_delete, requires_permission,
-          width, height, duration_ms, whatsapp_type
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+          width, height, duration_ms, whatsapp_type, is_sent
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
       `);
 
       try {
@@ -95,6 +102,7 @@ class StorageIndexServiceImpl {
             item.modifiedAt,
             item.isLarge ? 1 : 0,
             item.isJunk ? 1 : 0,
+            item.junkType ?? null,
             item.junkReason ?? null,
             item.duplicateGroupId ?? null,
             item.canOpen ? 1 : 0,
@@ -105,6 +113,7 @@ class StorageIndexServiceImpl {
             item.height ?? null,
             item.durationMs ?? null,
             item.whatsappType ?? null,
+            item.isSent ? 1 : 0,
           ]);
         }
       } finally {
@@ -145,13 +154,25 @@ class StorageIndexServiceImpl {
       conditions.push("is_junk = ?");
       args.push(params.isJunk ? 1 : 0);
     }
+    if (params.junkType) {
+      conditions.push("junk_type = ?");
+      args.push(params.junkType);
+    }
+    if (params.isSent !== undefined) {
+      conditions.push("is_sent = ?");
+      args.push(params.isSent ? 1 : 0);
+    }
     if (params.duplicateGroupId) {
       conditions.push("duplicate_group_id = ?");
       args.push(params.duplicateGroupId);
     }
     if (params.whatsappType) {
-      conditions.push("whatsapp_type = ?");
-      args.push(params.whatsappType);
+      if (params.whatsappType === "sent") {
+        conditions.push("is_sent = 1");
+      } else {
+        conditions.push("whatsapp_type = ?");
+        args.push(params.whatsappType);
+      }
     }
     if (params.search) {
       conditions.push("name LIKE ?");

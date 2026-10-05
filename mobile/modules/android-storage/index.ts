@@ -25,6 +25,7 @@ export interface NativeScannedFile {
   subType?: string;
   mimeType?: string;
   modifiedAt: number;
+  isSent?: boolean;
 }
 
 export const AndroidStorage = {

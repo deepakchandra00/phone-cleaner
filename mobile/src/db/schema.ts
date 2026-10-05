@@ -19,7 +19,10 @@ export type WhatsAppType =
   | "audio"
   | "voice"
   | "document"
-  | "sticker";
+  | "sticker"
+  | "sent";
+
+export type JunkType = "cache" | "temp" | "apk" | "thumbnail" | "other";
 
 export interface StorageItem {
   id: string;
@@ -34,6 +37,7 @@ export interface StorageItem {
   modifiedAt: number; // epoch ms
   isLarge: boolean;
   isJunk: boolean;
+  junkType?: JunkType;
   junkReason?: string;
   duplicateGroupId?: string;
   canOpen: boolean;
@@ -44,6 +48,7 @@ export interface StorageItem {
   height?: number;
   durationMs?: number;
   whatsappType?: WhatsAppType;
+  isSent?: boolean;
 }
 
 export interface DashboardCategoryAggregate {
@@ -97,7 +102,9 @@ CREATE TABLE IF NOT EXISTS storage_items (
     width INTEGER,
     height INTEGER,
     duration_ms INTEGER,
-    whatsapp_type TEXT
+    whatsapp_type TEXT,
+    junk_type TEXT,
+    is_sent INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_storage_category ON storage_items(category);
@@ -106,6 +113,8 @@ CREATE INDEX IF NOT EXISTS idx_storage_modified ON storage_items(modified_at DES
 CREATE INDEX IF NOT EXISTS idx_storage_source ON storage_items(source);
 CREATE INDEX IF NOT EXISTS idx_storage_large ON storage_items(is_large);
 CREATE INDEX IF NOT EXISTS idx_storage_junk ON storage_items(is_junk);
+CREATE INDEX IF NOT EXISTS idx_storage_junk_type ON storage_items(junk_type);
+CREATE INDEX IF NOT EXISTS idx_storage_is_sent ON storage_items(is_sent);
 CREATE INDEX IF NOT EXISTS idx_storage_duplicate ON storage_items(duplicate_group_id);
 `;
 
@@ -122,6 +131,7 @@ export interface StorageItemRow {
   modified_at: number;
   is_large: number;
   is_junk: number;
+  junk_type: string | null;
   junk_reason: string | null;
   duplicate_group_id: string | null;
   can_open: number;
@@ -132,6 +142,7 @@ export interface StorageItemRow {
   height: number | null;
   duration_ms: number | null;
   whatsapp_type: string | null;
+  is_sent: number;
 }
 
 export function mapRowToStorageItem(row: StorageItemRow): StorageItem {
@@ -148,6 +159,7 @@ export function mapRowToStorageItem(row: StorageItemRow): StorageItem {
     modifiedAt: row.modified_at,
     isLarge: row.is_large === 1,
     isJunk: row.is_junk === 1,
+    junkType: (row.junk_type as JunkType) ?? undefined,
     junkReason: row.junk_reason ?? undefined,
     duplicateGroupId: row.duplicate_group_id ?? undefined,
     canOpen: row.can_open === 1,
@@ -158,5 +170,6 @@ export function mapRowToStorageItem(row: StorageItemRow): StorageItem {
     height: row.height ?? undefined,
     durationMs: row.duration_ms ?? undefined,
     whatsappType: (row.whatsapp_type as WhatsAppType) ?? undefined,
+    isSent: row.is_sent === 1,
   };
 }

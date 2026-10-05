@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { View, Text, Pressable, Linking } from "react-native";
+import { View, Text, Pressable, TextInput, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
@@ -30,7 +30,7 @@ const SECTIONS: { key: Section; label: string; icon: IconName; color: string }[]
 
 const SIZE_FILTERS = [
   { key: "all", label: "All", min: 0 },
-  { key: "25mb", label: "> 25 MB", min: 25 * 1024 ** 2 },
+  { key: "10mb", label: "> 10 MB", min: 10 * 1024 ** 2 },
   { key: "50mb", label: "> 50 MB", min: 50 * 1024 ** 2 },
   { key: "100mb", label: "> 100 MB", min: 100 * 1024 ** 2 },
   { key: "500mb", label: "> 500 MB", min: 500 * 1024 ** 2 },
@@ -93,24 +93,26 @@ export default function FilesScreen() {
 function LargeFilesSection() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { selectedFileIds, toggleFile } = useAppStore();
+  const { selectedFileIds, toggleFile, selectAllFiles, deselectAllFiles } = useAppStore();
   const selectedBytes = useSelectedBytes();
-  const [filter, setFilter] = useState<SizeFilterKey>("25mb");
+  const [filter, setFilter] = useState<SizeFilterKey>("10mb");
+  const [searchQuery, setSearchQuery] = useState("");
   const [modalItem, setModalItem] = useState<StorageItem | null>(null);
   const [files, setFiles] = useState<StorageItem[]>([]);
   const [totalBytes, setTotalBytes] = useState(0);
 
   const loadData = useCallback(() => {
-    const min = SIZE_FILTERS.find((f) => f.key === filter)?.min ?? 25 * 1024 ** 2;
+    const min = SIZE_FILTERS.find((f) => f.key === filter)?.min ?? 10 * 1024 ** 2;
     const res = StorageIndexService.getItems({
       isLarge: true,
       minSizeBytes: min,
+      search: searchQuery.trim() || undefined,
       sortBy: "size_desc",
       limit: 100,
     });
     setFiles(res.items);
     setTotalBytes(res.totalBytes);
-  }, [filter]);
+  }, [filter, searchQuery]);
 
   useEffect(() => {
     loadData();
@@ -119,6 +121,16 @@ function LargeFilesSection() {
   }, [loadData]);
 
   const selectedCount = files.filter((f) => selectedFileIds.has(f.id)).length;
+  const allCurrentSelected = files.length > 0 && files.every((f) => selectedFileIds.has(f.id));
+
+  const toggleSelectAll = () => {
+    const ids = files.map((f) => f.id);
+    if (allCurrentSelected) {
+      deselectAllFiles(ids);
+    } else {
+      selectAllFiles(ids);
+    }
+  };
 
   const renderFileRow = useCallback(
     ({ item }: { item: StorageItem }) => (
@@ -161,6 +173,24 @@ function LargeFilesSection() {
               </View>
             </Card>
 
+            {/* Real-time search */}
+            <View className="flex-row items-center bg-card rounded-xl px-3 py-2 mb-2 border border-border">
+              <Icon name="search" size={15} color={ThemeColors.mutedForeground} />
+              <TextInput
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search large files…"
+                placeholderTextColor={ThemeColors.mutedForeground}
+                className="flex-1 ml-2 text-foreground text-xs py-0"
+                returnKeyType="search"
+              />
+              {searchQuery.length > 0 && (
+                <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+                  <Icon name="close-circle" size={16} color={ThemeColors.mutedForeground} />
+                </Pressable>
+              )}
+            </View>
+
             {/* Size filters */}
             <View className="flex-row flex-wrap gap-2 mb-2">
               {SIZE_FILTERS.map((f) => {
@@ -171,12 +201,29 @@ function LargeFilesSection() {
                     onPress={() => setFilter(f.key)}
                     className={`px-3 py-1.5 rounded-full border ${active ? "bg-primary border-primary" : "bg-card border-border"}`}
                   >
-                    <Text className={`text-xs font-medium ${active ? "text-primary-foreground" : "text-muted-foreground"}`}>
+                    <Text className={`text-xs font-medium ${active ? "text-primary-foreground font-semibold" : "text-muted-foreground"}`}>
                       {f.label}
                     </Text>
                   </Pressable>
                 );
               })}
+            </View>
+
+            {/* Select All Toggle Header */}
+            <View className="flex-row items-center justify-between pt-1">
+              <Pressable onPress={toggleSelectAll} className="flex-row items-center gap-1.5 py-1">
+                <Icon
+                  name={allCurrentSelected ? "checkbox" : "square-outline"}
+                  size={16}
+                  color={ThemeColors.primary}
+                />
+                <Text className="text-xs font-semibold text-primary">
+                  {allCurrentSelected ? "Deselect all" : "Select all"}
+                </Text>
+              </Pressable>
+              <Text className="text-muted-foreground text-xs font-medium">
+                {files.length} file{files.length === 1 ? "" : "s"}
+              </Text>
             </View>
           </View>
         }
@@ -216,9 +263,10 @@ function LargeFilesSection() {
 function WhatsAppSection() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { selectedFileIds, toggleFile } = useAppStore();
+  const { selectedFileIds, toggleFile, selectAllFiles, deselectAllFiles } = useAppStore();
   const selectedBytes = useSelectedBytes();
   const [selectedSubtype, setSelectedSubtype] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [modalItem, setModalItem] = useState<StorageItem | null>(null);
   const [files, setFiles] = useState<StorageItem[]>([]);
   const [totalBytes, setTotalBytes] = useState(0);
@@ -227,12 +275,13 @@ function WhatsAppSection() {
     const res = StorageIndexService.getItems({
       source: "whatsapp",
       whatsappType: selectedSubtype !== "all" ? (selectedSubtype as any) : undefined,
+      search: searchQuery.trim() || undefined,
       sortBy: "size_desc",
       limit: 100,
     });
     setFiles(res.items);
     setTotalBytes(res.totalBytes);
-  }, [selectedSubtype]);
+  }, [selectedSubtype, searchQuery]);
 
   useEffect(() => {
     loadData();
@@ -241,6 +290,16 @@ function WhatsAppSection() {
   }, [loadData]);
 
   const selectedCount = files.filter((f) => selectedFileIds.has(f.id)).length;
+  const allCurrentSelected = files.length > 0 && files.every((f) => selectedFileIds.has(f.id));
+
+  const toggleSelectAll = () => {
+    const ids = files.map((f) => f.id);
+    if (allCurrentSelected) {
+      deselectAllFiles(ids);
+    } else {
+      selectAllFiles(ids);
+    }
+  };
 
   const renderItem = useCallback(
     ({ item }: { item: StorageItem }) => (
@@ -283,28 +342,70 @@ function WhatsAppSection() {
               </View>
             </Pressable>
 
+            {/* Real-time search */}
+            <View className="flex-row items-center bg-card rounded-xl px-3 py-2 mb-2 border border-border">
+              <Icon name="search" size={15} color={ThemeColors.mutedForeground} />
+              <TextInput
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search WhatsApp files…"
+                placeholderTextColor={ThemeColors.mutedForeground}
+                className="flex-1 ml-2 text-foreground text-xs py-0"
+                returnKeyType="search"
+              />
+              {searchQuery.length > 0 && (
+                <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+                  <Icon name="close-circle" size={16} color={ThemeColors.mutedForeground} />
+                </Pressable>
+              )}
+            </View>
+
             {/* Subtype Filter chips */}
             <View className="flex-row flex-wrap gap-2 mb-2">
-              {(["all", "image", "video", "audio", "document"] as const).map((type) => {
-                const active = selectedSubtype === type;
+              {[
+                { key: "all", label: "All" },
+                { key: "image", label: "Images" },
+                { key: "video", label: "Videos" },
+                { key: "audio", label: "Audio" },
+                { key: "document", label: "Documents" },
+                { key: "sent", label: "Sent files" },
+              ].map((sub) => {
+                const active = selectedSubtype === sub.key;
                 return (
                   <Pressable
-                    key={type}
-                    onPress={() => setSelectedSubtype(type)}
+                    key={sub.key}
+                    onPress={() => setSelectedSubtype(sub.key)}
                     className={`px-3 py-1.5 rounded-full border ${
                       active ? "bg-primary border-primary" : "bg-card border-border"
                     }`}
                   >
                     <Text
-                      className={`text-xs capitalize font-medium ${
-                        active ? "text-primary-foreground" : "text-muted-foreground"
+                      className={`text-xs font-medium ${
+                        active ? "text-primary-foreground font-semibold" : "text-muted-foreground"
                       }`}
                     >
-                      {type}
+                      {sub.label}
                     </Text>
                   </Pressable>
                 );
               })}
+            </View>
+
+            {/* Select All Toggle Header */}
+            <View className="flex-row items-center justify-between pt-1">
+              <Pressable onPress={toggleSelectAll} className="flex-row items-center gap-1.5 py-1">
+                <Icon
+                  name={allCurrentSelected ? "checkbox" : "square-outline"}
+                  size={16}
+                  color={ThemeColors.primary}
+                />
+                <Text className="text-xs font-semibold text-primary">
+                  {allCurrentSelected ? "Deselect all" : "Select all"}
+                </Text>
+              </Pressable>
+              <Text className="text-muted-foreground text-xs font-medium">
+                {files.length} file{files.length === 1 ? "" : "s"}
+              </Text>
             </View>
           </View>
         }
