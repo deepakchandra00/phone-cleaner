@@ -102,7 +102,11 @@ export async function runRealScan(
 
   let permissionGranted = false;
   try {
-    const { status } = await MediaLibrary.getPermissionsAsync();
+    let { status } = await MediaLibrary.getPermissionsAsync();
+    if (status !== "granted") {
+      const res = await MediaLibrary.requestPermissionsAsync();
+      status = res.status;
+    }
     permissionGranted = status === "granted";
   } catch {
     permissionGranted = false;

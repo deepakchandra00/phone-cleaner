@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { storage, KEYS } from "@/lib/storage";
 import { bytesToGB, formatSizeCompact } from "@/lib/format";
+import { maybeShowInterstitial } from "@/lib/ads";
 
 const CONFETTI_COLORS = ["#10b981", "#14b8a6", "#f59e0b", "#ec4899", "#f97316", "#22c55e"];
 
@@ -50,7 +51,14 @@ export default function Success() {
     numberScale.value = withDelay(300, withSpring(1, { damping: 14, stiffness: 180 }));
     // Refresh storage so the dashboard reflects the freed space
     loadStorage();
-  }, [checkScale, numberScale, loadStorage]);
+
+    if (!isPurchase) {
+      const adTimer = setTimeout(() => {
+        maybeShowInterstitial();
+      }, 1200);
+      return () => clearTimeout(adTimer);
+    }
+  }, [checkScale, numberScale, loadStorage, isPurchase]);
 
   const confetti = useMemo<ConfettiPiece[]>(
     () =>

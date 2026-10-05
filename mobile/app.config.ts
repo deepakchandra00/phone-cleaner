@@ -87,9 +87,15 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         backgroundColor: "#0F172A",
       },
       permissions: [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_MEDIA_VIDEO",
         "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
       ],
     },
     web: {
@@ -104,6 +110,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       "expo-notifications",
       "expo-asset",
       "expo-image",
+      [
+        "expo-media-library",
+        {
+          photosPermission: "Allow Phone Cleaner to access your photos and videos to detect duplicates and large files.",
+          savePhotosPermission: "Allow Phone Cleaner to save photos.",
+          isAccessMediaLocationEnabled: true,
+        },
+      ],
       [
         "expo-splash-screen",
         {
@@ -133,6 +147,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             targetSdkVersion: 36,
             enableProguardInReleaseBuilds: true,
             enableShrinkResourcesInReleaseBuilds: true,
+            extraProguardRules: `
+-keep class com.phonecleaner.app.** { *; }
+-keep class com.revenuecat.purchases.** { *; }
+            `,
           },
         },
       ],

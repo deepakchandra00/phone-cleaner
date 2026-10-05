@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { View, Text, Pressable, ScrollView, Dimensions } from "react-native";
+import { View, Text, Pressable, ScrollView, Dimensions, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn, SlideInRight } from "react-native-reanimated";
+import { AndroidStorage } from "android-storage";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -432,10 +433,13 @@ function AppRow({ app, delay }: { app: AppItem; delay: number }) {
             </View>
           </View>
           <Pressable
-            className="px-3 py-1.5 rounded-lg bg-destructive/10"
-            onPress={() => {
-              // In production: Linking.openURL(`package:${app.packageName}`) via ACTION_UNINSTALL
+            className="px-3 py-1.5 rounded-lg bg-destructive/10 active:opacity-70"
+            onPress={async () => {
               track("app_uninstall_tapped", { package: app.packageName });
+              const launched = await AndroidStorage.uninstallApp(app.packageName);
+              if (!launched) {
+                Linking.openURL(`package:${app.packageName}`).catch(() => {});
+              }
             }}
           >
             <Text className="text-destructive text-xs font-semibold">Uninstall</Text>

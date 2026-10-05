@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { View, Text, Pressable, Dimensions, ScrollView } from "react-native";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
@@ -237,18 +238,27 @@ function DuplicateGroupCard({
               style={{ width: THUMB, height: THUMB }}
               className="relative rounded-lg overflow-hidden"
             >
-              {/* Placeholder thumbnail (gradient + icon — no real image in demo) */}
+              {/* Thumbnail */}
               <View
                 className="absolute inset-0 items-center justify-center"
                 style={{
                   backgroundColor: isKeep ? "#dcfce7" : isSelected ? "#fee2e2" : "#f1f5f9",
                 }}
               >
-                <Icon
-                  name="image"
-                  size={28}
-                  color={isKeep ? "#16a34a" : isSelected ? "#ef4444" : "#94a3b8"}
-                />
+                {f.path ? (
+                  <Image
+                    source={{ uri: f.path }}
+                    style={{ width: "100%", height: "100%" }}
+                    contentFit="cover"
+                    transition={150}
+                  />
+                ) : (
+                  <Icon
+                    name="image"
+                    size={28}
+                    color={isKeep ? "#16a34a" : isSelected ? "#ef4444" : "#94a3b8"}
+                  />
+                )}
               </View>
 
               {/* Keep badge */}

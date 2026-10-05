@@ -131,7 +131,28 @@ export const useAppStore = create<AppState>((set, get) => ({
       file_count: fileCount,
     });
     track("files_deleted", { count: fileCount });
-    set({ selectedFileIds: new Set(), selectedGroupIds: new Set() });
+
+    const currentResult = get().scanResult;
+    const deletedFileIds = get().selectedFileIds;
+    const deletedGroupIds = get().selectedGroupIds;
+
+    let updatedResult: ScanResult | null = null;
+    if (currentResult) {
+      updatedResult = {
+        ...currentResult,
+        totalCleanableBytes: Math.max(0, currentResult.totalCleanableBytes - freedBytes),
+        largeFiles: currentResult.largeFiles.filter((f) => !deletedFileIds.has(f.id)),
+        junkFiles: currentResult.junkFiles.filter((f) => !deletedFileIds.has(f.id)),
+        whatsappFiles: currentResult.whatsappFiles.filter((f) => !deletedFileIds.has(f.id)),
+        duplicateGroups: currentResult.duplicateGroups.filter((g) => !deletedGroupIds.has(g.id)),
+      };
+    }
+
+    set({
+      scanResult: updatedResult,
+      selectedFileIds: new Set(),
+      selectedGroupIds: new Set(),
+    });
     get().loadStorage();
   },
 
