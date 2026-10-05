@@ -1,0 +1,21 @@
+# .easignore — files excluded from EAS Build tarball upload
+# (in addition to .gitignore)
+
+# Never upload stale native build artifacts
+android/.gradle
+android/app/build
+android/build
+android/.cxx
+android/modules/*/android/build
+android/modules/*/android/.cxx
+
+# Never upload stray worklets (shouldn't exist, but just in case)
+node_modules/react-native-worklets-core
+
+# Env files
+.env
+.env.local
+
+# IDE
+.idea
+.vscode

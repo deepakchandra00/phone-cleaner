@@ -11,21 +11,24 @@
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug"
       },
-      "env": { "APP_VARIANT": "development" }
+      "env": { "APP_VARIANT": "development" },
+      "cache": false
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
       },
-      "env": { "APP_VARIANT": "preview" }
+      "env": { "APP_VARIANT": "preview" },
+      "cache": false
     },
     "production": {
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
       },
-      "env": { "APP_VARIANT": "production" }
+      "env": { "APP_VARIANT": "production" },
+      "cache": false
     }
   },
   "submit": {
