@@ -74,13 +74,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     icon: "./src/assets/icon.png",
     scheme: "phonecleaner",
     userInterfaceStyle: "automatic",
-    newArchEnabled: true,
     runtimeVersion: "1.0.0",
-    splash: {
-      image: "./src/assets/icon.png",
-      resizeMode: "contain",
-      backgroundColor: "#0F172A",
-    },
     assetBundlePatterns: ["**/*"],
     ios: {
       supportsTablet: false,
@@ -108,6 +102,19 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       "expo-font",
       "expo-secure-store",
       "expo-notifications",
+      "expo-asset",
+      "expo-image",
+      [
+        "expo-splash-screen",
+        {
+          image: "./src/assets/icon.png",
+          resizeMode: "contain",
+          backgroundColor: "#0F172A",
+        },
+      ],
+      "expo-sqlite",
+      "expo-status-bar",
+      "expo-web-browser",
       [
         "react-native-google-mobile-ads",
         {
@@ -122,9 +129,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         {
           android: {
             minSdkVersion: 24,
-            compileSdkVersion: 35,
-            targetSdkVersion: 35,
-            kotlinVersion: "1.9.25",
+            compileSdkVersion: 36,
+            targetSdkVersion: 36,
             enableProguardInReleaseBuilds: true,
             enableShrinkResourcesInReleaseBuilds: true,
           },

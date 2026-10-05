@@ -6,11 +6,11 @@ version = '1.0.0'
 
 android {
   namespace "com.phonecleaner.app.androidstorage"
-  compileSdkVersion 35
+  compileSdkVersion 36
 
   defaultConfig {
     minSdkVersion 24
-    targetSdkVersion 35
+    targetSdkVersion 36
   }
 
   compileOptions {
