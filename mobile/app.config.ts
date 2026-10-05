@@ -22,19 +22,39 @@ function withAndroidQueries(config: ExpoConfig): ExpoConfig {
       manifest.queries = [];
     }
 
+    const queries = manifest.queries as any[];
+
     // Check if launcher query already exists
-    const hasLauncherQuery = (manifest.queries as any[]).some(
-      (q) => q.intent?.some(
-        (i: any) => i.action?.$?.includes("MAIN") && i.category?.some((c: any) => c.$?.includes("LAUNCHER")),
+    const hasLauncherQuery = queries.some((query) =>
+      query.intent?.some(
+        (intent: any) =>
+          intent.action?.some(
+            (action: any) => action.$?.["android:name"] === "android.intent.action.MAIN",
+          ) &&
+          intent.category?.some(
+            (category: any) => category.$?.["android:name"] === "android.intent.category.LAUNCHER",
+          ),
       ),
     );
 
     if (!hasLauncherQuery) {
-      manifest.queries.push({
+      queries.push({
         intent: [
           {
-            action: { $: "android.intent.action.MAIN" },
-            category: [{ $: "android.intent.category.LAUNCHER" }],
+            action: [
+              {
+                $: {
+                  "android:name": "android.intent.action.MAIN",
+                },
+              },
+            ],
+            category: [
+              {
+                $: {
+                  "android:name": "android.intent.category.LAUNCHER",
+                },
+              },
+            ],
           },
         ],
       });
@@ -105,8 +125,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           },
         },
       ],
-      // Inline plugin: adds <queries> for Android 11+ package visibility
-      withAndroidQueries as unknown as string,
     ],
     extra: {
       ...config.extra,

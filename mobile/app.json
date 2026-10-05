@@ -54,9 +54,6 @@
       "revenueCatAndroidApiKey": "goog_xxxxxxxxxxxxxxxxxxxxx",
       "posthogKey": "",
       "sentryDsn": "",
-      "router": {
-        "origin": false
-      },
       "eas": {
         "projectId": "3c8e8c02-411e-48fe-8879-536bcab009d9"
       }
