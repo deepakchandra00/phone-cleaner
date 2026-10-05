@@ -41,6 +41,15 @@ class StorageIndexServiceImpl {
       this.db = SQLite.openDatabaseSync("phone_cleaner.db");
     }
     if (!this.initialized) {
+      try {
+        const tableSql = this.db.getFirstSync<{ sql: string }>(
+          "SELECT sql FROM sqlite_master WHERE type='table' AND name='storage_items';"
+        );
+        if (tableSql && tableSql.sql.includes("uri TEXT NOT NULL UNIQUE")) {
+          this.db.execSync("DROP TABLE IF EXISTS storage_items;");
+        }
+      } catch {}
+
       this.db.execSync(CREATE_STORAGE_ITEMS_TABLE_SQL);
       this.initialized = true;
     }
@@ -54,40 +63,25 @@ class StorageIndexServiceImpl {
     if (items.length === 0) return;
     const db = this.getDb();
 
+    // Deduplicate items by ID keeping latest
+    const uniqueMap = new Map<string, StorageItem>();
+    for (const item of items) {
+      uniqueMap.set(item.id, item);
+    }
+    const uniqueItems = Array.from(uniqueMap.values());
+
     db.withTransactionSync(() => {
       const stmt = db.prepareSync(`
-        INSERT INTO storage_items (
+        INSERT OR REPLACE INTO storage_items (
           id, uri, path, name, size_bytes, mime_type, extension,
           category, source, modified_at, is_large, is_junk, junk_reason,
           duplicate_group_id, can_open, can_preview, can_delete, requires_permission,
           width, height, duration_ms, whatsapp_type
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-          uri=excluded.uri,
-          path=excluded.path,
-          name=excluded.name,
-          size_bytes=excluded.size_bytes,
-          mime_type=excluded.mime_type,
-          extension=excluded.extension,
-          category=excluded.category,
-          source=excluded.source,
-          modified_at=excluded.modified_at,
-          is_large=excluded.is_large,
-          is_junk=excluded.is_junk,
-          junk_reason=excluded.junk_reason,
-          duplicate_group_id=excluded.duplicate_group_id,
-          can_open=excluded.can_open,
-          can_preview=excluded.can_preview,
-          can_delete=excluded.can_delete,
-          requires_permission=excluded.requires_permission,
-          width=excluded.width,
-          height=excluded.height,
-          duration_ms=excluded.duration_ms,
-          whatsapp_type=excluded.whatsapp_type;
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
       `);
 
       try {
-        for (const item of items) {
+        for (const item of uniqueItems) {
           stmt.executeSync([
             item.id,
             item.uri,
@@ -362,6 +356,15 @@ class StorageIndexServiceImpl {
       appsBytes: appsStats.bytes,
       lastScannedAt: Date.now(),
     };
+  }
+
+  /**
+   * Returns total count of indexed items.
+   */
+  public getItemCount(): number {
+    const db = this.getDb();
+    const row = db.getFirstSync<{ count: number }>("SELECT COUNT(*) as count FROM storage_items;");
+    return row?.count ?? 0;
   }
 
   /**

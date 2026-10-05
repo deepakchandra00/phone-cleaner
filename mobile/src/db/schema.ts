@@ -77,7 +77,7 @@ export interface DashboardSummary {
 export const CREATE_STORAGE_ITEMS_TABLE_SQL = `
 CREATE TABLE IF NOT EXISTS storage_items (
     id TEXT PRIMARY KEY,
-    uri TEXT NOT NULL UNIQUE,
+    uri TEXT NOT NULL,
     path TEXT,
     name TEXT NOT NULL,
     size_bytes INTEGER NOT NULL,
