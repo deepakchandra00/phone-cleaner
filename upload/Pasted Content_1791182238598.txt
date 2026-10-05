@@ -1,0 +1,2063 @@
+Run gradlew
+
+8m 13s
+
+
+Running 'gradlew :app:assembleRelease' in /home/expo/workingdir/build/mobile/android
+Downloading https://services.gradle.org/distributions/gradle-8.10.2-all.zip
+10%
+20%.
+30%.
+40%.
+50%.
+60%.
+70%.
+80%.
+90%.
+100
+%
+Welcome to Gradle 8.10.2!
+Here are the highlights of this release:
+ - Support for Java 23
+ - Faster configuration cache
+ - Better configuration cache reports
+For more details see https://docs.gradle.org/8.10.2/release-notes.html
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors
+> Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors
+> Task :gradle-plugin:settings-plugin:pluginDescriptors
+> Task :gradle-plugin:settings-plugin:processResources
+> Task :gradle-plugin:shared:processResources
+NO-SOURCE
+> Task :gradle-plugin:shared:compileKotlin
+> Task :gradle-plugin:shared:compileJava NO-SOURCE
+> Task :gradle-plugin:shared:classes UP-TO-DATE
+> Task :gradle-plugin:shared:jar
+> Task :gradle-plugin:settings-plugin:compileKotlin
+> Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:settings-plugin:classes
+> Task :gradle-plugin:settings-plugin:jar
+> Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-dev-launcher-gradle-plugin:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-dev-launcher-gradle-plugin:pluginDescriptors
+> Task :expo-dev-launcher-gradle-plugin:processResources
+> Task :gradle-plugin:react-native-gradle-plugin:pluginDescriptors
+> Task :gradle-plugin:react-native-gradle-plugin:processResources
+> Task :gradle-plugin:react-native-gradle-plugin:compileKotlin
+> Task :gradle-plugin:react-native-gradle-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:react-native-gradle-plugin:classes
+> Task :gradle-plugin:react-native-gradle-plugin:jar
+> Task :expo-dev-launcher-gradle-plugin:compileKotlin
+> Task :expo-dev-launcher-gradle-plugin:compileJava NO-SOURCE
+> Task :expo-dev-launcher-gradle-plugin:classes
+> Task :expo-dev-launcher-gradle-plugin:jar
+> Configure project :app
+ℹ️  Applying gradle plugin 'expo-dev-launcher-gradle-plugin' (expo-dev-launcher@5.0.35)
+> Configure project :expo
+Using expo modules
+  - android-storage (1.0.0)
+  - expo-application (6.0.2)
+  - expo-asset (11.0.5)
+  - expo-background-fetch (13.0.6)
+  - expo-blur (14.0.3)
+  - expo-constants (17.0.8)
+  - expo-dev-client (5.0.20)
+  - expo-dev-launcher (5.0.35)
+  - expo-dev-menu (6.0.25)
+  - expo-file-system (18.0.12)
+  - expo-font (13.0.4)
+  - expo-haptics (14.0.1)
+  - expo-image (2.0.7)
+  - expo-json-utils (0.14.0)
+  - expo-keep-awake (14.0.3)
+  - expo-linear-gradient (14.0.2)
+  - expo-linking (7.0.5)
+  - expo-manifests (0.15.8)
+  - expo-media-library (17.0.6)
+  - expo-modules-core (2.2.3)
+  - expo-notifications (0.29.14)
+  - expo-secure-store (14.0.1)
+  - expo-sensors (14.0.2)
+  - expo-splash-screen (0.29.24)
+  - expo-sqlite (15.1.4)
+  - expo-system-ui (4.0.9)
+  - expo-task-manager (12.0.6)
+  - expo-web-browser (14.0.2)
+  - unimodules-app-loader (5.0.1)
+> Configure project :react-native-google-mobile-ads
+:react-native-google-mobile-ads package.json found at /home/expo/workingdir/build/mobile/node_modules/react-native-google-mobile-ads/package.json
+**************************************************************************************************************
+WARNING: react-native-google-mobile-ads requires an 'android_app_id' property inside a 'react-native-google-mobile-ads' key in your app.json.
+         No android_app_id property was found in this location. The native Google Mobile Ads SDK will crash on startup without it.
+         You can safely ignore this warning if you are using our Expo config plugin.
+**************************************************************************************************************
+:react-native-google-mobile-ads package.json found at /home/expo/workingdir/build/mobile/node_modules/react-native-google-mobile-ads/package.json
+:react-native-google-mobile-ads:version set from package.json: 14.11.0 (14,11,0 - 14011000)
+:react-native-google-mobile-ads:android.compileSdk using custom value: 35
+:react-native-google-mobile-ads:android.targetSdk using custom value: 35
+:react-native-google-mobile-ads:android.minSdk using custom value: 24
+:react-native-google-mobile-ads:reactNativeAndroidDir /home/expo/workingdir/build/mobile/node_modules/react-native/android
+> Configure project :react-native-reanimated
+Android gradle plugin: 8.6.0
+Gradle: 8.10.2
+Checking the license for package Android SDK Build-Tools 34 in /home/expo/Android/Sdk/licenses
+License for package Android SDK Build-Tools 34 accepted.
+Preparing "Install Android SDK Build-Tools 34 v.34.0.0".
+"Install Android SDK Build-Tools 34 v.34.0.0" ready.
+Installing Android SDK Build-Tools 34 in /home/expo/Android/Sdk/build-tools/34.0.0
+"Install Android SDK Build-Tools 34 v.34.0.0" complete.
+"Install Android SDK Build-Tools 34 v.34.0.0" finished.
+> Task :expo-modules-core:checkKotlinGradlePluginConfigurationErrors
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-modules-core:preBuild UP-TO-DATE
+> Task :android-storage:checkKotlinGradlePluginConfigurationErrors
+> Task :android-storage:preBuild UP-TO-DATE
+> Task :android-storage:preReleaseBuild UP-TO-DATE
+> Task :expo-modules-core:preReleaseBuild UP-TO-DATE
+> Task :app:generateAutolinkingNewArchitectureFiles
+> Task :app:generateAutolinkingPackageList
+> Task :app:generateCodegenSchemaFromJavaScript SKIPPED
+> Task :app:generateCodegenArtifactsFromSchema SKIPPED
+> Task :app:preBuild
+> Task :app:preReleaseBuild
+> Task :expo-modules-core:generateReleaseBuildConfig
+> Task :android-storage:generateReleaseBuildConfig
+> Task :app:generateReleaseBuildConfig
+> Task :expo-application:preBuild UP-TO-DATE
+> Task :expo-application:preReleaseBuild UP-TO-DATE
+> Task :expo-modules-core:generateReleaseResValues
+> Task :android-storage:generateReleaseResValues
+> Task :android-storage:generateReleaseResources
+> Task :expo-modules-core:generateReleaseResources
+> Task :expo-application:writeReleaseAarMetadata
+> Task :expo-asset:preBuild UP-TO-DATE
+> Task :expo-asset:preReleaseBuild UP-TO-DATE
+> Task :expo-asset:writeReleaseAarMetadata
+> Task :expo-background-fetch:preBuild UP-TO-DATE
+> Task :expo-background-fetch:preReleaseBuild UP-TO-DATE
+> Task :expo-background-fetch:writeReleaseAarMetadata
+> Task :expo-blur:preBuild UP-TO-DATE
+> Task :expo-blur:preReleaseBuild UP-TO-DATE
+> Task :expo-blur:writeReleaseAarMetadata
+> Task :android-storage:packageReleaseResources
+> Task :expo-modules-core:packageReleaseResources
+> Task :expo:generateExpoModulesPackageListTask
+> Task :expo:preBuild
+> Task :expo:preReleaseBuild
+> Task :expo:writeReleaseAarMetadata
+> Task :expo-dev-client:preBuild UP-TO-DATE
+> Task :expo-dev-client:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-client:writeReleaseAarMetadata
+> Task :expo-dev-launcher:preBuild UP-TO-DATE
+> Task :expo-dev-launcher:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-launcher:writeReleaseAarMetadata
+> Task :expo-dev-menu:preBuild UP-TO-DATE
+> Task :expo-dev-menu:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-menu:writeReleaseAarMetadata
+> Task :expo-dev-menu-interface:preBuild UP-TO-DATE
+> Task :expo-dev-menu-interface:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-menu-interface:writeReleaseAarMetadata
+> Task :expo-file-system:preBuild UP-TO-DATE
+> Task :expo-file-system:preReleaseBuild UP-TO-DATE
+> Task :expo-file-system:writeReleaseAarMetadata
+> Task :expo-font:preBuild UP-TO-DATE
+> Task :expo-font:preReleaseBuild UP-TO-DATE
+> Task :expo-font:writeReleaseAarMetadata
+> Task :expo-haptics:preBuild UP-TO-DATE
+> Task :expo-haptics:preReleaseBuild UP-TO-DATE
+> Task :expo-haptics:writeReleaseAarMetadata
+> Task :expo-image:preBuild UP-TO-DATE
+> Task :expo-image:preReleaseBuild UP-TO-DATE
+> Task :expo-image:writeReleaseAarMetadata
+> Task :expo-json-utils:preBuild UP-TO-DATE
+> Task :expo-json-utils:preReleaseBuild UP-TO-DATE
+> Task :expo-json-utils:writeReleaseAarMetadata
+> Task :expo-keep-awake:preBuild UP-TO-DATE
+> Task :expo-keep-awake:preReleaseBuild UP-TO-DATE
+> Task :expo-keep-awake:writeReleaseAarMetadata
+> Task :expo-linear-gradient:preBuild UP-TO-DATE
+> Task :expo-linear-gradient:preReleaseBuild UP-TO-DATE
+> Task :expo-linear-gradient:writeReleaseAarMetadata
+> Task :expo-linking:preBuild UP-TO-DATE
+> Task :expo-linking:preReleaseBuild UP-TO-DATE
+> Task :expo-linking:writeReleaseAarMetadata
+> Task :expo-manifests:preBuild
+UP-TO-DATE
+> Task :expo-manifests:preReleaseBuild UP-TO-DATE
+> Task :expo-manifests:writeReleaseAarMetadata
+> Task :expo-media-library:preBuild UP-TO-DATE
+> Task :expo-media-library:preReleaseBuild
+UP-TO-DATE
+> Task :expo-media-library:writeReleaseAarMetadata
+> Task :expo-notifications:preBuild UP-TO-DATE
+> Task :expo-notifications:preReleaseBuild UP-TO-DATE
+> Task :expo-notifications:writeReleaseAarMetadata
+> Task :expo-secure-store:preBuild UP-TO-DATE
+> Task :expo-secure-store:preReleaseBuild UP-TO-DATE
+> Task :expo-secure-store:writeReleaseAarMetadata
+> Task :expo-sensors:preBuild UP-TO-DATE
+> Task :expo-sensors:preReleaseBuild UP-TO-DATE
+> Task :expo-sensors:writeReleaseAarMetadata
+> Task :expo-splash-screen:preBuild UP-TO-DATE
+> Task :expo-splash-screen:preReleaseBuild UP-TO-DATE
+> Task :expo-splash-screen:writeReleaseAarMetadata
+> Task :expo-sqlite:preBuild UP-TO-DATE
+> Task :expo-sqlite:preReleaseBuild UP-TO-DATE
+> Task :expo-sqlite:writeReleaseAarMetadata
+> Task :expo-system-ui:preBuild UP-TO-DATE
+> Task :expo-system-ui:preReleaseBuild UP-TO-DATE
+> Task :expo-system-ui:writeReleaseAarMetadata
+> Task :expo-task-manager:preBuild UP-TO-DATE
+> Task :expo-task-manager:preReleaseBuild UP-TO-DATE
+> Task :expo-task-manager:writeReleaseAarMetadata
+> Task :expo-constants:createExpoConfig
+> Task :expo-updates-interface:preBuild UP-TO-DATE
+> Task :expo-updates-interface:preReleaseBuild UP-TO-DATE
+> Task :expo-constants:preBuild
+> Task :expo-constants:preReleaseBuild
+> Task :expo-constants:writeReleaseAarMetadata
+> Task :expo-web-browser:preBuild UP-TO-DATE
+> Task :expo-web-browser:preReleaseBuild UP-TO-DATE
+> Task :expo-web-browser:writeReleaseAarMetadata
+> Task :expo-updates-interface:writeReleaseAarMetadata
+The NODE_ENV environment variable is required but was not specified. Ensure the project is bundled with Expo CLI or NODE_ENV is set.
+Proceeding without mode-specific .env
+> Task :react-native-async-storage_async-storage:generateCodegenSchemaFromJavaScript
+> Task :react-native-gesture-handler:generateCodegenSchemaFromJavaScript
+> Task :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
+> Task :react-native-gesture-handler:generateCodegenArtifactsFromSchema
+> Task :android-storage:javaPreCompileRelease
+> Task :expo-modules-core:javaPreCompileRelease
+> Task :android-storage:parseReleaseLocalResources
+> Task :react-native-async-storage_async-storage:preBuild
+> Task :react-native-async-storage_async-storage:preReleaseBuild
+> Task :expo-modules-core:parseReleaseLocalResources
+> Task :react-native-gesture-handler:preBuild
+> Task :react-native-gesture-handler:preReleaseBuild
+> Task :expo-modules-core:extractProguardFiles
+> Task :android-storage:extractProguardFiles
+> Task :react-native-async-storage_async-storage:writeReleaseAarMetadata
+> Task :react-native-gesture-handler:writeReleaseAarMetadata
+> Task :expo-modules-core:generateReleaseRFile
+> Task :android-storage:generateReleaseRFile
+> Task :react-native-mmkv:generateCodegenSchemaFromJavaScript
+> Task :android-storage:prepareLintJarForPublish
+> Task :android-storage:writeReleaseAarMetadata
+No modules to process in combine-js-to-schema-cli. If this is unexpected, please check if you set up your NativeComponent correctly. See combine-js-to-schema.js for how codegen finds modules.
+> Task :android-storage:processReleaseManifest
+> Task :react-native-google-mobile-ads:generateCodegenSchemaFromJavaScript
+> Task :react-native-pager-view:generateCodegenSchemaFromJavaScript
+> Task :react-native-mmkv:generateCodegenArtifactsFromSchema
+> Task :react-native-mmkv:preBuild
+> Task :react-native-mmkv:preReleaseBuild
+> Task :react-native-google-mobile-ads:generateCodegenArtifactsFromSchema
+> Task :react-native-google-mobile-ads:preBuild
+> Task :react-native-google-mobile-ads:preReleaseBuild
+> Task :react-native-pager-view:generateCodegenArtifactsFromSchema
+> Task :react-native-pager-view:preBuild
+> Task :react-native-pager-view:preReleaseBuild
+> Task :react-native-pager-view:writeReleaseAarMetadata
+> Task :react-native-purchases:preBuild UP-TO-DATE
+> Task :react-native-purchases:preReleaseBuild UP-TO-DATE
+> Task :react-native-purchases:writeReleaseAarMetadata
+> Task :react-native-reanimated:assertLatestReactNativeWithNewArchitectureTask SKIPPED
+> Task :react-native-reanimated:assertMinimalReactNativeVersionTask SKIPPED
+> Task :react-native-reanimated:generateCodegenSchemaFromJavaScript
+> Task :react-native-reanimated:generateCodegenArtifactsFromSchema
+> Task :react-native-reanimated:prepareReanimatedHeadersForPrefabs
+> Task :react-native-reanimated:prepareWorkletsHeadersForPrefabs
+> Task :react-native-reanimated:preBuild
+> Task :react-native-reanimated:preReleaseBuild
+> Task :react-native-google-mobile-ads:writeReleaseAarMetadata
+> Task :react-native-safe-area-context:generateCodegenSchemaFromJavaScript
+> Task :react-native-safe-area-context:generateCodegenArtifactsFromSchema
+> Task :react-native-safe-area-context:preBuild
+> Task :react-native-safe-area-context:preReleaseBuild
+> Task :react-native-mmkv:writeReleaseAarMetadata
+> Task :react-native-screens:generateCodegenSchemaFromJavaScript
+> Task :react-native-screens:generateCodegenArtifactsFromSchema
+> Task :react-native-screens:preBuild
+> Task :react-native-screens:preReleaseBuild
+> Task :react-native-safe-area-context:writeReleaseAarMetadata
+> Task :react-native-screens:writeReleaseAarMetadata
+> Task :react-native-reanimated:writeReleaseAarMetadata
+> Task :react-native-worklets-core:generateCodegenSchemaFromJavaScript
+> Task :react-native-svg:generateCodegenSchemaFromJavaScript
+> Task :shopify_flash-list:generateCodegenSchemaFromJavaScript
+> Task :react-native-worklets-core:generateCodegenArtifactsFromSchema
+> Task :react-native-worklets-core:prepareHeaders
+> Task :react-native-worklets-core:preBuild
+> Task :react-native-worklets-core:preReleaseBuild
+> Task :react-native-svg:generateCodegenArtifactsFromSchema
+> Task :react-native-svg:preBuild
+> Task :react-native-svg:preReleaseBuild
+> Task :shopify_flash-list:generateCodegenArtifactsFromSchema
+> Task :shopify_flash-list:preBuild
+> Task :shopify_flash-list:preReleaseBuild
+> Task :react-native-svg:writeReleaseAarMetadata
+> Task :unimodules-app-loader:preBuild UP-TO-DATE
+> Task :unimodules-app-loader:preReleaseBuild UP-TO-DATE
+> Task :shopify_flash-list:writeReleaseAarMetadata
+> Task :react-native-worklets-core:writeReleaseAarMetadata
+> Task :expo:generateReleaseResValues
+> Task :expo:generateReleaseResources
+> Task :expo:packageReleaseResources
+> Task :unimodules-app-loader:writeReleaseAarMetadata
+> Task :expo-asset:generateReleaseResValues
+> Task :expo-application:generateReleaseResValues
+> Task :expo-asset:generateReleaseResources
+> Task :expo-application:generateReleaseResources
+> Task :expo-asset:packageReleaseResources
+> Task :expo-application:packageReleaseResources
+> Task :expo-background-fetch:generateReleaseResValues
+> Task :expo-blur:generateReleaseResValues
+> Task :expo-background-fetch:generateReleaseResources
+> Task :expo-blur:generateReleaseResources
+> Task :expo-blur:packageReleaseResources
+> Task :expo-background-fetch:packageReleaseResources
+> Task :expo-dev-client:generateReleaseResValues
+> Task :expo-constants:generateReleaseResValues
+> Task :expo-dev-client:generateReleaseResources
+> Task :expo-constants:generateReleaseResources
+> Task :expo-constants:packageReleaseResources
+> Task :expo-dev-launcher:generateReleaseResValues
+> Task :expo-dev-client:packageReleaseResources
+> Task :expo-dev-launcher:generateReleaseResources
+> Task :expo-dev-menu:generateReleaseResValues
+> Task :expo-dev-menu:generateReleaseResources
+> Task :expo-dev-menu:packageReleaseResources
+> Task :expo-dev-menu-interface:generateReleaseResValues
+> Task :expo-dev-menu-interface:generateReleaseResources
+> Task :expo-dev-menu-interface:packageReleaseResources
+> Task :expo-file-system:generateReleaseResValues
+> Task :expo-file-system:generateReleaseResources
+> Task :expo-file-system:packageReleaseResources
+> Task :expo-font:generateReleaseResValues
+> Task :expo-font:generateReleaseResources
+> Task :expo-font:packageReleaseResources
+> Task :expo-haptics:generateReleaseResValues
+> Task :expo-haptics:generateReleaseResources
+> Task :expo-haptics:packageReleaseResources
+> Task :expo-image:generateReleaseResValues
+> Task :expo-image:generateReleaseResources
+> Task :expo-image:packageReleaseResources
+> Task :expo-json-utils:generateReleaseResValues
+> Task :expo-json-utils:generateReleaseResources
+> Task :expo-json-utils:packageReleaseResources
+> Task :expo-keep-awake:generateReleaseResValues
+> Task :expo-keep-awake:generateReleaseResources
+> Task :expo-dev-launcher:packageReleaseResources
+> Task :expo-linear-gradient:generateReleaseResValues
+> Task :expo-linear-gradient:generateReleaseResources
+> Task :expo-keep-awake:packageReleaseResources
+> Task :expo-linking:generateReleaseResValues
+> Task :expo-linear-gradient:packageReleaseResources
+> Task :expo-linking:generateReleaseResources
+> Task :expo-manifests:generateReleaseResValues
+> Task :expo-manifests:generateReleaseResources
+> Task :expo-manifests:packageReleaseResources
+> Task :expo-media-library:generateReleaseResValues
+> Task :expo-linking:packageReleaseResources
+> Task :expo-media-library:generateReleaseResources
+> Task :expo-notifications:generateReleaseResValues
+> Task :expo-notifications:generateReleaseResources
+> Task :expo-media-library:packageReleaseResources
+> Task :expo-secure-store:generateReleaseResValues
+> Task :expo-secure-store:generateReleaseResources
+> Task :expo-notifications:packageReleaseResources
+> Task :expo-sensors:generateReleaseResValues
+> Task :expo-sensors:generateReleaseResources
+> Task :expo-secure-store:packageReleaseResources
+> Task :expo-splash-screen:generateReleaseResValues
+> Task :expo-sensors:packageReleaseResources
+> Task :expo-splash-screen:generateReleaseResources
+> Task :expo-sqlite:generateReleaseResValues
+> Task :expo-sqlite:generateReleaseResources
+> Task :expo-sqlite:packageReleaseResources
+> Task :expo-splash-screen:packageReleaseResources
+> Task :expo-system-ui:generateReleaseResValues
+> Task :expo-task-manager:generateReleaseResValues
+> Task :expo-system-ui:generateReleaseResources
+> Task :expo-task-manager:generateReleaseResources
+> Task :expo-system-ui:packageReleaseResources
+> Task :expo-task-manager:packageReleaseResources
+> Task :expo-updates-interface:generateReleaseResValues
+> Task :expo-web-browser:generateReleaseResValues
+> Task :expo-updates-interface:generateReleaseResources
+> Task :expo-web-browser:generateReleaseResources
+> Task :expo-updates-interface:packageReleaseResources
+> Task :expo-web-browser:packageReleaseResources
+> Task :react-native-async-storage_async-storage:generateReleaseResValues
+> Task :react-native-gesture-handler:generateReleaseResValues
+> Task :react-native-gesture-handler:generateReleaseResources
+> Task :react-native-async-storage_async-storage:generateReleaseResources
+> Task :react-native-gesture-handler:packageReleaseResources
+> Task :react-native-async-storage_async-storage:packageReleaseResources
+> Task :react-native-google-mobile-ads:generateReleaseResValues
+> Task :react-native-mmkv:generateReleaseResValues
+> Task :react-native-google-mobile-ads:generateReleaseResources
+> Task :react-native-mmkv:generateReleaseResources
+> Task :react-native-mmkv:packageReleaseResources
+> Task :react-native-google-mobile-ads:packageReleaseResources
+> Task :react-native-pager-view:generateReleaseResValues
+> Task :react-native-purchases:generateReleaseResValues
+> Task :react-native-pager-view:generateReleaseResources
+> Task :react-native-pager-view:packageReleaseResources
+> Task :expo-modules-core:processReleaseManifest
+/home/expo/workingdir/build/mobile/node_modules/expo-modules-core/android/src/main/AndroidManifest.xml:8:9-11:45 Warning:
+	meta-data#com.facebook.soloader.enabled@android:value was tagged at AndroidManifest.xml:8 to replace other declarations but no other declaration present
+> Task :expo-modules-core:prepareLintJarForPublish
+> Task :react-native-purchases:generateReleaseResources
+> Task :react-native-purchases:packageReleaseResources
+> Task :react-native-reanimated:generateReleaseResValues
+> Task :react-native-reanimated:generateReleaseResources
+> Task :react-native-reanimated:packageReleaseResources
+> Task :react-native-safe-area-context:generateReleaseResValues
+> Task :react-native-safe-area-context:generateReleaseResources
+> Task :react-native-safe-area-context:packageReleaseResources
+> Task :react-native-screens:generateReleaseResValues
+> Task :react-native-screens:generateReleaseResources
+> Task :react-native-screens:packageReleaseResources
+> Task :react-native-svg:generateReleaseResValues
+> Task :react-native-svg:generateReleaseResources
+> Task :react-native-svg:packageReleaseResources
+> Task :react-native-worklets-core:generateReleaseResValues
+> Task :react-native-worklets-core:generateReleaseResources
+> Task :react-native-worklets-core:packageReleaseResources
+> Task :shopify_flash-list:generateReleaseResValues
+> Task :shopify_flash-list:generateReleaseResources
+> Task :shopify_flash-list:packageReleaseResources
+> Task :unimodules-app-loader:generateReleaseResValues
+> Task :unimodules-app-loader:generateReleaseResources
+> Task :unimodules-app-loader:packageReleaseResources
+> Task :android-storage:extractDeepLinksRelease
+> Task :expo:extractDeepLinksRelease
+> Task :expo:processReleaseManifest
+> Task :expo-application:extractDeepLinksRelease
+> Task :expo-application:processReleaseManifest
+> Task :expo-asset:extractDeepLinksRelease
+> Task :expo-asset:processReleaseManifest
+> Task :expo-background-fetch:extractDeepLinksRelease
+> Task :expo-background-fetch:processReleaseManifest
+> Task :expo-blur:extractDeepLinksRelease
+> Task :expo-blur:processReleaseManifest
+> Task :expo-constants:extractDeepLinksRelease
+> Task :expo-constants:processReleaseManifest
+> Task :expo-dev-client:extractDeepLinksRelease
+> Task :expo-dev-client:processReleaseManifest
+> Task :expo-dev-launcher:extractDeepLinksRelease
+> Task :expo-dev-launcher:processReleaseManifest
+> Task :expo-dev-menu:extractDeepLinksRelease
+> Task :expo-dev-menu:processReleaseManifest
+> Task :expo-dev-menu-interface:extractDeepLinksRelease
+> Task :expo-dev-menu-interface:processReleaseManifest
+> Task :expo-file-system:extractDeepLinksRelease
+> Task :expo-file-system:processReleaseManifest
+/home/expo/workingdir/build/mobile/node_modules/expo-file-system/android/src/main/AndroidManifest.xml:6:9-8:20 Warning:
+	provider#expo.modules.filesystem.FileSystemFileProvider@android:authorities was tagged at AndroidManifest.xml:6 to replace other declarations but no other declaration present
+> Task :expo-font:extractDeepLinksRelease
+> Task :expo-font:processReleaseManifest
+> Task :expo-haptics:extractDeepLinksRelease
+> Task :expo-haptics:processReleaseManifest
+> Task :expo-image:extractDeepLinksRelease
+> Task :expo-image:processReleaseManifest
+> Task :expo-json-utils:extractDeepLinksRelease
+> Task :expo-json-utils:processReleaseManifest
+> Task :expo-keep-awake:extractDeepLinksRelease
+> Task :expo-keep-awake:processReleaseManifest
+> Task :expo-linear-gradient:extractDeepLinksRelease
+> Task :expo-linear-gradient:processReleaseManifest
+> Task :expo-linking:extractDeepLinksRelease
+> Task :expo-linking:processReleaseManifest
+> Task :expo-manifests:extractDeepLinksRelease
+> Task :expo-manifests:processReleaseManifest
+> Task :expo-media-library:extractDeepLinksRelease
+> Task :expo-media-library:processReleaseManifest
+> Task :expo-notifications:extractDeepLinksRelease
+> Task :expo-notifications:processReleaseManifest
+> Task :expo-secure-store:extractDeepLinksRelease
+> Task :expo-secure-store:processReleaseManifest
+> Task :expo-sensors:extractDeepLinksRelease
+> Task :expo-sensors:processReleaseManifest
+> Task :expo-splash-screen:extractDeepLinksRelease
+> Task :expo-splash-screen:processReleaseManifest
+> Task :expo-sqlite:extractDeepLinksRelease
+> Task :expo-sqlite:processReleaseManifest
+> Task :expo-system-ui:extractDeepLinksRelease
+> Task :expo-system-ui:processReleaseManifest
+> Task :expo-task-manager:extractDeepLinksRelease
+> Task :expo-task-manager:processReleaseManifest
+> Task :expo-updates-interface:extractDeepLinksRelease
+> Task :expo-updates-interface:processReleaseManifest
+> Task :expo-web-browser:extractDeepLinksRelease
+> Task :expo-web-browser:processReleaseManifest
+> Task :react-native-async-storage_async-storage:extractDeepLinksRelease
+> Task :react-native-async-storage_async-storage:processReleaseManifest
+package="com.reactnativecommunity.asyncstorage" found in source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/@react-native-async-storage/async-storage/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.reactnativecommunity.asyncstorage" from the source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/@react-native-async-storage/async-storage/android/src/main/AndroidManifest.xml.
+> Task :react-native-gesture-handler:extractDeepLinksRelease
+> Task :react-native-gesture-handler:processReleaseManifest
+> Task :react-native-google-mobile-ads:extractDeepLinksRelease
+> Task :react-native-google-mobile-ads:processReleaseManifest
+package="io.invertase.googlemobileads" found in source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-google-mobile-ads/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="io.invertase.googlemobileads" from the source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-google-mobile-ads/android/src/main/AndroidManifest.xml.
+/home/expo/workingdir/build/mobile/node_modules/react-native-google-mobile-ads/android/src/main/AndroidManifest.xml:40:7-43:44 Warning:
+	property#android.adservices.AD_SERVICES_CONFIG@android:resource was tagged at AndroidManifest.xml:40 to replace other declarations but no other declaration present
+> Task :react-native-mmkv:extractDeepLinksRelease
+> Task :react-native-mmkv:processReleaseManifest
+package="com.reactnativemmkv" found in source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-mmkv/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.reactnativemmkv" from the source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-mmkv/android/src/main/AndroidManifest.xml.
+> Task :react-native-pager-view:extractDeepLinksRelease
+> Task :react-native-pager-view:processReleaseManifest
+> Task :react-native-purchases:extractDeepLinksRelease
+> Task :react-native-purchases:processReleaseManifest
+package="com.revenuecat.purchases.react" found in source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-purchases/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.revenuecat.purchases.react" from the source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-purchases/android/src/main/AndroidManifest.xml.
+> Task :expo-modules-core:configureCMakeRelWithDebInfo[arm64-v8a]
+Checking the license for package CMake 3.22.1 in /home/expo/Android/Sdk/licenses
+License for package CMake 3.22.1 accepted.
+Preparing "Install CMake 3.22.1 v.3.22.1".
+> Task :react-native-reanimated:extractDeepLinksRelease
+> Task :react-native-reanimated:processReleaseManifest
+> Task :react-native-safe-area-context:extractDeepLinksRelease
+> Task :react-native-safe-area-context:processReleaseManifest
+package="com.th3rdwave.safeareacontext" found in source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-safe-area-context/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.th3rdwave.safeareacontext" from the source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-safe-area-context/android/src/main/AndroidManifest.xml.
+> Task :react-native-screens:extractDeepLinksRelease
+> Task :react-native-screens:processReleaseManifest
+package="com.swmansion.rnscreens" found in source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.swmansion.rnscreens" from the source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/AndroidManifest.xml.
+> Task :react-native-svg:extractDeepLinksRelease
+> Task :app:createBundleReleaseJsAndAssets
+Starting Metro Bundler
+> Task :react-native-svg:processReleaseManifest
+package="com.horcrux.svg" found in source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-svg/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.horcrux.svg" from the source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-svg/android/src/main/AndroidManifest.xml.
+> Task :react-native-worklets-core:extractDeepLinksRelease
+> Task :react-native-worklets-core:processReleaseManifest
+package="com.worklets" found in source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.worklets" from the source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/src/main/AndroidManifest.xml.
+> Task :shopify_flash-list:extractDeepLinksRelease
+> Task :shopify_flash-list:processReleaseManifest
+package="com.shopify.reactnative.flash_list" found in source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/@shopify/flash-list/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.shopify.reactnative.flash_list" from the source AndroidManifest.xml: /home/expo/workingdir/build/mobile/node_modules/@shopify/flash-list/android/src/main/AndroidManifest.xml.
+> Task :unimodules-app-loader:extractDeepLinksRelease
+> Task :unimodules-app-loader:processReleaseManifest
+> Task :expo:parseReleaseLocalResources
+> Task :expo:generateReleaseRFile
+> Task :expo-application:parseReleaseLocalResources
+> Task :expo-application:generateReleaseRFile
+> Task :expo-asset:parseReleaseLocalResources
+> Task :expo-asset:generateReleaseRFile
+> Task :expo-background-fetch:parseReleaseLocalResources
+> Task :expo-background-fetch:generateReleaseRFile
+> Task :expo-blur:parseReleaseLocalResources
+> Task :expo-blur:generateReleaseRFile
+> Task :expo-constants:parseReleaseLocalResources
+> Task :expo-constants:generateReleaseRFile
+> Task :expo-dev-client:parseReleaseLocalResources
+> Task :expo-dev-client:generateReleaseRFile
+> Task :expo-dev-launcher:parseReleaseLocalResources
+> Task :expo-dev-launcher:generateReleaseRFile
+> Task :expo-dev-menu:parseReleaseLocalResources
+> Task :expo-dev-menu:generateReleaseRFile
+> Task :expo-dev-menu-interface:parseReleaseLocalResources
+> Task :expo-dev-menu-interface:generateReleaseRFile
+> Task :expo-file-system:parseReleaseLocalResources
+> Task :expo-file-system:generateReleaseRFile
+> Task :expo-font:parseReleaseLocalResources
+> Task :expo-font:generateReleaseRFile
+> Task :expo-haptics:parseReleaseLocalResources
+> Task :expo-haptics:generateReleaseRFile
+> Task :expo-image:parseReleaseLocalResources
+> Task :expo-image:generateReleaseRFile
+> Task :expo-json-utils:parseReleaseLocalResources
+> Task :expo-json-utils:generateReleaseRFile
+> Task :expo-keep-awake:parseReleaseLocalResources
+> Task :expo-keep-awake:generateReleaseRFile
+> Task :expo-linear-gradient:parseReleaseLocalResources
+> Task :expo-linear-gradient:generateReleaseRFile
+> Task :expo-modules-core:configureCMakeRelWithDebInfo[arm64-v8a]
+"Install CMake 3.22.1 v.3.22.1" ready.
+Installing CMake 3.22.1 in /home/expo/Android/Sdk/cmake/3.22.1
+"Install CMake 3.22.1 v.3.22.1" complete.
+"Install CMake 3.22.1 v.3.22.1" finished.
+> Task :expo-linking:parseReleaseLocalResources
+> Task :expo-linking:generateReleaseRFile
+> Task :expo-manifests:parseReleaseLocalResources
+> Task :expo-manifests:generateReleaseRFile
+> Task :expo-media-library:parseReleaseLocalResources
+> Task :expo-media-library:generateReleaseRFile
+> Task :expo-notifications:parseReleaseLocalResources
+> Task :expo-notifications:generateReleaseRFile
+> Task :expo-secure-store:parseReleaseLocalResources
+> Task :expo-secure-store:generateReleaseRFile
+> Task :expo-sensors:parseReleaseLocalResources
+> Task :expo-sensors:generateReleaseRFile
+> Task :expo-splash-screen:parseReleaseLocalResources
+> Task :expo-splash-screen:generateReleaseRFile
+> Task :expo-sqlite:parseReleaseLocalResources
+> Task :expo-sqlite:generateReleaseRFile
+> Task :expo-system-ui:parseReleaseLocalResources
+> Task :expo-system-ui:generateReleaseRFile
+> Task :expo-task-manager:parseReleaseLocalResources
+> Task :expo-task-manager:generateReleaseRFile
+> Task :expo-updates-interface:parseReleaseLocalResources
+> Task :expo-updates-interface:generateReleaseRFile
+> Task :expo-web-browser:parseReleaseLocalResources
+> Task :expo-web-browser:generateReleaseRFile
+> Task :react-native-async-storage_async-storage:parseReleaseLocalResources
+> Task :react-native-async-storage_async-storage:generateReleaseRFile
+> Task :react-native-gesture-handler:parseReleaseLocalResources
+> Task :react-native-gesture-handler:generateReleaseRFile
+> Task :react-native-google-mobile-ads:parseReleaseLocalResources
+> Task :react-native-google-mobile-ads:generateReleaseRFile
+> Task :react-native-mmkv:parseReleaseLocalResources
+> Task :react-native-mmkv:generateReleaseRFile
+> Task :react-native-pager-view:parseReleaseLocalResources
+> Task :react-native-pager-view:generateReleaseRFile
+> Task :react-native-purchases:parseReleaseLocalResources
+> Task :react-native-purchases:generateReleaseRFile
+> Task :react-native-reanimated:parseReleaseLocalResources
+> Task :react-native-reanimated:generateReleaseRFile
+> Task :react-native-safe-area-context:parseReleaseLocalResources
+> Task :react-native-safe-area-context:generateReleaseRFile
+> Task :react-native-screens:parseReleaseLocalResources
+> Task :react-native-screens:generateReleaseRFile
+> Task :react-native-svg:parseReleaseLocalResources
+> Task :react-native-svg:generateReleaseRFile
+> Task :react-native-worklets-core:parseReleaseLocalResources
+> Task :react-native-worklets-core:generateReleaseRFile
+> Task :shopify_flash-list:parseReleaseLocalResources
+> Task :shopify_flash-list:generateReleaseRFile
+> Task :unimodules-app-loader:parseReleaseLocalResources
+> Task :unimodules-app-loader:generateReleaseRFile
+> Task :expo:checkKotlinGradlePluginConfigurationErrors
+> Task :expo:generateReleaseBuildConfig
+> Task :expo-application:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-application:generateReleaseBuildConfig
+> Task :expo-application:javaPreCompileRelease
+> Task :expo-asset:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-asset:generateReleaseBuildConfig
+> Task :expo-asset:javaPreCompileRelease
+> Task :expo-background-fetch:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-background-fetch:generateReleaseBuildConfig
+> Task :expo-background-fetch:javaPreCompileRelease
+> Task :expo-blur:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-blur:generateReleaseBuildConfig
+> Task :expo-blur:javaPreCompileRelease
+> Task :expo-constants:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-constants:generateReleaseBuildConfig
+> Task :expo-constants:javaPreCompileRelease
+> Task :expo-dev-client:checkKotlinGradlePluginConfigurationErrors
+> Task :app:createBundleReleaseJsAndAssets
+Android Bundled 6723ms index.ts (1742 modules)
+Writing bundle output to: /home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle
+Writing sourcemap output to: /home/expo/workingdir/build/mobile/android/app/build/intermediates/sourcemaps/react/release/index.android.bundle.packager.map
+Copying 44 asset files
+Done writing bundle output
+Done writing sourcemap output
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:2376:20: warning: the variable "Promise" was not declared in function "promiseMethodWrapper"
+        return new Promise((resolve, reject) => {
+                   ^~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:2598:23: warning: the variable "DebuggerInternal" was not declared in function "__shouldPauseOnThrow"
+        return typeof DebuggerInternal !== 'undefined' && DebuggerInternal.sh...
+                      ^~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:3915:5: warning: the variable "setImmediate" was not declared in function "handleResolved"
+    setImmediate(function () {
+    ^~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:5263:94: warning: the variable "setTimeout" was not declared in anonymous arrow function " 238#"
+...).then(callback).catch(error => setTimeout(() => {
+                                   ^~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:7545:5: warning: the variable "Headers" was not declared in anonymous function " 311#"
+    Headers,
+    ^~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:7546:5: warning: the variable "Request" was not declared in anonymous function " 311#"
+    Request,
+    ^~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:7547:5: warning: the variable "Response" was not declared in anonymous function " 311#"
+    Response
+    ^~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:7704:24: warning: the variable "FileReader" was not declared in function "readBlobAsArrayBuffer"
+      var reader = new FileReader();
+                       ^~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:7755:36: warning: the variable "Blob" was not declared in anonymous function " 322#"
+        } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
+                                   ^~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:7757:40: warning: the variable "FormData" was not declared in anonymous function " 322#"
+        } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
+                                       ^~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:7759:44: warning: the variable "URLSearchParams" was not declared in anonymous function " 322#"
+...e if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body...
+                                 ^~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:7878:26: warning: the variable "AbortController" was not declared in anonymous function " 328#"
+          var ctrl = new AbortController();
+                         ^~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:8012:23: warning: the variable "XMLHttpRequest" was not declared in anonymous function " 332#"
+        var xhr = new XMLHttpRequest();
+                      ^~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:7557:71: warning: the variable "self" was not declared in anonymous function " 314#"
+...undefined' && globalThis || typeof self !== 'undefined' && self ||
+                                      ^~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:17115:31: warning: the variable "nativeFabricUIManager" was not declared in anonymous function " 645#"
+  var _nativeFabricUIManage = nativeFabricUIManager,
+                              ^~~~~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:17143:21: warning: the variable "clearTimeout" was not declared in anonymous function " 645#"
+    cancelTimeout = clearTimeout;
+                    ^~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:17156:51: warning: the variable "RN$enableMicrotasksInReact" was not declared in anonymous function " 645#"
+... "undefined" !== typeof RN$enableMicrotasksInReact && !!RN$enableMicrotask...
+                           ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:17157:47: warning: the variable "queueMicrotask" was not declared in anonymous function " 645#"
+...otask = "function" === typeof queueMicrotask ? queueMicrotask : scheduleTi...
+                                 ^~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:
+21578:30: warning: the variable "__REACT_DEVTOOLS_GLOBAL_HOOK__" was not declared in anonymous function " 645#"
+  if ("undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__) {
+                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:21716:26: warning: the variable "navigator" was not declared in anonymous function " 678#"
+  "undefined" !== typeof navigator && undefined !== navigator.scheduling && u...
+                         ^~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:21826:37: warning: the variable "MessageChannel" was not declared in anonymous function " 678#"
+  };else if ("undefined" !== typeof MessageChannel) {
+                                    ^~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:21841:34: warning: the variable "nativeRuntimeScheduler" was not declared in anonymous function " 678#"
+... = "undefined" !== typeof nativeRuntimeScheduler ? nativeRuntimeScheduler....
+                             ^~~~~~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:32768:34: warning: the variable "requestAnimationFrame" was not declared in function "start 9#"
+...    this._animationFrame = requestAnimationFrame(this.onUpdate.bind(this));
+                              ^~~~~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:49329:11: warning: the variable "_WORKLET" was not declared in function "assertEasingIsWorklet"
+      if (_WORKLET) {
+          ^~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:51112:94: warning: the variable "location" was not declared in function "registerSensor 1#"
+...(0, _PlatformChecker.isWeb)() && location.protocol !== 'https:' ? ' Make s...
+                                    ^~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:51574:12: warning: the variable "__reanimatedLoggerConfig" was not declared in function "replaceLoggerImplementation"
+        ...__reanimatedLoggerConfig,
+           ^~~~~~~~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:52175:26: warning: Direct call to eval(), but lexical scope is not supported.
+            workletFun = eval('(' + initData.code + '\n)');
+                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:52198:112: warning: the variable "_toString" was not declared in function "valueUnpacker"
+...recognized by value unpacker: "${_toString(objectToUnpack)}".`);
+                                    ^~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:69168:26: warning: the variable "structuredClone" was not declared in function "createAnimationWithInitialValues"
+    var animationStyle = structuredClone(_config.AnimationsData[animationName...
+^~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:69488:5: warning: the variable "document" was not declared in function "configureWebLayoutAnimations"
+    document.getElementById(PREDEFINED_WEB_ANIMATIONS_ID) !== null) {
+    ^~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:69583:27: warning: the variable "HTMLElement" was not declared in function "findDescendantWithExitingAnimation"
+    if (!(node instanceof HTMLElement)) {
+                          ^~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:69609:24: warning: the variable "MutationObserver" was not declared in function "addHTMLMutationObserver"
+    var observer = new MutationObserver(mutationsList => {
+                       ^~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:69654:41: warning: the variable "getComputedStyle" was not declared in function "fixElementPosition"
+...entBorderTopValue = parseInt(getComputedStyle(parent).borderTopWidth);
+                                ^~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:73625:5: warning: the variable "jest" was not declared in arrow function "beforeTest"
+    jest.useFakeTimers();
+    ^~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:74201:26: warning: the variable "_getAnimationTimestamp" was not declared in function "computeEasingProgress"
+      var elapsedTime = (_getAnimationTimestamp() - startingTimestamp) / 1000;
+                         ^~~~~~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:79039:16: warning: the variable "SharedArrayBuffer" was not declared in function "from 1#"
+    if (typeof SharedArrayBuffer !== 'undefined' && (isInstance(value, Shared...
+               ^~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:84327:26: warning: the variable "SuppressedError" was not declared in anonymous function " 2768#"
+    "function" == typeof SuppressedError && SuppressedError;
+                         ^~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:92173:16: warning: Direct call to eval(), but lexical scope is not supported.
+        return eval(body);
+               ^~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:101486:9: warning: the variable "REACT_NAVIGATION_DEVTOOLS" was not declared in anonymous arrow function " 3690#"
+        REACT_NAVIGATION_DEVTOOLS.set(refContainer.current, {
+        ^~~~~~~~~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:106995:16: warning: the variable "requestIdleCallback" was not declared in anonymous arrow function " 3923#"
+      var id = requestIdleCallback(() => {
+               ^~~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:106998:20: warning: the variable "cancelIdleCallback" was not declared in anonymous arrow function " 3925#"
+      return () => cancelIdleCallback(id);
+                   ^~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:110510:11: warning: the variable "cancelAnimationFrame" was not declared in function "cleanup 1#"
+          cancelAnimationFrame(this.splashScreenAnimationFrame);
+          ^~~~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:111690:16: warning: the variable "ReactNativeWebView" was not declared in function "emitDomEvent"
+    if (typeof ReactNativeWebView !== 'undefined') {
+               ^~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:192190:25: warning: the variable "Atomics" was not declared in anonymous function " 6769#"
+    '%Atomics%': typeof Atomics === 'undefined' ? undefined : Atomics,
+                        ^~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:192205:30: warning: the variable "Float16Array" was not declared in anonymous function " 6769#"
+    '%Float16Array%': typeof Float16Array === 'undefined' ? undefined : Float...
+                             ^~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:192208:38: warning: the variable "FinalizationRegistry" was not declared in anonymous function " 6769#"
+...lizationRegistry%': typeof FinalizationRegistry === 'undefined' ? undefine...
+                              ^~~~~~~~~~~~~~~~~~~~
+/home/expo/workingdir/build/mobile/android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle:192248:25: warning: the variable "WeakRef" was not declared in anonymous function " 6769#"
+    '%WeakRef%': typeof WeakRef === 'undefined' ? undefined : WeakRef,
+                        ^~~~~~~
+> Task :expo-dev-client:dataBindingMergeDependencyArtifactsRelease
+> Task :expo-dev-client:dataBindingGenBaseClassesRelease
+> Task :expo-dev-client:generateReleaseBuildConfig
+> Task :expo-dev-client:javaPreCompileRelease
+> Task :expo-dev-launcher:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-dev-launcher:dataBindingMergeDependencyArtifactsRelease
+> Task :expo-dev-launcher:dataBindingGenBaseClassesRelease
+> Task :expo-dev-launcher:generateReleaseBuildConfig
+> Task :expo-dev-menu:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-dev-menu:generateReleaseBuildConfig
+> Task :expo-dev-menu-interface:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-dev-menu-interface:generateReleaseBuildConfig
+> Task :expo-dev-menu-interface:javaPreCompileRelease
+> Task :expo-json-utils:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-json-utils:generateReleaseBuildConfig
+> Task :expo-json-utils:javaPreCompileRelease
+> Task :expo-manifests:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-manifests:generateReleaseBuildConfig
+> Task :expo-manifests:javaPreCompileRelease
+> Task :expo-dev-menu:javaPreCompileRelease
+> Task :expo-updates-interface:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-updates-interface:generateReleaseBuildConfig
+> Task :expo-updates-interface:javaPreCompileRelease
+> Task :expo-dev-launcher:javaPreCompileRelease
+> Task :expo-file-system:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-file-system:generateReleaseBuildConfig
+> Task :expo-file-system:javaPreCompileRelease
+> Task :expo-font:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-font:generateReleaseBuildConfig
+> Task :expo-font:javaPreCompileRelease
+> Task :expo-haptics:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-haptics:generateReleaseBuildConfig
+> Task :expo-haptics:javaPreCompileRelease
+> Task :expo-image:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-image:generateReleaseBuildConfig
+> Task :expo-image:javaPreCompileRelease
+> Task :expo-keep-awake:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-keep-awake:generateReleaseBuildConfig
+> Task :expo-keep-awake:javaPreCompileRelease
+> Task :expo-linear-gradient:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-linear-gradient:generateReleaseBuildConfig
+> Task :expo-linear-gradient:javaPreCompileRelease
+> Task :expo-linking:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-linking:generateReleaseBuildConfig
+> Task :expo-linking:javaPreCompileRelease
+> Task :expo-media-library:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-media-library:generateReleaseBuildConfig
+> Task :expo-media-library:javaPreCompileRelease
+> Task :expo-notifications:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-notifications:generateReleaseBuildConfig
+> Task :expo-notifications:javaPreCompileRelease
+> Task :expo-secure-store:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-secure-store:generateReleaseBuildConfig
+> Task :expo-secure-store:javaPreCompileRelease
+> Task :expo-sensors:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-sensors:generateReleaseBuildConfig
+> Task :expo-sensors:javaPreCompileRelease
+> Task :expo-splash-screen:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-splash-screen:generateReleaseBuildConfig
+> Task :expo-splash-screen:javaPreCompileRelease
+> Task :expo-sqlite:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-sqlite:generateReleaseBuildConfig
+> Task :expo-sqlite:javaPreCompileRelease
+> Task :expo-system-ui:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-system-ui:generateReleaseBuildConfig
+> Task :expo-system-ui:javaPreCompileRelease
+> Task :expo-task-manager:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-task-manager:generateReleaseBuildConfig
+> Task :unimodules-app-loader:checkKotlinGradlePluginConfigurationErrors
+> Task :unimodules-app-loader:generateReleaseBuildConfig
+> Task :unimodules-app-loader:javaPreCompileRelease
+> Task :expo-task-manager:javaPreCompileRelease
+> Task :expo-web-browser:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-web-browser:generateReleaseBuildConfig
+> Task :expo-web-browser:javaPreCompileRelease
+> Task :expo:javaPreCompileRelease
+> Task :react-native-async-storage_async-storage:generateReleaseBuildConfig
+> Task :react-native-async-storage_async-storage:javaPreCompileRelease
+> Task :expo-modules-core:compileReleaseKotlin
+> Task :app:generateReleaseResValues
+> Task :react-native-async-storage_async-storage:compileReleaseJavaWithJavac
+/home/expo/workingdir/build/mobile/node_modules/@react-native-async-storage/async-storage/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStorageModule.java:84: warning: [removal] onCatalystInstanceDestroy() in NativeModule has been deprecated and marked for removal
+  public void onCatalystInstanceDestroy() {
+              ^
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /home/expo/workingdir/build/mobile/node_modules/@react-native-async-storage/async-storage/android/src/javaPackage/java/com/reactnativecommunity/asyncstorage/AsyncStoragePackage.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+1 warning
+> Task :react-native-async-storage_async-storage:bundleLibCompileToJarRelease
+> Task :react-native-gesture-handler:checkKotlinGradlePluginConfigurationErrors
+> Task :react-native-gesture-handler:generateReleaseBuildConfig
+> Task :react-native-reanimated:generateReleaseBuildConfig
+> Task :react-native-reanimated:javaPreCompileRelease
+> Task :react-native-reanimated:packageNdkLibs NO-SOURCE
+> Task :expo-modules-core:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-reanimated:compileReleaseJavaWithJavac
+> Task :react-native-reanimated:bundleLibCompileToJarRelease
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:generateReleaseResources
+> Task :app:mergeReleaseResources
+> Task :app:packageReleaseResources
+> Task :app:parseReleaseLocalResources
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease
+> Task :react-native-gesture-handler:javaPreCompileRelease
+> Task :react-native-google-mobile-ads:checkKotlinGradlePluginConfigurationErrors
+> Task :react-native-google-mobile-ads:generateReleaseBuildConfig
+> Task :react-native-gesture-handler:compileReleaseKotlin
+> Task :react-native-google-mobile-ads:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-google-mobile-ads/android/src/main/java/io/invertase/googlemobileads/OnNativeEvent.kt:6:68 'constructor Event<T : Event<(raw) Event<*>>!>(Int)' is deprecated. Deprecated in Java
+> Task :react-native-google-mobile-ads:javaPreCompileRelease
+> Task :react-native-gesture-handler:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/RNGestureHandlerPackage.kt:69:42 'constructor ReactModuleInfo(String, String, Boolean, Boolean, Boolean, Boolean, Boolean)' is deprecated. use ReactModuleInfo(String, String, boolean, boolean, boolean, boolean)]
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/core/FlingGestureHandler.kt:25:26 Parameter 'event' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerButtonViewManager.kt:72:62 The corresponding parameter in the supertype 'ViewGroupManager' is named 'borderRadius'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerButtonViewManager.kt:77:63 The corresponding parameter in the supertype 'ViewGroupManager' is named 'borderRadius'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerButtonViewManager.kt:82:65 The corresponding parameter in the supertype 'ViewGroupManager' is named 'borderRadius'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerButtonViewManager.kt:87:66 The corresponding parameter in the supertype 'ViewGroupManager' is named 'borderRadius'. This may cause problems when calling this function with named arguments.
+> Task :expo-modules-core:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-gesture-handler:compileReleaseJavaWithJavac
+> Task :react-native-gesture-handler:bundleLibCompileToJarRelease
+> Task :react-native-mmkv:generateReleaseBuildConfig
+> Task :react-native-mmkv:javaPreCompileRelease
+> Task :react-native-google-mobile-ads:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /home/expo/workingdir/build/mobile/node_modules/react-native-google-mobile-ads/android/src/main/java/io/invertase/googlemobileads/ReactNativeGoogleMobileAdsCommon.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+> Task :react-native-mmkv:compileReleaseJavaWithJavac
+> Task :react-native-mmkv:bundleLibCompileToJarRelease
+> Task :react-native-pager-view:checkKotlinGradlePluginConfigurationErrors
+> Task :react-native-pager-view:generateReleaseBuildConfig
+> Task :react-native-google-mobile-ads:bundleLibCompileToJarRelease
+> Task :react-native-pager-view:javaPreCompileRelease
+> Task :react-native-purchases:checkKotlinGradlePluginConfigurationErrors
+> Task :react-native-purchases:generateReleaseBuildConfig
+> Task :react-native-safe-area-context:checkKotlinGradlePluginConfigurationErrors
+> Task :react-native-safe-area-context:generateReleaseBuildConfig
+> Task :react-native-pager-view:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/fabric/java/com/reactnativepagerview/PagerViewViewManager.kt:10:34 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/fabric/java/com/reactnativepagerview/PagerViewViewManager.kt:91:26 The corresponding parameter in the supertype 'ViewGroupManager' is named 'parent'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/fabric/java/com/reactnativepagerview/PagerViewViewManager.kt:209:16 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/fabric/java/com/reactnativepagerview/PagerViewViewManager.kt:210:45 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/fabric/java/com/reactnativepagerview/PagerViewViewManager.kt:211:57 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/fabric/java/com/reactnativepagerview/PagerViewViewManager.kt:212:47 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:6:44 'RCTEventEmitter' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:21:82 'constructor Event<T : Event<(raw) Event<*>>!>(Int)' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:27:44 'RCTEventEmitter' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:28:25 'receiveEvent(Int, String!, WritableMap?): Unit' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:6:44 'RCTEventEmitter' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:15:89 'constructor Event<T : Event<(raw) Event<*>>!>(Int)' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:20:44 'RCTEventEmitter' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:21:25 'receiveEvent(Int, String!, WritableMap?): Unit' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:6:44 'RCTEventEmitter' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:15:69 'constructor Event<T : Event<(raw) Event<*>>!>(Int)' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:24:44 'RCTEventEmitter' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:25:25 'receiveEvent(Int, String!, WritableMap?): Unit' is deprecated. Deprecated in Java
+> Task :react-native-purchases:compileReleaseKotlin
+> Task :react-native-purchases:javaPreCompileRelease
+> Task :react-native-pager-view:compileReleaseJavaWithJavac
+> Task :react-native-pager-view:bundleLibCompileToJarRelease
+> Task :react-native-safe-area-context:javaPreCompileRelease
+> Task :react-native-screens:checkKotlinGradlePluginConfigurationErrors
+> Task :react-native-screens:generateReleaseBuildConfig
+> Task :react-native-purchases:compileReleaseJavaWithJavac
+/home/expo/workingdir/build/mobile/node_modules/react-native-purchases/android/src/main/java/com/revenuecat/purchases/react/RNPurchasesModule.java:66: warning: [removal] onCatalystInstanceDestroy() in NativeModule has been deprecated and marked for removal
+    public void onCatalystInstanceDestroy() {
+                ^
+Note: /home/expo/workingdir/build/mobile/node_modules/react-native-purchases/android/src/main/java/com/revenuecat/purchases/react/RNPurchasesModule.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /home/expo/workingdir/build/mobile/node_modules/react-native-purchases/android/src/main/java/com/revenuecat/purchases/react/RNPurchasesModule.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+1 warning
+> Task :react-native-purchases:bundleLibCompileToJarRelease
+> Task :react-native-svg:generateReleaseBuildConfig
+> Task :react-native-svg:javaPreCompileRelease
+> Task :react-native-safe-area-context:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaContextPackage.kt:27:11 'constructor ReactModuleInfo(String, String, Boolean, Boolean, Boolean, Boolean, Boolean)' is deprecated. use ReactModuleInfo(String, String, boolean, boolean, boolean, boolean)]
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaContextPackage.kt:33:27 'getter for hasConstants: Boolean' is deprecated. This property is unused and it's planning to be removed in a future version of
+        React Native. Please refrain from using it.
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaView.kt:59:23 'getter for uiImplementation: UIImplementation!' is deprecated. Deprecated in Java
+> Task :react-native-safe-area-context:compileReleaseJavaWithJavac
+> Task :react-native-safe-area-context:bundleLibCompileToJarRelease
+> Task :react-native-screens:javaPreCompileRelease
+> Task :react-native-worklets-core:generateReleaseBuildConfig
+> Task :react-native-worklets-core:javaPreCompileRelease
+> Task :react-native-worklets-core:compileReleaseJavaWithJavac
+> Task :react-native-worklets-core:bundleLibCompileToJarRelease
+> Task :shopify_flash-list:checkKotlinGradlePluginConfigurationErrors
+> Task :shopify_flash-list:generateReleaseBuildConfig
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+> Task :react-native-svg:compileReleaseJavaWithJavac
+/home/expo/workingdir/build/mobile/node_modules/react-native-svg/android/src/main/java/com/horcrux/svg/RenderableViewManager.java:388: warning: [removal] processTransform(ReadableArray,double[]) in TransformHelper has been deprecated and marked for removal
+    TransformHelper.processTransform(transforms, sTransformDecompositionArray);
+                   ^
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+1 warning
+> Task :react-native-svg:bundleLibCompileToJarRelease
+> Task :shopify_flash-list:javaPreCompileRelease
+> Task :app:buildKotlinToolingMetadata
+> Task :app:javaPreCompileRelease
+> Task :app:extractProguardFiles
+> Task :expo:extractProguardFiles
+> Task :expo-application:extractProguardFiles
+> Task :expo-application:prepareLintJarForPublish
+> Task :expo-asset:extractProguardFiles
+> Task :expo-asset:prepareLintJarForPublish
+> Task :expo-background-fetch:extractProguardFiles
+> Task :expo-background-fetch:prepareLintJarForPublish
+> Task :expo-blur:extractProguardFiles
+> Task :expo-blur:prepareLintJarForPublish
+> Task :expo-constants:extractProguardFiles
+> Task :expo-constants:prepareLintJarForPublish
+> Task :expo-dev-client:extractProguardFiles
+> Task :expo-dev-client:prepareLintJarForPublish
+> Task :expo-dev-launcher:extractProguardFiles
+> Task :expo-dev-menu:extractProguardFiles
+> Task :expo-dev-menu-interface:extractProguardFiles
+> Task :expo-dev-menu-interface:prepareLintJarForPublish
+> Task :expo-json-utils:extractProguardFiles
+> Task :expo-json-utils:prepareLintJarForPublish
+> Task :expo-manifests:extractProguardFiles
+> Task :expo-manifests:prepareLintJarForPublish
+> Task :expo-dev-menu:prepareLintJarForPublish
+> Task :expo-updates-interface:extractProguardFiles
+> Task :expo-updates-interface:prepareLintJarForPublish
+> Task :expo-dev-launcher:prepareLintJarForPublish
+> Task :expo-file-system:extractProguardFiles
+> Task :expo-file-system:prepareLintJarForPublish
+> Task :expo-font:extractProguardFiles
+> Task :expo-font:prepareLintJarForPublish
+> Task :expo-haptics:extractProguardFiles
+> Task :expo-haptics:prepareLintJarForPublish
+> Task :expo-image:extractProguardFiles
+> Task :expo-image:prepareLintJarForPublish
+> Task :expo-keep-awake:extractProguardFiles
+> Task :expo-keep-awake:prepareLintJarForPublish
+> Task :expo-linear-gradient:extractProguardFiles
+> Task :expo-linear-gradient:prepareLintJarForPublish
+> Task :expo-linking:extractProguardFiles
+> Task :expo-linking:prepareLintJarForPublish
+> Task :expo-media-library:extractProguardFiles
+> Task :expo-media-library:prepareLintJarForPublish
+> Task :expo-notifications:extractProguardFiles
+> Task :expo-notifications:prepareLintJarForPublish
+> Task :expo-secure-store:extractProguardFiles
+> Task :expo-secure-store:prepareLintJarForPublish
+> Task :expo-sensors:extractProguardFiles
+> Task :expo-sensors:prepareLintJarForPublish
+> Task :expo-splash-screen:extractProguardFiles
+> Task :expo-splash-screen:prepareLintJarForPublish
+> Task :expo-sqlite:extractProguardFiles
+> Task :expo-sqlite:prepareLintJarForPublish
+> Task :expo-system-ui:extractProguardFiles
+> Task :expo-system-ui:prepareLintJarForPublish
+> Task :expo-task-manager:extractProguardFiles
+> Task :unimodules-app-loader:extractProguardFiles
+> Task :unimodules-app-loader:prepareLintJarForPublish
+> Task :expo-task-manager:prepareLintJarForPublish
+> Task :expo-web-browser:extractProguardFiles
+> Task :expo-web-browser:prepareLintJarForPublish
+> Task :expo:prepareLintJarForPublish
+> Task :react-native-async-storage_async-storage:bundleLibRuntimeToJarRelease
+> Task :react-native-async-storage_async-storage:processReleaseJavaRes NO-SOURCE
+> Task :react-native-async-storage_async-storage:createFullJarRelease
+> Task :react-native-async-storage_async-storage:extractProguardFiles
+> Task :shopify_flash-list:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/@shopify/flash-list/android/src/main/kotlin/com/shopify/reactnative/flash_list/AutoLayoutShadow.kt:87:13 Name shadowed: actualScrollOffset
+w: file:///home/expo/workingdir/build/mobile/node_modules/@shopify/flash-list/android/src/main/kotlin/com/shopify/reactnative/flash_list/AutoLayoutView.kt:16:44 'RCTEventEmitter' is deprecated. Deprecated in Java
+> Task :shopify_flash-list:compileReleaseJavaWithJavac
+> Task :shopify_flash-list:bundleLibCompileToJarRelease
+> Task :react-native-gesture-handler:bundleLibRuntimeToJarRelease
+> Task :react-native-gesture-handler:processReleaseJavaRes
+> Task :react-native-gesture-handler:createFullJarRelease
+> Task :react-native-gesture-handler:extractProguardFiles
+> Task :react-native-reanimated:bundleLibRuntimeToJarRelease
+> Task :react-native-reanimated:processReleaseJavaRes NO-SOURCE
+> Task :react-native-reanimated:createFullJarRelease
+> Task :react-native-reanimated:extractProguardFiles
+> Task :expo-modules-core:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-async-storage_async-storage:generateReleaseLintModel
+> Task :react-native-async-storage_async-storage:prepareLintJarForPublish
+> Task :react-native-gesture-handler:prepareLintJarForPublish
+> Task :react-native-google-mobile-ads:bundleLibRuntimeToJarRelease
+> Task :react-native-google-mobile-ads:processReleaseJavaRes
+> Task :react-native-google-mobile-ads:createFullJarRelease
+> Task :react-native-google-mobile-ads:extractProguardFiles
+> Task :react-native-reanimated:generateReleaseLintModel
+> Task :react-native-reanimated:prepareLintJarForPublish
+> Task :react-native-gesture-handler:generateReleaseLintModel
+> Task :react-native-mmkv:bundleLibRuntimeToJarRelease
+> Task :react-native-mmkv:processReleaseJavaRes NO-SOURCE
+> Task :react-native-mmkv:createFullJarRelease
+> Task :react-native-mmkv:extractProguardFiles
+> Task :react-native-mmkv:generateReleaseLintModel
+> Task :react-native-mmkv:prepareLintJarForPublish
+> Task :react-native-pager-view:bundleLibRuntimeToJarRelease
+> Task :react-native-pager-view:processReleaseJavaRes
+> Task :react-native-pager-view:createFullJarRelease
+> Task :react-native-pager-view:extractProguardFiles
+> Task :react-native-pager-view:generateReleaseLintModel
+> Task :react-native-pager-view:prepareLintJarForPublish
+> Task :react-native-purchases:bundleLibRuntimeToJarRelease
+> Task :react-native-purchases:processReleaseJavaRes
+> Task :react-native-purchases:createFullJarRelease
+> Task :react-native-purchases:extractProguardFiles
+> Task :react-native-google-mobile-ads:generateReleaseLintModel
+> Task :react-native-google-mobile-ads:prepareLintJarForPublish
+> Task :react-native-safe-area-context:bundleLibRuntimeToJarRelease
+> Task :react-native-safe-area-context:processReleaseJavaRes
+> Task :react-native-safe-area-context:createFullJarRelease
+> Task :react-native-safe-area-context:extractProguardFiles
+> Task :react-native-safe-area-context:generateReleaseLintModel
+> Task :react-native-safe-area-context:prepareLintJarForPublish
+> Task :react-native-screens:extractProguardFiles
+> Task :react-native-screens:prepareLintJarForPublish
+> Task :react-native-svg:bundleLibRuntimeToJarRelease
+> Task :react-native-svg:processReleaseJavaRes NO-SOURCE
+> Task :react-native-svg:createFullJarRelease
+> Task :react-native-svg:extractProguardFiles
+> Task :react-native-svg:generateReleaseLintModel
+> Task :react-native-svg:prepareLintJarForPublish
+> Task :react-native-worklets-core:bundleLibRuntimeToJarRelease
+> Task :react-native-worklets-core:processReleaseJavaRes NO-SOURCE
+> Task :react-native-worklets-core:createFullJarRelease
+> Task :react-native-worklets-core:extractProguardFiles
+> Task :react-native-worklets-core:generateReleaseLintModel
+> Task :react-native-worklets-core:prepareLintJarForPublish
+> Task :shopify_flash-list:bundleLibRuntimeToJarRelease
+> Task :shopify_flash-list:processReleaseJavaRes
+> Task :shopify_flash-list:createFullJarRelease
+> Task :shopify_flash-list:extractProguardFiles
+> Task :react-native-purchases:generateReleaseLintModel
+> Task :react-native-purchases:prepareLintJarForPublish
+> Task :expo:mergeReleaseJniLibFolders
+> Task :expo:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo:stripReleaseDebugSymbols NO-SOURCE
+> Task :shopify_flash-list:generateReleaseLintModel
+> Task :shopify_flash-list:prepareLintJarForPublish
+> Task :expo:copyReleaseJniLibsProjectAndLocalJars
+> Task :expo:extractDeepLinksForAarRelease
+> Task :expo:mergeReleaseShaders
+> Task :expo:compileReleaseShaders NO-SOURCE
+> Task :expo:generateReleaseAssets UP-TO-DATE
+> Task :expo:packageReleaseAssets
+> Task :expo:prepareReleaseArtProfile
+> Task :react-native-gesture-handler:mergeReleaseJniLibFolders
+> Task :react-native-gesture-handler:extractDeepLinksForAarRelease
+> Task :react-native-reanimated:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-screens:compileReleaseKotlin
+> Task :react-native-reanimated:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-reanimated:configureCMakeRelWithDebInfo[x86]
+> Task :react-native-reanimated:configureCMakeRelWithDebInfo[x86_64]
+> Task :react-native-reanimated:generateJsonModelRelease
+> Task :react-native-reanimated:prefabReleaseConfigurePackage
+> Task :react-native-screens:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/CustomToolbar.kt:19:53 'FrameCallback' is deprecated. Use Choreographer.FrameCallback instead
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/CustomToolbar.kt:20:38 'FrameCallback' is deprecated. Use Choreographer.FrameCallback instead
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/RNScreensPackage.kt:64:17 'constructor ReactModuleInfo(String, String, Boolean, Boolean, Boolean, Boolean, Boolean)' is deprecated. use ReactModuleInfo(String, String, boolean, boolean, boolean, boolean)]
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/Screen.kt:45:77 Unchecked cast: CoordinatorLayout.Behavior<(raw) View!>? to BottomSheetBehavior<Screen>
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenContainer.kt:33:53 'FrameCallback' is deprecated. Use Choreographer.FrameCallback instead
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenContainer.kt:34:38 'FrameCallback' is deprecated. Use Choreographer.FrameCallback instead
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenFooter.kt:252:9 Parameter 'changed' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenFooter.kt:253:9 Parameter 'left' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenFooter.kt:254:9 Parameter 'top' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenFooter.kt:255:9 Parameter 'right' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenFooter.kt:256:9 Parameter 'bottom' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:257:31 'setter for targetElevation: Float' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:260:13 'setHasOptionsMenu(Boolean): Unit' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:496:22 'onPrepareOptionsMenu(Menu): Unit' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:504:22 'onCreateOptionsMenu(Menu, MenuInflater): Unit' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt:100:38 'getter for systemWindowInsetTop: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt:7:34 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt:209:9 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt:211:13 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt:213:13 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt:7:34 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt:375:48 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt:376:49 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt:377:45 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt:378:52 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt:379:48 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt:380:51 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt:381:56 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt:382:57 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenViewManager.kt:383:51 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:55:42 'replaceSystemWindowInsets(Int, Int, Int, Int): WindowInsetsCompat' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:56:39 'getter for systemWindowInsetLeft: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:58:39 'getter for systemWindowInsetRight: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:59:39 'getter for systemWindowInsetBottom: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:98:53 'getter for statusBarColor: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:109:48 'getter for statusBarColor: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:112:32 'setter for statusBarColor: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:208:72 'getter for navigationBarColor: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:214:16 'setter for navigationBarColor: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/SearchBarManager.kt:5:34 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/SearchBarManager.kt:138:66 Elvis operator (?:) always returns the left operand of non-nullable type Boolean
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/SearchBarManager.kt:142:9 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/SearchBarManager.kt:144:13 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/SearchBarManager.kt:146:13 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/SearchBarManager.kt:148:13 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/SearchBarManager.kt:150:13 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/SearchBarManager.kt:152:13 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/SearchBarManager.kt:154:13 'MapBuilder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/SearchBarView.kt:153:43 Parameter 'flag' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:7:34 'ReactFeatureFlags' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:25:13 'ReactFeatureFlags' is deprecated. Deprecated in Java
+> Task :react-native-gesture-handler:extractReleaseAnnotations
+> Task :react-native-screens:compileReleaseJavaWithJavac
+> Task :react-native-screens:bundleLibCompileToJarRelease
+> Task :react-native-screens:bundleLibRuntimeToJarRelease
+> Task :react-native-screens:processReleaseJavaRes
+> Task :react-native-screens:createFullJarRelease
+> Task :react-native-screens:generateReleaseLintModel
+> Task :react-native-google-mobile-ads:mergeReleaseJniLibFolders
+> Task :react-native-google-mobile-ads:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-google-mobile-ads:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-google-mobile-ads:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-google-mobile-ads:extractDeepLinksForAarRelease
+> Task :react-native-google-mobile-ads:extractReleaseAnnotations
+> Task :react-native-google-mobile-ads:mergeReleaseGeneratedProguardFiles
+> Task :react-native-google-mobile-ads:mergeReleaseConsumerProguardFiles
+> Task :react-native-google-mobile-ads:mergeReleaseShaders
+> Task :react-native-google-mobile-ads:compileReleaseShaders NO-SOURCE
+> Task :react-native-google-mobile-ads:generateReleaseAssets UP-TO-DATE
+> Task :react-native-google-mobile-ads:packageReleaseAssets
+> Task :react-native-google-mobile-ads:prepareReleaseArtProfile
+> Task :react-native-google-mobile-ads:mergeReleaseJavaResource
+> Task :react-native-google-mobile-ads:syncReleaseLibJars
+> Task :react-native-google-mobile-ads:bundleReleaseLocalLintAar
+> Task :react-native-pager-view:mergeReleaseJniLibFolders
+> Task :react-native-pager-view:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-pager-view:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-pager-view:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-pager-view:extractDeepLinksForAarRelease
+> Task :react-native-pager-view:extractReleaseAnnotations
+> Task :react-native-pager-view:mergeReleaseGeneratedProguardFiles
+> Task :react-native-pager-view:mergeReleaseConsumerProguardFiles
+> Task :react-native-pager-view:mergeReleaseShaders
+> Task :react-native-pager-view:compileReleaseShaders NO-SOURCE
+> Task :react-native-pager-view:generateReleaseAssets UP-TO-DATE
+> Task :react-native-pager-view:packageReleaseAssets
+> Task :react-native-pager-view:prepareReleaseArtProfile
+> Task :react-native-pager-view:mergeReleaseJavaResource
+> Task :react-native-pager-view:syncReleaseLibJars
+> Task :react-native-pager-view:bundleReleaseLocalLintAar
+> Task :react-native-safe-area-context:mergeReleaseJniLibFolders
+> Task :react-native-safe-area-context:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-safe-area-context:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-safe-area-context:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-safe-area-context:extractDeepLinksForAarRelease
+> Task :react-native-safe-area-context:extractReleaseAnnotations
+> Task :react-native-safe-area-context:mergeReleaseGeneratedProguardFiles
+> Task :react-native-safe-area-context:mergeReleaseConsumerProguardFiles
+> Task :react-native-safe-area-context:mergeReleaseShaders
+> Task :react-native-safe-area-context:compileReleaseShaders NO-SOURCE
+> Task :react-native-safe-area-context:generateReleaseAssets UP-TO-DATE
+> Task :react-native-safe-area-context:packageReleaseAssets
+> Task :react-native-safe-area-context:prepareReleaseArtProfile
+> Task :react-native-safe-area-context:mergeReleaseJavaResource
+> Task :react-native-safe-area-context:syncReleaseLibJars
+> Task :react-native-safe-area-context:bundleReleaseLocalLintAar
+> Task :react-native-screens:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-screens:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-screens:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :expo-modules-core:compileReleaseJavaWithJavac
+> Task :expo-modules-core:bundleLibCompileToJarRelease
+> Task :react-native-reanimated:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :android-storage:compileReleaseKotlin
+> Task :android-storage:compileReleaseJavaWithJavac
+> Task :expo-modules-core:bundleLibRuntimeToJarRelease
+> Task :expo-modules-core:processReleaseJavaRes
+> Task :expo-modules-core:createFullJarRelease
+> Task :react-native-gesture-handler:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :expo-modules-core:generateReleaseLintModel
+> Task :android-storage:generateReleaseLintVitalModel
+> Task :expo-modules-core:configureCMakeRelWithDebInfo[x86]
+> Task :react-native-screens:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :android-storage:bundleLibCompileToJarRelease
+> Task :expo-application:compileReleaseKotlin
+> Task :expo-application:compileReleaseJavaWithJavac
+> Task :expo-application:bundleLibCompileToJarRelease
+> Task :expo-asset:compileReleaseKotlin
+> Task :expo-asset:compileReleaseJavaWithJavac
+> Task :expo-asset:bundleLibCompileToJarRelease
+> Task :expo-background-fetch:compileReleaseKotlin
+> Task :expo-background-fetch:compileReleaseJavaWithJavac
+> Task :expo-background-fetch:bundleLibCompileToJarRelease
+> Task :expo-blur:compileReleaseKotlin
+> Task :expo-blur:compileReleaseJavaWithJavac
+> Task :expo-blur:bundleLibCompileToJarRelease
+> Task :expo-constants:compileReleaseKotlin
+> Task :expo-constants:compileReleaseJavaWithJavac
+> Task :expo-constants:bundleLibCompileToJarRelease
+> Task :expo-dev-client:compileReleaseKotlin NO-SOURCE
+> Task :expo-dev-client:compileReleaseJavaWithJavac
+> Task :expo-dev-client:bundleLibCompileToJarRelease
+> Task :expo-dev-menu-interface:compileReleaseKotlin
+> Task :expo-dev-menu-interface:compileReleaseJavaWithJavac
+> Task :expo-dev-menu-interface:bundleLibCompileToJarRelease
+> Task :expo-json-utils:compileReleaseKotlin
+> Task :expo-json-utils:compileReleaseJavaWithJavac
+> Task :expo-json-utils:bundleLibCompileToJarRelease
+> Task :expo-manifests:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-manifests/android/src/main/java/expo/modules/manifests/core/EmbeddedManifest.kt:19:16 This declaration overrides deprecated member but not marked as deprecated itself. Please add @Deprecated annotation or suppress. See https://youtrack.jetbrains.com/issue/KT-47902 for details
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-manifests/android/src/main/java/expo/modules/manifests/core/EmbeddedManifest.kt:19:86 'getLegacyID(): String' is deprecated. Prefer scopeKey or projectId depending on use case
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-manifests/android/src/main/java/expo/modules/manifests/core/ExpoUpdatesManifest.kt:16:16 This declaration overrides deprecated member but not marked as deprecated itself. Please add @Deprecated annotation or suppress. See https://youtrack.jetbrains.com/issue/KT-47902 for details
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-manifests/android/src/main/java/expo/modules/manifests/core/Manifest.kt:15:12 'getRawJson(): JSONObject' is deprecated. Prefer to use specific field getters
+> Task :expo-manifests:compileReleaseJavaWithJavac
+> Task :expo-manifests:bundleLibCompileToJarRelease
+> Task :expo-updates-interface:compileReleaseKotlin
+> Task :expo-updates-interface:compileReleaseJavaWithJavac
+> Task :expo-updates-interface:bundleLibCompileToJarRelease
+> Task :expo-modules-core:buildCMakeRelWithDebInfo[x86]
+> Task :expo-dev-menu:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-menu/android/src/main/java/com/facebook/react/devsupport/DevMenuSettingsBase.kt:6:27 'PreferenceManager' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-menu/android/src/main/java/com/facebook/react/devsupport/DevMenuSettingsBase.kt:18:51 'PreferenceManager' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-menu/android/src/main/java/com/facebook/react/devsupport/DevMenuSettingsBase.kt:18:69 'getDefaultSharedPreferences(Context!): SharedPreferences!' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-menu/android/src/main/java/com/facebook/react/devsupport/DevMenuSettingsBase.kt:56:16 This declaration overrides deprecated member but not marked as deprecated itself. Please add @Deprecated annotation or suppress. See https://youtrack.jetbrains.com/issue/KT-47902 for details
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-menu/android/src/main/java/expo/modules/devmenu/fab/MovableFloatingActionButton.kt:173:17 'computeBounds(RectF, Boolean): Unit' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-menu/android/src/main/java/expo/modules/devmenu/helpers/DevMenuOkHttpExtension.kt:58:19 'create(MediaType?, String): RequestBody' is deprecated. Moved to extension function. Put the 'content' argument first to fix Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-menu/android/src/main/java/expo/modules/devmenu/modules/DevMenuModule.kt:33:44 Elvis operator (?:) always returns the left operand of non-nullable type ReadableMap
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-menu/android/src/react-native-74/main/expo/modules/devmenu/react/DevMenuPackagerConnectionSettings.kt:16:9 Parameter 'host' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-menu/android/src/release/java/expo/modules/devmenu/DevMenuManager.kt:40:42 Returning type parameter has been inferred to Nothing implicitly. Please specify type arguments explicitly to hide this warning. Nothing can produce an exception at runtime.
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-menu/android/src/release/java/expo/modules/devmenu/DevMenuManager.kt:82:43 The corresponding parameter in the supertype 'DevMenuManagerInterface' is named 'shouldAutoLaunch'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-menu/android/src/release/java/expo/modules/devmenu/DevMenuManager.kt:94:17 Parameter 'context' is never used
+> Task :expo-font:compileReleaseKotlin
+> Task :expo-dev-menu:compileReleaseJavaWithJavac
+> Task :expo-dev-menu:bundleLibCompileToJarRelease
+> Task :expo-font:compileReleaseJavaWithJavac
+> Task :expo-font:bundleLibCompileToJarRelease
+> Task :expo-haptics:compileReleaseKotlin
+> Task :expo-haptics:compileReleaseJavaWithJavac
+> Task :expo-haptics:bundleLibCompileToJarRelease
+> Task :expo-dev-launcher:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/helpers/DevLauncherUpdatesHelper.kt:16:3 Parameter 'context' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/DevLauncherRecentlyOpenedAppsRegistry.kt:32:47 Unchecked cast: MutableMap<Any?, Any?> to MutableMap<String, Any>
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/DevLauncherRecentlyOpenedAppsRegistry.kt:50:27 'getRawJson(): JSONObject' is deprecated. Prefer to use specific field getters
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:37:23 'constructor TaskDescription(String!, Bitmap!, Int)' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:63:61 'FLAG_TRANSLUCENT_STATUS: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:90:33 Variable 'appliedStatusBarStyle' initializer is redundant
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:92:45 'getter for systemUiVisibility: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:95:68 'SYSTEM_UI_FLAG_LIGHT_STATUS_BAR: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:99:67 'SYSTEM_UI_FLAG_LIGHT_STATUS_BAR: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:103:67 'SYSTEM_UI_FLAG_LIGHT_STATUS_BAR: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:107:15 'setter for systemUiVisibility: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:115:59 'FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:116:61 'FLAG_FORCE_NOT_FULLSCREEN: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:118:59 'FLAG_FORCE_NOT_FULLSCREEN: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:119:61 'FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:131:23 'replaceSystemWindowInsets(Int, Int, Int, Int): WindowInsets' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:132:25 'getter for systemWindowInsetLeft: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:134:25 'getter for systemWindowInsetRight: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:135:25 'getter for systemWindowInsetBottom: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:150:15 'setter for statusBarColor: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:160:63 'FLAG_TRANSLUCENT_NAVIGATION: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:161:25 'setter for navigationBarColor: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:171:63 'FLAG_TRANSLUCENT_NAVIGATION: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:175:33 'getter for systemUiVisibility: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:176:33 'SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:177:21 'setter for systemUiVisibility: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:190:29 'getter for systemUiVisibility: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:191:62 'SYSTEM_UI_FLAG_HIDE_NAVIGATION: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:191:101 'SYSTEM_UI_FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:192:63 'SYSTEM_UI_FLAG_HIDE_NAVIGATION: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:192:102 'SYSTEM_UI_FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:192:136 'SYSTEM_UI_FLAG_IMMERSIVE: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:193:70 'SYSTEM_UI_FLAG_HIDE_NAVIGATION: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:193:109 'SYSTEM_UI_FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:193:143 'SYSTEM_UI_FLAG_IMMERSIVE_STICKY: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt:196:17 'setter for systemUiVisibility: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/react/DevLauncherPackagerConnectionSettings.kt:12:9 Parameter 'value' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherController.kt:102:29 Parameter 'context' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherController.kt:102:47 Parameter 'reactHost' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherController.kt:108:67 Parameter 'launcherClass' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherController.kt:113:56 Parameter 'additionalPackages' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherController.kt:113:93 Parameter 'launcherClass' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherController.kt:118:35 Parameter 'reactActivity' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherController.kt:123:27 Parameter 'reactActivity' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherController.kt:123:57 Parameter 'intent' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherPackageDelegate.kt:12:27 Parameter 'reactContext' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherPackageDelegate.kt:13:43 Parameter 'context' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherPackageDelegate.kt:14:45 Parameter 'activityContext' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherPackageDelegate.kt:15:35 Parameter 'activityContext' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/DevLauncherPackageDelegate.kt:16:37 Parameter 'context' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/launcher/DevLauncherReactHost.kt:8:14 Parameter 'application' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/launcher/DevLauncherReactHost.kt:8:40 Parameter 'launcherIp' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/release/java/expo/modules/devlauncher/launcher/DevLauncherReactNativeHost.kt:8:60 Parameter 'launcherIp' is never used
+> Task :expo-dev-launcher:compileReleaseJavaWithJavac
+Note: /home/expo/workingdir/build/mobile/node_modules/expo-dev-launcher/android/src/rn74/main/com/facebook/react/devsupport/NonFinalBridgeDevSupportManager.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+> Task :expo-dev-launcher:bundleLibCompileToJarRelease
+> Task :expo-file-system:compileReleaseKotlin
+> Task :expo-keep-awake:compileReleaseKotlin
+> Task :expo-keep-awake:compileReleaseJavaWithJavac
+> Task :expo-keep-awake:bundleLibCompileToJarRelease
+> Task :expo-file-system:compileReleaseJavaWithJavac
+> Task :expo-file-system:bundleLibCompileToJarRelease
+> Task :expo-linear-gradient:compileReleaseKotlin
+> Task :expo-linking:compileReleaseKotlin
+> Task :expo-linking:compileReleaseJavaWithJavac
+> Task :expo-linking:bundleLibCompileToJarRelease
+> Task :expo-linear-gradient:compileReleaseJavaWithJavac
+> Task :expo-linear-gradient:bundleLibCompileToJarRelease
+> Task :expo-image:kaptGenerateStubsReleaseKotlin
+> Task :expo-image:kaptReleaseKotlin
+Note: [2] Wrote GeneratedAppGlideModule with: [com.github.penfeizhou.animation.glide.GlideAnimationModule, com.bumptech.glide.integration.okhttp3.OkHttpLibraryGlideModule, com.bumptech.glide.integration.avif.AvifGlideModule, expo.modules.image.decodedsource.DecodedModule, expo.modules.image.blurhash.BlurhashModule, expo.modules.image.thumbhash.ThumbhashModule, expo.modules.image.dataurls.Base64Module, expo.modules.image.svg.SVGModule, expo.modules.image.okhttp.ExpoImageOkHttpClientGlideModule]
+> Task :expo-media-library:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-media-library/android/src/main/java/expo/modules/medialibrary/MediaLibraryConstants.kt:96:32 'TAG_ISO_SPEED_RATINGS: String' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-media-library/android/src/main/java/expo/modules/medialibrary/albums/CreateAlbum.kt:27:38 'getEnvDirectoryForAssetType(String?, Boolean): File' is deprecated. It uses deprecated Android method under the hood. See implementation for details.
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-media-library/android/src/main/java/expo/modules/medialibrary/assets/AssetUtils.kt:286:32 'MEDIA_TYPE_PLAYLIST: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-media-library/android/src/main/java/expo/modules/medialibrary/assets/CreateAsset.kt:116:37 'getEnvDirectoryForAssetType(String?, Boolean): File' is deprecated. It uses deprecated Android method under the hood. See implementation for details.
+> Task :expo-media-library:compileReleaseJavaWithJavac
+> Task :expo-media-library:bundleLibCompileToJarRelease
+> Task :expo-secure-store:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/SecureStoreModule.kt:5:27 'PreferenceManager' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/SecureStoreModule.kt:110:9 Variable 'legacyReadFailedWarning' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/SecureStoreModule.kt:247:23 'PreferenceManager' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/SecureStoreModule.kt:247:41 'getDefaultSharedPreferences(Context!): SharedPreferences!' is deprecated. Deprecated in Java
+> Task :expo-secure-store:compileReleaseJavaWithJavac
+> Task :expo-secure-store:bundleLibCompileToJarRelease
+> Task :expo-notifications:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/Utils.kt:41:21 'get(String!): Any?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/categories/ExpoNotificationCategoriesModule.kt:69:40 'getParcelableArrayList(String?): ArrayList<T!>?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/categories/ExpoNotificationCategoriesModule.kt:122:36 'getParcelable(String?): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/debug/DebugLogging.kt:30:23 'get(String!): Any?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/model/RemoteNotificationContent.kt:21:45 'readParcelable(ClassLoader?): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/model/triggers/FirebaseNotificationTrigger.kt:19:12 'readParcelable(ClassLoader?): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/presentation/ExpoNotificationPresentationModule.kt:46:33 'getSerializable(String?): Serializable?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/presentation/ExpoNotificationPresentationModule.kt:57:43 'getParcelableArrayList(String?): ArrayList<T!>?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/presentation/ExpoNotificationPresentationModule.kt:61:33 'getSerializable(String?): Serializable?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/presentation/ExpoNotificationPresentationModule.kt:81:31 'getSerializable(String?): Serializable?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/presentation/ExpoNotificationPresentationModule.kt:95:31 'getSerializable(String?): Serializable?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/presentation/builders/BaseNotificationBuilder.kt:35:100 'constructor Builder(Context)' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/scheduling/NotificationScheduler.kt:51:40 'getParcelableArrayList(String?): ArrayList<T!>?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/scheduling/NotificationScheduler.kt:58:33 'getSerializable(String?): Serializable?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/scheduling/NotificationScheduler.kt:81:35 'getSerializable(String?): Serializable?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/scheduling/NotificationScheduler.kt:128:31 'getSerializable(String?): Serializable?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/scheduling/NotificationScheduler.kt:142:31 'getSerializable(String?): Serializable?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/NotificationsService.kt:480:34 'getParcelable(String?): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/NotificationsService.kt:481:28 'getParcelable(String?): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/NotificationsService.kt:505:33 'getParcelableExtra(String!): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/NotificationsService.kt:506:27 'getParcelableExtra(String!): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/NotificationsService.kt:609:54 'get(String!): Any?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/NotificationsService.kt:676:22 'getParcelable(String?): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/NotificationsService.kt:677:22 'getParcelable(String?): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/NotificationsService.kt:704:14 'getParcelableExtra(String!): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/NotificationsService.kt:734:18 'getParcelableExtra(String!): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/NotificationsService.kt:774:22 'getParcelable(String?): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/delegates/Base64Serialization.kt:26:45 Returning type parameter has been inferred to Nothing implicitly because Nothing is more specific than specified expected type. Please specify type arguments explicitly in accordance with expected type to hide this warning. Nothing can produce an exception at runtime. See KT-36776 for more details.
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/delegates/ExpoHandlingDelegate.kt:63:85 Parameter 'notificationResponse' is never used
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/delegates/ExpoPresentationDelegate.kt:194:70 'priority: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/delegates/ExpoPresentationDelegate.kt:195:41 'vibrate: LongArray!' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/delegates/ExpoPresentationDelegate.kt:196:30 'sound: Uri!' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/delegates/ExpoPresentationDelegate.kt:207:41 'get(String!): Any?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/service/delegates/ExpoPresentationDelegate.kt:210:124 'get(String!): Any?' is deprecated. Deprecated in Java
+> Task :expo-sensors:compileReleaseKotlin
+> Task :expo-modules-core:configureCMakeRelWithDebInfo[x86_64]
+> Task :expo-sensors:compileReleaseJavaWithJavac
+> Task :expo-sensors:bundleLibCompileToJarRelease
+> Task :expo-notifications:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /home/expo/workingdir/build/mobile/node_modules/expo-notifications/android/src/main/java/expo/modules/notifications/notifications/model/NotificationCategory.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+> Task :expo-notifications:bundleLibCompileToJarRelease
+> Task :expo-splash-screen:compileReleaseKotlin
+> Task :expo-splash-screen:compileReleaseJavaWithJavac
+> Task :expo-splash-screen:bundleLibCompileToJarRelease
+> Task :expo-image:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-image/android/src/main/java/expo/modules/image/ExpoImageComponentCallbacks.kt:18:38 'TRIM_MEMORY_RUNNING_CRITICAL: Int' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-image/android/src/main/java/expo/modules/image/ExpoImageViewWrapper.kt:620:85 'with(Activity): RequestManager' is deprecated. Deprecated in Java
+> Task :expo-system-ui:compileReleaseKotlin
+> Task :expo-system-ui:compileReleaseJavaWithJavac
+> Task :expo-system-ui:bundleLibCompileToJarRelease
+> Task :unimodules-app-loader:compileReleaseKotlin NO-SOURCE
+> Task :unimodules-app-loader:compileReleaseJavaWithJavac
+> Task :unimodules-app-loader:bundleLibCompileToJarRelease
+> Task :expo-sqlite:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-sqlite/android/src/main/java/expo/modules/sqlite/NativeDatabase.kt:20:16 This declaration overrides deprecated member but not marked as deprecated itself. Please add @Deprecated annotation or suppress. See https://youtrack.jetbrains.com/issue/KT-47902 for details
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-sqlite/android/src/main/java/expo/modules/sqlite/NativeDatabase.kt:21:11 'deallocate(): Unit' is deprecated. Use sharedObjectDidRelease() instead.
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-sqlite/android/src/main/java/expo/modules/sqlite/NativeStatement.kt:10:16 This declaration overrides deprecated member but not marked as deprecated itself. Please add @Deprecated annotation or suppress. See https://youtrack.jetbrains.com/issue/KT-47902 for details
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-sqlite/android/src/main/java/expo/modules/sqlite/NativeStatement.kt:11:11 'deallocate(): Unit' is deprecated. Use sharedObjectDidRelease() instead.
+> Task :expo-sqlite:compileReleaseJavaWithJavac
+> Task :expo-sqlite:bundleLibCompileToJarRelease
+> Task :expo-task-manager:compileReleaseKotlin
+> Task :expo-image:compileReleaseJavaWithJavac
+> Task :expo-image:bundleLibCompileToJarRelease
+> Task :android-storage:bundleLibRuntimeToJarRelease
+> Task :android-storage:processReleaseJavaRes
+> Task :android-storage:createFullJarRelease
+> Task :android-storage:generateReleaseLintModel
+> Task :expo-application:bundleLibRuntimeToJarRelease
+> Task :expo-application:processReleaseJavaRes
+> Task :expo-application:createFullJarRelease
+> Task :expo-application:generateReleaseLintModel
+> Task :expo-asset:bundleLibRuntimeToJarRelease
+> Task :expo-asset:processReleaseJavaRes
+> Task :expo-asset:createFullJarRelease
+> Task :expo-asset:generateReleaseLintModel
+> Task :expo-background-fetch:bundleLibRuntimeToJarRelease
+> Task :expo-background-fetch:processReleaseJavaRes
+> Task :expo-background-fetch:createFullJarRelease
+> Task :expo-background-fetch:generateReleaseLintModel
+> Task :expo-blur:bundleLibRuntimeToJarRelease
+> Task :expo-blur:processReleaseJavaRes
+> Task :expo-task-manager:compileReleaseJavaWithJavac
+> Task :expo-blur:createFullJarRelease
+> Task :expo-task-manager:bundleLibCompileToJarRelease
+> Task :expo-constants:bundleLibRuntimeToJarRelease
+> Task :expo-constants:processReleaseJavaRes
+Note: /home/expo/workingdir/build/mobile/node_modules/expo-task-manager/android/src/main/java/expo/modules/taskManager/TaskService.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+> Task :expo-constants:createFullJarRelease
+> Task :expo-blur:generateReleaseLintModel
+> Task :expo-dev-client:bundleLibRuntimeToJarRelease
+> Task :expo-dev-client:processReleaseJavaRes NO-SOURCE
+> Task :expo-dev-client:createFullJarRelease
+> Task :expo-constants:generateReleaseLintModel
+> Task :expo-dev-client:generateReleaseLintModel
+> Task :expo-dev-launcher:bundleLibRuntimeToJarRelease
+> Task :expo-dev-launcher:processReleaseJavaRes
+> Task :expo-dev-launcher:createFullJarRelease
+> Task :expo-dev-menu:bundleLibRuntimeToJarRelease
+> Task :expo-dev-menu-interface:bundleLibRuntimeToJarRelease
+> Task :expo-dev-menu:processReleaseJavaRes
+> Task :expo-dev-menu-interface:processReleaseJavaRes
+> Task :expo-dev-menu-interface:createFullJarRelease
+> Task :expo-dev-menu:createFullJarRelease
+> Task :expo-json-utils:bundleLibRuntimeToJarRelease
+> Task :expo-web-browser:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-web-browser/android/src/main/java/expo/modules/webbrowser/WebBrowserModule.kt:112:15 'setToolbarColor(Int): CustomTabsIntent.Builder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-web-browser/android/src/main/java/expo/modules/webbrowser/WebBrowserModule.kt:117:15 'setSecondaryToolbarColor(Int): CustomTabsIntent.Builder' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo-web-browser/android/src/main/java/expo/modules/webbrowser/WebBrowserModule.kt:123:15 'addDefaultShareMenuItem(): CustomTabsIntent.Builder' is deprecated. Deprecated in Java
+> Task :expo-json-utils:processReleaseJavaRes
+> Task :expo-json-utils:createFullJarRelease
+> Task :expo-dev-menu-interface:generateReleaseLintModel
+> Task :expo-manifests:bundleLibRuntimeToJarRelease
+> Task :expo-json-utils:generateReleaseLintModel
+> Task :expo-manifests:processReleaseJavaRes
+> Task :expo-updates-interface:bundleLibRuntimeToJarRelease
+> Task :expo-manifests:createFullJarRelease
+> Task :expo-updates-interface:processReleaseJavaRes
+> Task :expo-updates-interface:createFullJarRelease
+> Task :expo-manifests:generateReleaseLintModel
+> Task :expo-updates-interface:generateReleaseLintModel
+> Task :expo-file-system:bundleLibRuntimeToJarRelease
+> Task :expo-file-system:processReleaseJavaRes
+> Task :expo-file-system:createFullJarRelease
+> Task :expo-web-browser:compileReleaseJavaWithJavac
+> Task :expo-web-browser:bundleLibCompileToJarRelease
+> Task :expo-dev-menu:generateReleaseLintModel
+> Task :expo-file-system:generateReleaseLintModel
+> Task :expo-dev-launcher:generateReleaseLintModel
+> Task :expo-font:processReleaseJavaRes
+> Task :expo-font:generateReleaseLintModel
+> Task :expo-font:bundleLibRuntimeToJarRelease
+> Task :expo-haptics:bundleLibRuntimeToJarRelease
+> Task :expo-font:createFullJarRelease
+> Task :expo-haptics:processReleaseJavaRes
+> Task :expo-haptics:createFullJarRelease
+> Task :expo-image:bundleLibRuntimeToJarRelease
+> Task :expo-haptics:generateReleaseLintModel
+> Task :expo-keep-awake:bundleLibRuntimeToJarRelease
+> Task :expo-image:processReleaseJavaRes
+> Task :expo-keep-awake:processReleaseJavaRes
+> Task :expo-image:createFullJarRelease
+> Task :expo-keep-awake:createFullJarRelease
+> Task :expo-keep-awake:generateReleaseLintModel
+> Task :expo-linear-gradient:bundleLibRuntimeToJarRelease
+> Task :expo-linear-gradient:processReleaseJavaRes
+> Task :expo-linear-gradient:createFullJarRelease
+> Task :expo-linear-gradient:generateReleaseLintModel
+> Task :expo-linking:bundleLibRuntimeToJarRelease
+> Task :expo-linking:processReleaseJavaRes
+> Task :expo-linking:createFullJarRelease
+> Task :expo-linking:generateReleaseLintModel
+> Task :expo-media-library:bundleLibRuntimeToJarRelease
+> Task :expo-image:generateReleaseLintModel
+> Task :expo-media-library:processReleaseJavaRes
+> Task :expo-media-library:createFullJarRelease
+> Task :expo-notifications:bundleLibRuntimeToJarRelease
+> Task :expo-notifications:processReleaseJavaRes
+> Task :expo-notifications:createFullJarRelease
+> Task :expo-media-library:generateReleaseLintModel
+> Task :expo-secure-store:bundleLibRuntimeToJarRelease
+> Task :expo-secure-store:processReleaseJavaRes
+> Task :expo-secure-store:createFullJarRelease
+> Task :expo-secure-store:generateReleaseLintModel
+> Task :expo-sensors:bundleLibRuntimeToJarRelease
+> Task :expo-sensors:processReleaseJavaRes
+> Task :expo-sensors:createFullJarRelease
+> Task :expo-sensors:generateReleaseLintModel
+> Task :expo-splash-screen:bundleLibRuntimeToJarRelease
+> Task :expo-splash-screen:processReleaseJavaRes
+> Task :expo-splash-screen:createFullJarRelease
+> Task :expo-splash-screen:generateReleaseLintModel
+> Task :expo-notifications:generateReleaseLintModel
+> Task :expo-system-ui:bundleLibRuntimeToJarRelease
+> Task :expo-sqlite:bundleLibRuntimeToJarRelease
+> Task :expo-sqlite:processReleaseJavaRes
+> Task :expo-system-ui:processReleaseJavaRes
+> Task :expo-system-ui:createFullJarRelease
+> Task :expo-sqlite:createFullJarRelease
+> Task :expo-system-ui:generateReleaseLintModel
+> Task :expo-task-manager:bundleLibRuntimeToJarRelease
+> Task :expo-sqlite:generateReleaseLintModel
+> Task :unimodules-app-loader:bundleLibRuntimeToJarRelease
+> Task :unimodules-app-loader:processReleaseJavaRes NO-SOURCE
+> Task :expo-task-manager:processReleaseJavaRes
+> Task :unimodules-app-loader:createFullJarRelease
+> Task :expo-task-manager:createFullJarRelease
+> Task :expo-web-browser:bundleLibRuntimeToJarRelease
+> Task :expo-web-browser:processReleaseJavaRes
+> Task :unimodules-app-loader:generateReleaseLintModel
+> Task :expo-web-browser:createFullJarRelease
+> Task :expo-task-manager:generateReleaseLintModel
+> Task :expo-web-browser:generateReleaseLintModel
+> Task :react-native-gesture-handler:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :expo:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:163:34 'constructor ReactDelegate(Activity!, ReactNativeHost!, String?, Bundle?)' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeResponse.kt:40:16 This declaration overrides deprecated member but not marked as deprecated itself. Please add @Deprecated annotation or suppress. See https://youtrack.jetbrains.com/issue/KT-47902 for details
+w: file:///home/expo/workingdir/build/mobile/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeResponse.kt:42:11 'deallocate(): Unit' is deprecated. Use sharedObjectDidRelease() instead.
+> Task :react-native-gesture-handler:configureCMakeRelWithDebInfo[x86]
+> Task :expo:compileReleaseJavaWithJavac
+> Task :expo:bundleLibCompileToJarRelease
+> Task :expo:bundleLibRuntimeToJarRelease
+> Task :expo:processReleaseJavaRes
+> Task :expo:createFullJarRelease
+> Task :expo:generateReleaseLintModel
+> Task :expo:extractReleaseAnnotations
+> Task :expo:mergeReleaseGeneratedProguardFiles
+> Task :expo:mergeReleaseConsumerProguardFiles
+> Task :expo:mergeReleaseJavaResource
+> Task :expo:syncReleaseLibJars
+> Task :expo:bundleReleaseLocalLintAar
+> Task :react-native-gesture-handler:configureCMakeRelWithDebInfo[x86_64]
+> Task :react-native-gesture-handler:mergeReleaseGeneratedProguardFiles
+> Task :react-native-gesture-handler:mergeReleaseConsumerProguardFiles
+> Task :react-native-gesture-handler:mergeReleaseShaders
+> Task :react-native-gesture-handler:compileReleaseShaders NO-SOURCE
+> Task :react-native-gesture-handler:generateReleaseAssets UP-TO-DATE
+> Task :react-native-gesture-handler:packageReleaseAssets
+> Task :react-native-gesture-handler:prepareReleaseArtProfile
+> Task :react-native-gesture-handler:mergeReleaseJavaResource
+> Task :react-native-gesture-handler:syncReleaseLibJars
+> Task :react-native-async-storage_async-storage:mergeReleaseJniLibFolders
+> Task :react-native-async-storage_async-storage:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-async-storage_async-storage:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-async-storage_async-storage:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-async-storage_async-storage:extractDeepLinksForAarRelease
+> Task :react-native-async-storage_async-storage:extractReleaseAnnotations
+> Task :react-native-async-storage_async-storage:mergeReleaseGeneratedProguardFiles
+> Task :react-native-async-storage_async-storage:mergeReleaseConsumerProguardFiles
+> Task :react-native-async-storage_async-storage:mergeReleaseShaders
+> Task :react-native-async-storage_async-storage:compileReleaseShaders NO-SOURCE
+> Task :react-native-async-storage_async-storage:generateReleaseAssets UP-TO-DATE
+> Task :react-native-async-storage_async-storage:packageReleaseAssets
+> Task :react-native-async-storage_async-storage:prepareReleaseArtProfile
+> Task :react-native-async-storage_async-storage:mergeReleaseJavaResource
+> Task :react-native-async-storage_async-storage:syncReleaseLibJars
+> Task :react-native-async-storage_async-storage:bundleReleaseLocalLintAar
+> Task :react-native-screens:configureCMakeRelWithDebInfo[x86]
+> Task :react-native-mmkv:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :expo-modules-core:buildCMakeRelWithDebInfo[x86_64]
+> Task :react-native-reanimated:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-screens:buildCMakeRelWithDebInfo[x86]
+> Task :react-native-mmkv:buildCMakeRelWithDebInfo[arm64-v8a]
+C/C++: ninja: Entering directory `/home/expo/workingdir/build/mobile/node_modules/react-native-mmkv/android/.cxx/RelWithDebInfo/391a1i3m/arm64-v8a'
+C/C++: /home/expo/workingdir/build/mobile/node_modules/react-native-mmkv/MMKV/Core/MMKV_IO.cpp:1625:29: warning: 'const' qualifier on reference type 'MMKVKey_t' (aka 'const basic_string<char> &') has no effect [-Wignored-reference-qualifiers]
+C/C++:     auto packKeyValue = [&](const MMKVKey_t &key, const MMBuffer &value) {
+C/C++:                             ^~~~~~
+C/C++: /home/expo/workingdir/build/mobile/node_modules/react-native-mmkv/MMKV/Core/MMKV_IO.cpp:1683:29: warning: 'const' qualifier on reference type 'MMKVKey_t' (aka 'const basic_string<char> &') has no effect [-Wignored-reference-qualifiers]
+C/C++:     auto packKeyValue = [&](const MMKVKey_t &key, const MMBuffer &value) {
+C/C++:                             ^~~~~~
+C/C++: 2 warnings generated.
+> Task :react-native-screens:configureCMakeRelWithDebInfo[x86_64]
+> Task :react-native-mmkv:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-mmkv:buildCMakeRelWithDebInfo[armeabi-v7a]
+C/C++: ninja: Entering directory `/home/expo/workingdir/build/mobile/node_modules/react-native-mmkv/android/.cxx/RelWithDebInfo/391a1i3m/armeabi-v7a'
+C/C++: /home/expo/workingdir/build/mobile/node_modules/react-native-mmkv/MMKV/Core/MMKV_IO.cpp:1625:29: warning: 'const' qualifier on reference type 'MMKVKey_t' (aka 'const basic_string<char> &') has no effect [-Wignored-reference-qualifiers]
+C/C++:     auto packKeyValue = [&](const MMKVKey_t &key, const MMBuffer &value) {
+C/C++:                             ^~~~~~
+C/C++: /home/expo/workingdir/build/mobile/node_modules/react-native-mmkv/MMKV/Core/MMKV_IO.cpp:1683:29: warning: 'const' qualifier on reference type 'MMKVKey_t' (aka 'const basic_string<char> &') has no effect [-Wignored-reference-qualifiers]
+C/C++:     auto packKeyValue = [&](const MMKVKey_t &key, const MMBuffer &value) {
+C/C++:                             ^~~~~~
+C/C++: 2 warnings generated.
+> Task :react-native-screens:buildCMakeRelWithDebInfo[x86_64]
+> Task :react-native-screens:mergeReleaseJniLibFolders
+> Task :react-native-screens:mergeReleaseNativeLibs
+> Task :react-native-screens:stripReleaseDebugSymbols
+> Task :react-native-screens:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-screens:extractDeepLinksForAarRelease
+> Task :react-native-screens:extractReleaseAnnotations
+> Task :react-native-screens:mergeReleaseGeneratedProguardFiles
+> Task :react-native-screens:mergeReleaseConsumerProguardFiles
+> Task :react-native-screens:mergeReleaseShaders
+> Task :react-native-screens:compileReleaseShaders NO-SOURCE
+> Task :react-native-screens:generateReleaseAssets UP-TO-DATE
+> Task :react-native-screens:packageReleaseAssets
+> Task :react-native-screens:prepareReleaseArtProfile
+> Task :react-native-screens:mergeReleaseJavaResource
+> Task :react-native-screens:syncReleaseLibJars
+> Task :react-native-screens:bundleReleaseLocalLintAar
+> Task :react-native-purchases:mergeReleaseJniLibFolders
+> Task :react-native-purchases:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-purchases:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-purchases:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-purchases:extractDeepLinksForAarRelease
+> Task :react-native-purchases:extractReleaseAnnotations
+> Task :react-native-purchases:mergeReleaseGeneratedProguardFiles
+> Task :react-native-purchases:mergeReleaseConsumerProguardFiles
+> Task :react-native-purchases:mergeReleaseShaders
+> Task :react-native-purchases:compileReleaseShaders NO-SOURCE
+> Task :react-native-purchases:generateReleaseAssets UP-TO-DATE
+> Task :react-native-purchases:packageReleaseAssets
+> Task :react-native-purchases:prepareReleaseArtProfile
+> Task :react-native-purchases:mergeReleaseJavaResource
+> Task :react-native-purchases:syncReleaseLibJars
+> Task :react-native-purchases:bundleReleaseLocalLintAar
+> Task :react-native-svg:mergeReleaseJniLibFolders
+> Task :react-native-svg:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-svg:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-svg:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-svg:extractDeepLinksForAarRelease
+> Task :react-native-svg:extractReleaseAnnotations
+> Task :react-native-svg:mergeReleaseGeneratedProguardFiles
+> Task :react-native-svg:mergeReleaseConsumerProguardFiles
+> Task :react-native-svg:mergeReleaseShaders
+> Task :react-native-svg:compileReleaseShaders NO-SOURCE
+> Task :react-native-svg:generateReleaseAssets UP-TO-DATE
+> Task :react-native-svg:packageReleaseAssets
+> Task :react-native-svg:prepareReleaseArtProfile
+> Task :react-native-svg:mergeReleaseJavaResource
+> Task :react-native-svg:syncReleaseLibJars
+> Task :react-native-svg:bundleReleaseLocalLintAar
+> Task :react-native-worklets-core:configureCMakeRelWithDebInfo[arm64-v8a]
+FAILED
+C/C++: CMake Error at CMakeLists.txt:28 (add_library):
+C/C++:   Target "rnworklets" links to target "ReactAndroid::folly_runtime" but the
+C/C++:   target was not found.  Perhaps a find_package() call is missing for an
+C/C++:   IMPORTED target, or an ALIAS target is missing?
+C/C++: CMake Error at CMakeLists.txt:28 (add_library):
+C/C++:   Target "rnworklets" links to target "ReactAndroid::glog" but the target was
+C/C++:   not found.  Perhaps a find_package() call is missing for an IMPORTED
+C/C++:   target, or an ALIAS target is missing?
+C/C++: CMake Error at CMakeLists.txt:28 (add_library):
+C/C++:   Target "rnworklets" links to target "ReactAndroid::reactnativejni" but the
+C/C++:   target was not found.  Perhaps a find_package() call is missing for an
+C/C++:   IMPORTED target, or an ALIAS target is missing?
+C/C++: CMake Generate step failed.  Build files cannot be regenerated correctly.
+> Task :react-native-mmkv:configureCMakeRelWithDebInfo[x86]
+FAILURE: Build failed with an exception.
+* What went wrong:
+Execution failed for task ':react-native-worklets-core:configureCMakeRelWithDebInfo[arm64-v8a]'.
+> [CXX1429] error when building with cmake using /home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/CMakeLists.txt: -- The C compiler identification is Clang 17.0.2
+  -- The CXX compiler identification is Clang 17.0.2
+  -- Detecting C compiler ABI info
+  -- Detecting C compiler ABI info - done
+  -- Check for working C compiler: /home/expo/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang - skipped
+  -- Detecting C compile features
+  -- Detecting C compile features - done
+  -- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+  -- Check for working CXX compiler: /home/expo/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ - skipped
+  -- Detecting CXX compile features
+  -- Detecting CXX compile features - done
+  -- Configuring done
+  -- Generating done
+  
+  C++ build system [configure] failed while executing:
+      /home/expo/Android/Sdk/cmake/3.22.1/bin/cmake \
+        -H/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android \
+        -DCMAKE_SYSTEM_NAME=Android \
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+        -DCMAKE_SYSTEM_VERSION=24 \
+        -DANDROID_PLATFORM=android-24 \
+        -DANDROID_ABI=arm64-v8a \
+        -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a \
+        -DANDROID_NDK=/home/expo/Android/Sdk/ndk/26.1.10909125 \
+        -DCMAKE_ANDROID_NDK=/home/expo/Android/Sdk/ndk/26.1.10909125 \
+        -DCMAKE_TOOLCHAIN_FILE=/home/expo/Android/Sdk/ndk/26.1.10909125/build/cmake/android.toolchain.cmake \
+        -DCMAKE_MAKE_PROGRAM=/home/expo/Android/Sdk/cmake/3.22.1/bin/ninja \
+        -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/build/intermediates/cxx/RelWithDebInfo/6h6e6552/obj/arm64-v8a \
+        -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/build/intermediates/cxx/RelWithDebInfo/6h6e6552/obj/arm64-v8a \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_FIND_ROOT_PATH=/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/.cxx/RelWithDebInfo/6h6e6552/prefab/arm64-v8a/prefab \
+        -B/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/.cxx/RelWithDebInfo/6h6e6552/arm64-v8a \
+        -GNinja \
+        -DANDROID_STL=c++_shared \
+        -DANDROID_TOOLCHAIN=clang \
+        -DREACT_NATIVE_DIR=/home/expo/workingdir/build/mobile/node_modules/react-native \
+        -DJS_RUNTIME=hermes \
+        -DHERMES_ENABLE_DEBUGGER=0
+    from /home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android
+  CMake Error at CMakeLists.txt:28 (add_library):
+    Target "rnworklets" links to target "ReactAndroid::folly_runtime" but the
+    target was not found.  Perhaps a find_package() call is missing for an
+    IMPORTED target, or an ALIAS target is missing?
+  
+  
+  CMake Error at CMakeLists.txt:28 (add_library):
+    Target "rnworklets" links to target "ReactAndroid::glog" but the target was
+    not found.  Perhaps a find_package() call is missing for an IMPORTED
+    target, or an ALIAS target is missing?
+  
+  
+  CMake Error at CMakeLists.txt:28 (add_library):
+    Target "rnworklets" links to target "ReactAndroid::reactnativejni" but the
+    target was not found.  Perhaps a find_package() call is missing for an
+    IMPORTED target, or an ALIAS target is missing?
+  
+  
+  CMake Generate step failed.  Build files cannot be regenerated correctly. : com.android.ide.common.process.ProcessException: -- The C compiler identification is Clang 17.0.2
+  -- The CXX compiler identification is Clang 17.0.2
+  -- Detecting C compiler ABI info
+  -- Detecting C compiler ABI info - done
+  -- Check for working C compiler: /home/expo/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang - skipped
+  -- Detecting C compile features
+  -- Detecting C compile features - done
+  -- Detecting CXX compiler ABI info
+  -- Detecting CXX compiler ABI info - done
+  -- Check for working CXX compiler: /home/expo/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ - skipped
+  -- Detecting CXX compile features
+  -- Detecting CXX compile features - done
+  -- Configuring done
+  -- Generating done
+  
+  C++ build system [configure] failed while executing:
+      /home/expo/Android/Sdk/cmake/3.22.1/bin/cmake \
+        -H/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android \
+        -DCMAKE_SYSTEM_NAME=Android \
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+        -DCMAKE_SYSTEM_VERSION=24 \
+        -DANDROID_PLATFORM=android-24 \
+        -DANDROID_ABI=arm64-v8a \
+        -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a \
+        -DANDROID_NDK=/home/expo/Android/Sdk/ndk/26.1.10909125 \
+        -DCMAKE_ANDROID_NDK=/home/expo/Android/Sdk/ndk/26.1.10909125 \
+        -DCMAKE_TOOLCHAIN_FILE=/home/expo/Android/Sdk/ndk/26.1.10909125/build/cmake/android.toolchain.cmake \
+        -DCMAKE_MAKE_PROGRAM=/home/expo/Android/Sdk/cmake/3.22.1/bin/ninja \
+        -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/build/intermediates/cxx/RelWithDebInfo/6h6e6552/obj/arm64-v8a \
+        -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/build/intermediates/cxx/RelWithDebInfo/6h6e6552/obj/arm64-v8a \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_FIND_ROOT_PATH=/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/.cxx/RelWithDebInfo/6h6e6552/prefab/arm64-v8a/prefab \
+        -B/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/.cxx/RelWithDebInfo/6h6e6552/arm64-v8a \
+        -GNinja \
+        -DANDROID_STL=c++_shared \
+        -DANDROID_TOOLCHAIN=clang \
+        -DREACT_NATIVE_DIR=/home/expo/workingdir/build/mobile/node_modules/react-native \
+        -DJS_RUNTIME=hermes \
+        -DHERMES_ENABLE_DEBUGGER=0
+    from /home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android
+  CMake Error at CMakeLists.txt:28 (add_library):
+    Target "rnworklets" links to target "ReactAndroid::folly_runtime" but the
+    target was not found.  Perhaps a find_package() call is missing for an
+    IMPORTED target, or an ALIAS target is missing?
+  
+  
+  CMake Error at CMakeLists.txt:28 (add_library):
+    Target "rnworklets" links to target "ReactAndroid::glog" but the target was
+    not found.  Perhaps a find_package() call is missing for an IMPORTED
+target, or an ALIAS target is missing?
+  
+  
+  CMake Error at CMakeLists.txt:28 (add_library):
+    Target "rnworklets" links to target "ReactAndroid::reactnativejni" but the
+    target was not found.  Perhaps a find_package() call is missing for an
+    IMPORTED target, or an ALIAS target is missing?
+  
+  
+  CMake Generate step failed.  Build files cannot be regenerated correctly.
+  	at com.android.build.gradle.internal.cxx.process.ExecuteProcessKt.execute(ExecuteProcess.kt:288)
+  	at com.android.build.gradle.internal.cxx.process.ExecuteProcessKt$executeProcess$1.invoke(ExecuteProcess.kt:108)
+  	at com.android.build.gradle.internal.cxx.process.ExecuteProcessKt$executeProcess$1.invoke(ExecuteProcess.kt:106)
+  	at com.android.build.gradle.internal.cxx.timing.TimingEnvironmentKt.time(TimingEnvironment.kt:32)
+  	at com.android.build.gradle.internal.cxx.process.ExecuteProcessKt.executeProcess(ExecuteProcess.kt:106)
+  	at com.android.build.gradle.internal.cxx.process.ExecuteProcessKt.executeProcess$default(ExecuteProcess.kt:85)
+  	at com.android.build.gradle.tasks.CmakeQueryMetadataGenerator.executeProcess(CmakeFileApiMetadataGenerator.kt:59)
+  	at com.android.build.gradle.tasks.ExternalNativeJsonGenerator$configureOneAbi$1$1$3.invoke(ExternalNativeJsonGenerator.kt:247)
+  	at com.android.build.gradle.tasks.ExternalNativeJsonGenerator$configureOneAbi$1$1$3.invoke(ExternalNativeJsonGenerator.kt:247)
+  	at com.android.build.gradle.internal.cxx.timing.TimingEnvironmentKt.time(TimingEnvironment.kt:32)
+  	at com.android.build.gradle.tasks.ExternalNativeJsonGenerator.configureOneAbi(ExternalNativeJsonGenerator.kt:247)
+  	at com.android.build.gradle.tasks.ExternalNativeJsonGenerator.configure(ExternalNativeJsonGenerator.kt:113)
+  	at com.android.build.gradle.tasks.ExternalNativeBuildJsonTask.doTaskAction(ExternalNativeBuildJsonTask.kt:89)
+  	at com.android.build.gradle.internal.tasks.UnsafeOutputsTask$taskAction$$inlined$recordTaskAction$1.invoke(BaseTask.kt:66)
+  	at com.android.build.gradle.internal.tasks.Blocks.recordSpan(Blocks.java:51)
+  	at com.android.build.gradle.internal.tasks.UnsafeOutputsTask.taskAction(UnsafeOutputsTask.kt:81)
+  	at jdk.internal.reflect.GeneratedMethodAccessor1080.invoke(Unknown Source)
+  	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+  	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+  	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
+  	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.doExecute(StandardTaskAction.java:58)
+  	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:51)
+  	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:29)
+  	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:244)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+  	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:229)
+  	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:212)
+  	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:195)
+  	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:162)
+  	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
+  	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
+  	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
+  	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+  	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
+  	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
+  	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:42)
+  	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:75)
+  	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+  	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:50)
+  	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:28)
+  	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:67)
+  	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:37)
+  	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:61)
+  	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
+  	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:69)
+  	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:46)
+  	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:40)
+  	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:29)
+  	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
+  	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$1(BuildCacheStep.java:75)
+  	at org.gradle.internal.Either$Right.fold(Either.java:175)
+  	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
+  	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:73)
+  	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:48)
+  	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:46)
+  	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:35)
+  	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:75)
+  	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:53)
+  	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+  	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:53)
+  	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:35)
+  	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+  	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+  	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:49)
+  	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:27)
+  	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:71)
+  	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:39)
+  	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:65)
+  	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:36)
+  	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:107)
+  	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:56)
+  	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
+  	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
+  	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.executeWithNonEmptySources(AbstractSkipEmptyWorkStep.java:125)
+  	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:56)
+  	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:36)
+  	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+  	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:36)
+  	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:23)
+  	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:75)
+  	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:41)
+  	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$execute$0(AssignMutableWorkspaceStep.java:35)
+  	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:289)
+  	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:31)
+  	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:22)
+  	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
+  	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+  	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+  	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+  	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+  	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+  	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+  	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+  	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
+  	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
+  	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:61)
+  	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:127)
+  	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+  	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+  	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+  	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+  	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+  	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+  	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+  	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+  	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+  	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+  	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+  	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+  	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+  	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+  	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+  	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+  	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+  	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+  	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+  	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+  	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+  	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+  	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+  	at java.base/java.lang.Thread.run(Thread.java:840)
+  Caused by: com.android.ide.common.process.ProcessException: Error while executing process /home/expo/Android/Sdk/cmake/3.22.1/bin/cmake with arguments {-H/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android -DCMAKE_SYSTEM_NAME=Android -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_SYSTEM_VERSION=24 -DANDROID_PLATFORM=android-24 -DANDROID_ABI=arm64-v8a -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a -DANDROID_NDK=/home/expo/Android/Sdk/ndk/26.1.10909125 -DCMAKE_ANDROID_NDK=/home/expo/Android/Sdk/ndk/26.1.10909125 -DCMAKE_TOOLCHAIN_FILE=/home/expo/Android/Sdk/ndk/26.1.10909125/build/cmake/android.toolchain.cmake -DCMAKE_MAKE_PROGRAM=/home/expo/Android/Sdk/cmake/3.22.1/bin/ninja -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/build/intermediates/cxx/RelWithDebInfo/6h6e6552/obj/arm64-v8a -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/build/intermediates/cxx/RelWithDebInfo/6h6e6552/obj/arm64-v8a -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_FIND_ROOT_PATH=/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/.cxx/RelWithDebInfo/6h6e6552/prefab/arm64-v8a/prefab -B/home/expo/workingdir/build/mobile/node_modules/react-native-worklets-core/android/.cxx/RelWithDebInfo/6h6e6552/arm64-v8a -GNinja -DANDROID_STL=c++_shared -DANDROID_TOOLCHAIN=clang -DREACT_NATIVE_DIR=/home/expo/workingdir/build/mobile/node_modules/react-native -DJS_RUNTIME=hermes -DHERMES_ENABLE_DEBUGGER=0}
+  	at com.android.build.gradle.internal.process.GradleProcessResult.buildProcessException(GradleProcessResult.java:73)
+  	at com.android.build.gradle.internal.process.GradleProcessResult.assertNormalExitValue(GradleProcessResult.java:48)
+  	at com.android.build.gradle.internal.cxx.process.ExecuteProcessKt.execute(ExecuteProcess.kt:277)
+  	... 140 more
+  Caused by: org.gradle.process.internal.ExecException: Process 'command '/home/expo/Android/Sdk/cmake/3.22.1/bin/cmake'' finished with non-zero exit value 1
+  	at org.gradle.process.internal.DefaultExecHandle$ExecResultImpl.assertNormalExitValue(DefaultExecHandle.java:442)
+  	at com.android.build.gradle.internal.process.GradleProcessResult.assertNormalExitValue(GradleProcessResult.java:46)
+  	... 141 more
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+BUILD FAILED in 8m 12s
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+1068 actionable tasks: 1068 executed
+See the profiling report at: file:///home/expo/workingdir/build/mobile/android/build/reports/profile/profile-2026-10-05-06-22-08.html
+A fine-grained performance profile is available: use the --scan option.
+Error: Gradle build failed with unknown error. See logs for the "Run gradlew" phase for more information.
+Fail job
+
+< 1s
+
+
+Build failed: Gradle build failed with unknown error. See logs for the "Run gradlew" phase for more information.

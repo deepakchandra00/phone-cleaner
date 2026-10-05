@@ -414,7 +414,7 @@ function AppRow({ app, delay }: { app: AppItem; delay: number }) {
             className="w-11 h-11 rounded-xl items-center justify-center"
             style={{ backgroundColor: `${CategoryColors.apps}20` }}
           >
-            <Icon name={app.iconUri as IconName} size={22} color={CategoryColors.apps} />
+            <Icon name={(app.iconUri as IconName) || "apps"} size={22} color={CategoryColors.apps} />
           </View>
           <View className="flex-1 min-w-0">
             <Text className="text-foreground text-sm font-semibold" numberOfLines={1}>

@@ -54,6 +54,15 @@ export const useAppStore = create<AppState>((set, get) => ({
         summary.freeBytes = summary.totalBytes - summary.usedBytes;
         summary.usedPercent = summary.totalBytes > 0 ? Math.round((summary.usedBytes / summary.totalBytes) * 100) : 0;
       }
+
+      // If we have a scan result, merge real per-category bytes + cleanable
+      const existing = get().scanResult;
+      if (existing) {
+        summary.cleanableBytes = existing.totalCleanableBytes;
+        // Replace estimated categories with real scanned ones
+        summary.categories = existing.categories;
+      }
+
       set({ storage: summary });
     } catch (e) {
       console.warn("[useAppStore] loadStorage error:", e);
