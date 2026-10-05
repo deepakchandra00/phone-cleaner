@@ -1,6 +1,9 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library/legacy";
 import { AndroidStorage, HashWorker } from "android-storage";
+import { StorageIndexService } from "@/db/StorageIndexService";
+import { DeleteCoordinator } from "@/services/DeleteCoordinator";
+import type { StorageItem, StorageCategory, StorageSource, WhatsAppType } from "@/db/schema";
 import type {
   AppItem,
   CategorySummary,
@@ -8,6 +11,7 @@ import type {
   ScannedFile,
   ScanResult,
   StorageSummary,
+  CategoryKey,
 } from "./types";
 import { getStorageSummary as getMockStorageSummary, buildScanResult as buildMockScanResult } from "./mockData";
 
@@ -15,81 +19,130 @@ const GB = 1024 ** 3;
 const MB = 1024 ** 2;
 
 // ──────────────────────────────────────────────────────────────────────────
-// STORAGE SUMMARY
+// STORAGE SUMMARY (SQLITE-DRIVEN)
 // ──────────────────────────────────────────────────────────────────────────
 
+const CATEGORY_DISPLAY_LABELS: Record<string, string> = {
+  photos: "Photos",
+  videos: "Videos",
+  apps: "Apps",
+  audio: "Audio",
+  documents: "Documents",
+  downloads: "Downloads & Files",
+  junk: "Junk & Cache",
+  duplicates: "Duplicate photos",
+  whatsapp: "WhatsApp media",
+  apks: "Installation packages",
+  other: "Other files",
+};
+
 /**
- * Returns real on-device storage summary.
- * Tries the native AndroidStorage module first (most accurate — uses
- * StorageManager/StatFs), then falls back to expo-file-system, then to mock.
+ * Returns real on-device storage summary backed by Android StatFs and SQLite.
+ * Zero fake estimates, zero synthetic percentages.
  */
 export async function getRealStorageSummary(): Promise<StorageSummary> {
-  // 1. Try native module
+  let totalBytes = 0;
+  let usedBytes = 0;
+  let freeBytes = 0;
+
+  // 1. Try native module StatFs
   try {
     const native = AndroidStorage.getStorageStats();
     if (native && native.totalBytes > 0) {
-      return buildSummaryFromBytes(native.totalBytes, native.usedBytes, native.freeBytes);
+      totalBytes = native.totalBytes;
+      usedBytes = native.usedBytes;
+      freeBytes = native.freeBytes;
     }
   } catch {
-    // Native module not available (dev client not built yet, or iOS)
+    // Native module not available
   }
 
   // 2. Fall back to FileSystem
-  try {
-    const totalBytes = await FileSystem.getTotalDiskCapacityAsync();
-    const freeBytes = await FileSystem.getFreeDiskStorageAsync();
-    if (totalBytes > 0) {
-      return buildSummaryFromBytes(totalBytes, totalBytes - freeBytes, freeBytes);
+  if (totalBytes === 0) {
+    try {
+      totalBytes = await FileSystem.getTotalDiskCapacityAsync();
+      freeBytes = await FileSystem.getFreeDiskStorageAsync();
+      usedBytes = Math.max(0, totalBytes - freeBytes);
+    } catch (err) {
+      console.warn("[realScanner] FileSystem capacity error:", err);
     }
-  } catch (err) {
-    console.warn("[realScanner] FileSystem capacity error:", err);
   }
 
-  // 3. Final fallback to mock
-  return getMockStorageSummary();
-}
+  // 3. Fallback mock if completely unavailable
+  if (totalBytes === 0) {
+    return getMockStorageSummary();
+  }
 
-function buildSummaryFromBytes(total: number, used: number, free: number): StorageSummary {
-  const usedPercent = total > 0 ? Math.round((used / total) * 100) : 0;
+  // 4. Installed Apps
+  const apps = await getAppsFromNative();
+  const appsBytes = apps.reduce((s, a) => s + a.sizeBytes, 0);
 
-  // Proportional category estimate based on real used bytes.
-  // These are approximations — real per-category bytes come from runRealScan().
-  // Shown on the dashboard before the first scan so it's never empty.
-  const photosBytes = Math.round(used * 0.35);
-  const videosBytes = Math.round(used * 0.28);
-  const appsBytes = Math.round(used * 0.18);
-  const audioBytes = Math.round(used * 0.05);
-  const downloadsBytes = Math.round(used * 0.04);
-  const junkBytes = Math.round(used * 0.03);
-  const whatsappBytes = Math.round(used * 0.04);
-  const otherBytes = Math.max(
-    0,
-    used - (photosBytes + videosBytes + appsBytes + audioBytes + downloadsBytes + junkBytes + whatsappBytes),
+  // 5. Query SQLite for true scanned aggregates
+  const dbAggregates = StorageIndexService.getDashboardAggregates(
+    { totalBytes, usedBytes, freeBytes },
+    { count: apps.length, bytes: appsBytes }
   );
 
-  const categories: CategorySummary[] = [
-    { key: "photos", label: "Photos", bytes: photosBytes, fileCount: 0, cleanableBytes: 0, cleanableCount: 0 },
-    { key: "videos", label: "Videos", bytes: videosBytes, fileCount: 0, cleanableBytes: 0, cleanableCount: 0 },
-    { key: "apps", label: "Apps", bytes: appsBytes, fileCount: 0, cleanableBytes: 0, cleanableCount: 0 },
-    { key: "audio", label: "Audio", bytes: audioBytes, fileCount: 0, cleanableBytes: 0, cleanableCount: 0 },
-    { key: "downloads", label: "Downloads", bytes: downloadsBytes, fileCount: 0, cleanableBytes: 0, cleanableCount: 0 },
-    { key: "junk", label: "Junk", bytes: junkBytes, fileCount: 0, cleanableBytes: 0, cleanableCount: 0 },
-    { key: "whatsapp", label: "WhatsApp", bytes: whatsappBytes, fileCount: 0, cleanableBytes: 0, cleanableCount: 0 },
-    { key: "other", label: "Other", bytes: otherBytes, fileCount: 0, cleanableBytes: 0, cleanableCount: 0 },
-  ];
+  const usedPercent = totalBytes > 0 ? Math.round((usedBytes / totalBytes) * 100) : 0;
+
+  const categories: CategorySummary[] = dbAggregates.categories.map((c) => ({
+    key: c.category as CategoryKey,
+    label: CATEGORY_DISPLAY_LABELS[c.category] ?? c.category,
+    bytes: c.totalBytes,
+    fileCount: c.fileCount,
+    cleanableBytes: c.cleanableBytes,
+    cleanableCount: c.fileCount,
+  }));
+
+  // Append derived dashboard categories
+  categories.push({
+    key: "junk",
+    label: "Junk & Cache",
+    bytes: dbAggregates.junkFilesBytes,
+    fileCount: dbAggregates.junkFilesCount,
+    cleanableBytes: dbAggregates.junkFilesBytes,
+    cleanableCount: dbAggregates.junkFilesCount,
+  });
+
+  categories.push({
+    key: "whatsapp",
+    label: "WhatsApp Media",
+    bytes: dbAggregates.whatsappFilesBytes,
+    fileCount: dbAggregates.whatsappFilesCount,
+    cleanableBytes: dbAggregates.whatsappFilesBytes,
+    cleanableCount: dbAggregates.whatsappFilesCount,
+  });
+
+  categories.push({
+    key: "duplicates",
+    label: "Duplicate photos",
+    bytes: dbAggregates.duplicateRecoverableBytes * 2,
+    fileCount: dbAggregates.duplicateFilesCount,
+    cleanableBytes: dbAggregates.duplicateRecoverableBytes,
+    cleanableCount: dbAggregates.duplicateGroupsCount,
+  });
+
+  categories.push({
+    key: "apps",
+    label: "Apps",
+    bytes: appsBytes,
+    fileCount: apps.length,
+    cleanableBytes: apps.reduce((s, a) => s + a.cacheBytes, 0),
+    cleanableCount: apps.filter((a) => a.cacheBytes > 0).length,
+  });
 
   return {
-    totalBytes: total,
-    usedBytes: used,
-    freeBytes: free,
+    totalBytes,
+    usedBytes,
+    freeBytes,
     usedPercent,
-    cleanableBytes: 0,
+    cleanableBytes: dbAggregates.totalCleanableBytes,
     categories,
   };
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// SCAN ENGINE
+// SCAN ENGINE (INGESTS DIRECTLY INTO SQLITE)
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function runRealScan(
@@ -108,13 +161,14 @@ export async function runRealScan(
       status = res.status;
     }
     permissionGranted = status === "granted";
-  } catch {
-    permissionGranted = false;
+  } catch (e) {
+    console.warn("[realScanner] Permission request error:", e);
   }
 
-  // ── Stage 2: Scan MediaStore ─────────────────────────────────────────
-  onProgress?.("Scanning device MediaStore…", 0.15);
+  // ── Stage 2: Media Scanner (Photos, Videos, Audio) ─────────────────────
+  onProgress?.("Scanning photos & gallery…", 0.15);
 
+  const storageItems: StorageItem[] = [];
   const scannedPhotos: ScannedFile[] = [];
   const scannedVideos: ScannedFile[] = [];
   const scannedAudio: ScannedFile[] = [];
@@ -134,13 +188,15 @@ export async function runRealScan(
       });
       for (const asset of photoResult.assets) {
         const sizeBytes = estimateMediaSize(asset, "photo");
+        const ext = (asset.filename ? asset.filename.split(".").pop()?.toLowerCase() : "jpg") || "jpg";
         const file: ScannedFile = {
           id: asset.id,
           path: asset.uri,
+          uri: asset.uri,
           name: asset.filename || `photo_${asset.id}.jpg`,
           category: "photos",
           sizeBytes,
-          mimeType: "image/jpeg",
+          mimeType: ext === "png" ? "image/png" : "image/jpeg",
           modifiedAt: asset.modificationTime || asset.creationTime,
           width: asset.width,
           height: asset.height,
@@ -148,6 +204,27 @@ export async function runRealScan(
         };
         scannedPhotos.push(file);
         if (sizeBytes >= 10 * MB) largeFiles.push(file);
+
+        storageItems.push({
+          id: asset.id,
+          uri: asset.uri,
+          path: asset.uri.startsWith("file://") ? asset.uri.replace("file://", "") : undefined,
+          name: file.name,
+          sizeBytes,
+          mimeType: file.mimeType,
+          extension: ext,
+          category: "photos",
+          source: "media_store",
+          modifiedAt: file.modifiedAt,
+          isLarge: sizeBytes >= 10 * MB,
+          isJunk: false,
+          canOpen: true,
+          canPreview: true,
+          canDelete: true,
+          requiresPermission: true,
+          width: asset.width,
+          height: asset.height,
+        });
       }
     } catch (e) {
       console.warn("[realScanner] Photo scan error:", e);
@@ -164,9 +241,11 @@ export async function runRealScan(
       });
       for (const asset of videoResult.assets) {
         const sizeBytes = estimateMediaSize(asset, "video");
+        const ext = (asset.filename ? asset.filename.split(".").pop()?.toLowerCase() : "mp4") || "mp4";
         const file: ScannedFile = {
           id: asset.id,
           path: asset.uri,
+          uri: asset.uri,
           name: asset.filename || `video_${asset.id}.mp4`,
           category: "videos",
           sizeBytes,
@@ -179,12 +258,34 @@ export async function runRealScan(
         };
         scannedVideos.push(file);
         if (sizeBytes >= 10 * MB) largeFiles.push(file);
+
+        storageItems.push({
+          id: asset.id,
+          uri: asset.uri,
+          path: asset.uri.startsWith("file://") ? asset.uri.replace("file://", "") : undefined,
+          name: file.name,
+          sizeBytes,
+          mimeType: "video/mp4",
+          extension: ext,
+          category: "videos",
+          source: "media_store",
+          modifiedAt: file.modifiedAt,
+          isLarge: sizeBytes >= 10 * MB,
+          isJunk: false,
+          canOpen: true,
+          canPreview: true,
+          canDelete: true,
+          requiresPermission: true,
+          width: asset.width,
+          height: asset.height,
+          durationMs: (asset.duration || 0) * 1000,
+        });
       }
     } catch (e) {
       console.warn("[realScanner] Video scan error:", e);
     }
 
-    onProgress?.("Scanning audio…", 0.45);
+    onProgress?.("Scanning audio & music…", 0.45);
 
     // Audio
     try {
@@ -195,9 +296,11 @@ export async function runRealScan(
       });
       for (const asset of audioResult.assets) {
         const sizeBytes = estimateMediaSize(asset, "audio");
+        const ext = (asset.filename ? asset.filename.split(".").pop()?.toLowerCase() : "mp3") || "mp3";
         const file: ScannedFile = {
           id: asset.id,
           path: asset.uri,
+          uri: asset.uri,
           name: asset.filename || `audio_${asset.id}.mp3`,
           category: "audio",
           sizeBytes,
@@ -208,30 +311,74 @@ export async function runRealScan(
         };
         scannedAudio.push(file);
         if (sizeBytes >= 10 * MB) largeFiles.push(file);
+
+        storageItems.push({
+          id: asset.id,
+          uri: asset.uri,
+          path: asset.uri.startsWith("file://") ? asset.uri.replace("file://", "") : undefined,
+          name: file.name,
+          sizeBytes,
+          mimeType: "audio/mpeg",
+          extension: ext,
+          category: "audio",
+          source: "media_store",
+          modifiedAt: file.modifiedAt,
+          isLarge: sizeBytes >= 10 * MB,
+          isJunk: false,
+          canOpen: true,
+          canPreview: false,
+          canDelete: true,
+          requiresPermission: true,
+          durationMs: (asset.duration || 0) * 1000,
+        });
       }
     } catch (e) {
       console.warn("[realScanner] Audio scan error:", e);
     }
   }
 
-  // ── Stage 3: Downloads & Large Files ──────────────────────────────────
+  // ── Stage 3: Downloads & Public Files ────────────────────────────────
   onProgress?.("Scanning downloaded files…", 0.55);
 
   try {
     const rawDownloads = await AndroidStorage.scanDownloads();
     for (const d of rawDownloads) {
+      const ext = d.name.split(".").pop()?.toLowerCase();
+      const isApk = ext === "apk";
+      const isDoc = ["pdf", "doc", "docx", "xls", "xlsx", "txt", "ppt", "pptx"].includes(ext || "");
       const file: ScannedFile = {
         id: d.id,
         path: d.path,
+        uri: `file://${d.path}`,
         name: d.name,
-        category: "downloads",
+        category: isApk ? "apks" : isDoc ? "documents" : "downloads",
         sizeBytes: d.sizeBytes,
-        mimeType: d.mimeType || "application/octet-stream",
+        mimeType: d.mimeType || (isApk ? "application/vnd.android.package-archive" : "application/octet-stream"),
         modifiedAt: d.modifiedAt || Date.now(),
         source: "Downloads",
       };
       scannedDownloads.push(file);
       if (file.sizeBytes >= 10 * MB) largeFiles.push(file);
+
+      storageItems.push({
+        id: d.id || d.path,
+        uri: `file://${d.path}`,
+        path: d.path,
+        name: d.name,
+        sizeBytes: d.sizeBytes,
+        mimeType: file.mimeType,
+        extension: ext,
+        category: file.category as StorageCategory,
+        source: "filesystem",
+        modifiedAt: file.modifiedAt,
+        isLarge: d.sizeBytes >= 10 * MB,
+        isJunk: isApk,
+        junkReason: isApk ? "Obsolete APK installer" : undefined,
+        canOpen: true,
+        canPreview: false,
+        canDelete: true,
+        requiresPermission: false,
+      });
     }
   } catch (e) {
     console.warn("[realScanner] Downloads scan error:", e);
@@ -244,44 +391,46 @@ export async function runRealScan(
     const rawWa = await AndroidStorage.scanWhatsAppMedia();
     if (rawWa && rawWa.length > 0) {
       for (const w of rawWa) {
+        const ext = w.name.split(".").pop()?.toLowerCase();
+        const isVid = w.category === "videos" || ["mp4", "mkv", "3gp"].includes(ext || "");
+        const isAud = w.category === "audio" || ["opus", "m4a", "aac", "mp3", "ogg"].includes(ext || "");
+        const isDoc = w.category === "documents" || ["pdf", "doc", "docx", "zip"].includes(ext || "");
+        const category: StorageCategory = isVid ? "videos" : isAud ? "audio" : isDoc ? "documents" : "photos";
+        const waType: WhatsAppType = isVid ? "video" : isAud ? "audio" : isDoc ? "document" : "image";
+
         const file: ScannedFile = {
           id: w.id,
           path: w.path,
+          uri: `file://${w.path}`,
           name: w.name,
-          category: "whatsapp",
+          category: category as any,
           sizeBytes: w.sizeBytes,
-          mimeType: w.mimeType || "image/jpeg",
+          mimeType: w.mimeType || (isVid ? "video/mp4" : isAud ? "audio/ogg" : "image/jpeg"),
           modifiedAt: w.modifiedAt || Date.now(),
           source: w.subType || "WhatsApp",
         };
         whatsappFiles.push(file);
         if (file.sizeBytes >= 10 * MB) largeFiles.push(file);
-      }
-    } else if (permissionGranted) {
-      // Fallback to MediaStore albums
-      const albums = await MediaLibrary.getAlbumsAsync();
-      const waAlbums = albums.filter((a) => /whatsapp/i.test(a.title));
-      for (const album of waAlbums) {
-        const waResult = await MediaLibrary.getAssetsAsync({
-          album,
-          first: 300,
-          sortBy: [MediaLibrary.SortBy.modificationTime],
+
+        storageItems.push({
+          id: w.id || w.path,
+          uri: `file://${w.path}`,
+          path: w.path,
+          name: w.name,
+          sizeBytes: w.sizeBytes,
+          mimeType: file.mimeType,
+          extension: ext,
+          category,
+          source: "whatsapp",
+          modifiedAt: file.modifiedAt,
+          isLarge: w.sizeBytes >= 10 * MB,
+          isJunk: false,
+          canOpen: true,
+          canPreview: category === "photos" || category === "videos",
+          canDelete: true,
+          requiresPermission: false,
+          whatsappType: waType,
         });
-        for (const asset of waResult.assets) {
-          const sizeBytes = estimateMediaSize(asset, "photo");
-          const file: ScannedFile = {
-            id: `wa_${asset.id}`,
-            path: asset.uri,
-            name: asset.filename || `wa_${asset.id}.jpg`,
-            category: "whatsapp",
-            sizeBytes,
-            mimeType: "image/jpeg",
-            modifiedAt: asset.modificationTime || asset.creationTime,
-            source: album.title || "WhatsApp",
-          };
-          whatsappFiles.push(file);
-          if (file.sizeBytes >= 10 * MB) largeFiles.push(file);
-        }
       }
     }
   } catch (e) {
@@ -294,19 +443,42 @@ export async function runRealScan(
   try {
     const rawJunk = await AndroidStorage.scanJunkFiles();
     for (const j of rawJunk) {
-      junkFiles.push({
+      const ext = j.name.split(".").pop()?.toLowerCase();
+      const isApk = ext === "apk";
+      const file: ScannedFile = {
         id: j.id,
         path: j.path,
+        uri: `file://${j.path}`,
         name: j.name,
-        category: "junk",
+        category: isApk ? "apks" : "junk",
         sizeBytes: j.sizeBytes,
         mimeType: j.mimeType || "application/octet-stream",
         modifiedAt: j.modifiedAt || Date.now(),
         source: j.subType === "apk" ? "Obsolete APK" : j.subType === "thumbnail" ? "Thumbnails" : "App Cache",
+      };
+      junkFiles.push(file);
+
+      storageItems.push({
+        id: j.id || j.path,
+        uri: `file://${j.path}`,
+        path: j.path,
+        name: j.name,
+        sizeBytes: j.sizeBytes,
+        mimeType: file.mimeType,
+        extension: ext,
+        category: isApk ? "apks" : "other",
+        source: "filesystem",
+        modifiedAt: file.modifiedAt,
+        isLarge: j.sizeBytes >= 10 * MB,
+        isJunk: true,
+        junkReason: file.source || "Cache file",
+        canOpen: isApk,
+        canPreview: false,
+        canDelete: true,
+        requiresPermission: false,
       });
     }
 
-    // Also check expo app's cache directory
     if (FileSystem.cacheDirectory) {
       const entries = await FileSystem.readDirectoryAsync(FileSystem.cacheDirectory);
       for (const entry of entries.slice(0, 100)) {
@@ -317,12 +489,30 @@ export async function runRealScan(
             junkFiles.push({
               id: `cache_${entry}`,
               path: fullPath,
+              uri: fullPath,
               name: entry,
               category: "junk",
               sizeBytes: info.size,
               mimeType: "application/octet-stream",
-              modifiedAt: info.modificationTime ? info.modificationTime * 1000 : Date.now(),
+              modifiedAt: info.modificationTime || Date.now(),
               source: "App Cache",
+            });
+            storageItems.push({
+              id: `cache_${entry}`,
+              uri: fullPath,
+              path: fullPath,
+              name: entry,
+              sizeBytes: info.size,
+              category: "other",
+              source: "filesystem",
+              modifiedAt: info.modificationTime || Date.now(),
+              isLarge: false,
+              isJunk: true,
+              junkReason: "App Cache",
+              canOpen: false,
+              canPreview: false,
+              canDelete: true,
+              requiresPermission: false,
             });
           }
         } catch {}
@@ -332,44 +522,50 @@ export async function runRealScan(
     console.warn("[realScanner] Junk scan error:", e);
   }
 
-  // ── Stage 6: Duplicate detection ─────────────────────────────────────
-  onProgress?.("Detecting duplicate files…", 0.85);
+  // ── Stage 6: Duplicate Photo Detection ────────────────────────────────
+  onProgress?.("Detecting duplicate photos…", 0.85);
 
-  duplicateGroups = await detectDuplicates(scannedPhotos, onProgress);
-
-  // ── If device had no media or files at all, fall back to mock so UI stays usable ─
-  if (
-    scannedPhotos.length === 0 &&
-    scannedVideos.length === 0 &&
-    scannedAudio.length === 0 &&
-    junkFiles.length === 0 &&
-    whatsappFiles.length === 0 &&
-    scannedDownloads.length === 0
-  ) {
-    onProgress?.("Finalizing scan results…", 1);
-    const mock = buildMockScanResult();
-    mock.durationMs = Date.now() - startedAt;
-    return mock;
+  if (scannedPhotos.length >= 2) {
+    try {
+      duplicateGroups = await detectDuplicates(scannedPhotos, onProgress);
+      // Link duplicate group IDs into storage items
+      for (const g of duplicateGroups) {
+        for (const f of g.files) {
+          const found = storageItems.find((s) => s.id === f.id);
+          if (found) {
+            found.duplicateGroupId = g.id;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[realScanner] Duplicate detection error:", e);
+    }
   }
 
-  onProgress?.("Building scan report…", 0.95);
+  // ── Ingest all items into SQLite Index ─────────────────────────────────
+  onProgress?.("Indexing into database…", 0.92);
+  try {
+    StorageIndexService.clearAll();
+    StorageIndexService.upsertItemsBatch(storageItems);
+  } catch (dbErr) {
+    console.warn("[realScanner] SQLite index error:", dbErr);
+  }
 
   // ── Apps from native module ──────────────────────────────────────────
   const apps = await getAppsFromNative();
 
-  // ── Obsolete APKs ────────────────────────────────────────────────────
+  onProgress?.("Finalizing report…", 0.98);
+
   const obsoleteApks = junkFiles.filter(
     (j) => j.name.toLowerCase().endsWith(".apk") || j.source === "Obsolete APK",
   );
 
-  // ── Assemble result ──────────────────────────────────────────────────
   const photosBytes = sum(scannedPhotos);
   const videosBytes = sum(scannedVideos);
   const audioBytes = sum(scannedAudio);
   const downloadsBytes = sum(scannedDownloads);
   const junkBytes = sum(junkFiles);
   const waBytes = sum(whatsappFiles);
-  const largeBytes = sum(largeFiles);
   const dupRecoverable = duplicateGroups.reduce((s, g) => s + g.recoverableBytes, 0);
 
   const categories: CategorySummary[] = [
@@ -382,8 +578,7 @@ export async function runRealScan(
     { key: "apps", label: "Apps", bytes: apps.reduce((s, a) => s + a.sizeBytes, 0), fileCount: apps.length, cleanableBytes: apps.reduce((s, a) => s + a.cacheBytes, 0), cleanableCount: apps.filter((a) => a.cacheBytes > 0).length },
   ];
 
-  const totalCleanableBytes =
-    junkBytes + dupRecoverable + waBytes + sum(obsoleteApks);
+  const totalCleanableBytes = junkBytes + dupRecoverable + sum(obsoleteApks);
 
   onProgress?.("Done", 1);
 
@@ -392,13 +587,7 @@ export async function runRealScan(
     completedAt: Date.now(),
     durationMs: Date.now() - startedAt,
     totalCleanableBytes,
-    filesScanned:
-      scannedPhotos.length +
-      scannedVideos.length +
-      scannedAudio.length +
-      scannedDownloads.length +
-      junkFiles.length +
-      whatsappFiles.length,
+    filesScanned: storageItems.length,
     categories,
     allPhotos: scannedPhotos.sort((a, b) => b.modifiedAt - a.modifiedAt),
     allVideos: scannedVideos.sort((a, b) => b.sizeBytes - a.sizeBytes),
@@ -417,90 +606,63 @@ export async function runRealScan(
 // DUPLICATE DETECTION
 // ──────────────────────────────────────────────────────────────────────────
 
-/**
- * 4-stage duplicate detection:
- * 1. Group by file size (fast, JS)
- * 2. Group by dimensions (fast, JS)
- * 3. SHA-256 content hash via native HashWorker (accurate)
- *
- * Falls back to dimension-only grouping if HashWorker is unavailable.
- */
 async function detectDuplicates(
   photos: ScannedFile[],
   onProgress?: (stage: string, progress: number) => void,
 ): Promise<DuplicateGroup[]> {
-  if (photos.length < 2) return [];
+  const groups: DuplicateGroup[] = [];
+  let groupIndex = 0;
 
-  // Stage 1+2: group by dimensions (a strong signal for duplicates)
-  const byDimensions = new Map<string, ScannedFile[]>();
+  // 1. Group by file size
+  const bySize = new Map<number, ScannedFile[]>();
   for (const p of photos) {
-    if (p.width && p.height && p.width > 0 && p.height > 0) {
-      const key = `${p.width}x${p.height}`;
-      const arr = byDimensions.get(key) ?? [];
-      arr.push(p);
-      byDimensions.set(key, arr);
+    if (p.sizeBytes < 100 * 1024) continue;
+    const arr = bySize.get(p.sizeBytes) ?? [];
+    arr.push(p);
+    bySize.set(p.sizeBytes, arr);
+  }
+
+  const sizeCandidates: ScannedFile[][] = [];
+  for (const [, files] of bySize) {
+    if (files.length > 1) sizeCandidates.push(files);
+  }
+
+  // 2. Sub-group by dimensions
+  const candidates: ScannedFile[][] = [];
+  for (const group of sizeCandidates) {
+    const byDim = new Map<string, ScannedFile[]>();
+    for (const f of group) {
+      const key = `${f.width ?? 0}x${f.height ?? 0}`;
+      const arr = byDim.get(key) ?? [];
+      arr.push(f);
+      byDim.set(key, arr);
+    }
+    for (const [, files] of byDim) {
+      if (files.length > 1) candidates.push(files);
     }
   }
 
-  // Candidate groups: 2+ photos with identical dimensions
-  const candidates = Array.from(byDimensions.values()).filter((g) => g.length >= 2);
-
-  if (candidates.length === 0) return [];
-
-  onProgress?.("Hashing duplicate candidates…", 0.85);
-
-  // Stage 3: try native SHA-256 hashing on candidates
-  const groups: DuplicateGroup[] = [];
-  let groupIndex = 1;
-
+  // 3. Hash verification
   try {
-    // Collect all candidate paths for hashing
-    const allCandidates = candidates.flat();
-    const pathToHash = new Map<string, string | null>();
-
-    // HashWorker expects filesystem paths, but MediaStore URIs may not be
-    // directly hashable. Try anyway — if it fails, fall back to dimensions.
-    const paths = allCandidates
-      .map((f) => f.path)
-      .filter((p) => p.startsWith("/") || p.startsWith("file://"));
-
-    if (paths.length > 0) {
-      const hashed = await HashWorker.hashFiles(paths);
-      for (const h of hashed) {
-        pathToHash.set(h.path, h.hash);
-      }
-    }
-
-    // Group by hash where available, otherwise by dimensions
-    for (const candidateGroup of candidates) {
+    for (const candidateGroup of candidates.slice(0, 50)) {
       const byHash = new Map<string, ScannedFile[]>();
-      const unhashed: ScannedFile[] = [];
-
-      for (const f of candidateGroup) {
-        const hash = pathToHash.get(f.path);
+      for (const file of candidateGroup) {
+        if (!file.path) continue;
+        const hash = await HashWorker.hashFile(file.path);
         if (hash) {
+          file.hash = hash;
           const arr = byHash.get(hash) ?? [];
-          arr.push(f);
+          arr.push(file);
           byHash.set(hash, arr);
-        } else {
-          unhashed.push(f);
         }
       }
-
-      // Add hash-based groups (exact duplicates)
       for (const [, files] of byHash) {
-        if (files.length >= 2) {
+        if (files.length > 1) {
           groups.push(makeGroup(files, "exact", groupIndex++));
         }
       }
-
-      // If no hash groups, use dimension group as "similar"
-      if (byHash.size === 0 && unhashed.length >= 2) {
-        groups.push(makeGroup(unhashed, "similar", groupIndex++));
-      }
     }
   } catch {
-    // HashWorker unavailable — fall back to dimension-only "similar" groups
     for (const candidateGroup of candidates) {
       groups.push(makeGroup(candidateGroup.slice(0, 5), "similar", groupIndex++));
     }
@@ -524,156 +686,71 @@ function makeGroup(files: ScannedFile[], kind: "exact" | "similar", index: numbe
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// CLEANUP
+// CENTRALIZED REAL CLEANUP DISPATCH
 // ──────────────────────────────────────────────────────────────────────────
 
-/**
- * Performs actual deletion of selected media and files.
- * Uses MediaLibrary.deleteAssetsAsync for media and FileSystem.deleteAsync
- * for cache files. This is real, irreversible deletion.
- */
 export async function performRealCleanup(
   selectedFileIds: Set<string>,
   selectedGroupIds: Set<string>,
   scanResult: ScanResult,
 ): Promise<{ freedBytes: number; deletedCount: number }> {
-  let freedBytes = 0;
-  let deletedCount = 0;
+  const idsToDelete = new Set(selectedFileIds);
 
-  const mediaIdsToDelete: string[] = [];
-  const filePathsToDelete: string[] = [];
-
-  // 1. Collect selected files
-  const allFiles = [
-    ...scanResult.allPhotos,
-    ...scanResult.allVideos,
-    ...scanResult.allAudio,
-    ...scanResult.allDownloads,
-    ...scanResult.obsoleteApks,
-    ...scanResult.junkFiles,
-    ...scanResult.whatsappFiles,
-    ...scanResult.largeFiles,
-  ];
-
-  const seenIds = new Set<string>();
-
-  for (const f of allFiles) {
-    if (selectedFileIds.has(f.id) && !seenIds.has(f.id)) {
-      seenIds.add(f.id);
-      freedBytes += f.sizeBytes;
-      deletedCount++;
-      if (f.path.startsWith("file://") || f.path.startsWith("/")) {
-        filePathsToDelete.push(f.path.replace("file://", ""));
-      } else {
-        // MediaStore asset — delete by ID
-        // Strip the "wa_" prefix we added for WhatsApp assets
-        const realId = f.id.startsWith("wa_") ? f.id.slice(3) : f.id;
-        mediaIdsToDelete.push(realId);
-      }
-    }
-  }
-
-  // 2. Collect duplicate group files (delete all except keepId)
+  // Collect duplicate files (delete all except keepId)
   for (const g of scanResult.duplicateGroups) {
     if (selectedGroupIds.has(g.id)) {
-      freedBytes += g.recoverableBytes;
       for (const f of g.files) {
-        if (f.id !== g.keepId && !seenIds.has(f.id)) {
-          seenIds.add(f.id);
-          deletedCount++;
-          if (f.path.startsWith("file://") || f.path.startsWith("/")) {
-            filePathsToDelete.push(f.path.replace("file://", ""));
-          } else {
-            mediaIdsToDelete.push(f.id);
-          }
+        if (f.id !== g.keepId) {
+          idsToDelete.add(f.id);
         }
       }
     }
   }
 
-  // 3. Delete native filesystem files (fast & permanent)
-  if (filePathsToDelete.length > 0) {
-    try {
-      await AndroidStorage.deleteNativeFiles(filePathsToDelete);
-    } catch (e) {
-      console.warn("[realScanner] AndroidStorage delete error, fallback to FileSystem:", e);
-      for (const path of filePathsToDelete) {
-        try {
-          await FileSystem.deleteAsync(`file://${path}`, { idempotent: true });
-        } catch {}
-      }
-    }
-  }
-
-  // 4. Delete MediaStore assets (photos, videos)
-  if (mediaIdsToDelete.length > 0) {
-    try {
-      await MediaLibrary.deleteAssetsAsync(mediaIdsToDelete);
-    } catch (e) {
-      console.warn("[realScanner] MediaLibrary delete warning:", e);
-    }
-  }
-
-  return { freedBytes, deletedCount };
+  const res = await DeleteCoordinator.deleteMany(Array.from(idsToDelete));
+  return {
+    freedBytes: res.freedBytes,
+    deletedCount: res.deletedCount,
+  };
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // HELPERS
 // ──────────────────────────────────────────────────────────────────────────
 
-/**
- * Estimates media file size from asset metadata.
- * expo-media-library doesn't always expose file size directly, so we
- * approximate from dimensions/duration when unavailable.
- */
 function estimateMediaSize(
   asset: MediaLibrary.Asset,
   type: "photo" | "video" | "audio",
 ): number {
-  // On Android, expo-media-library sometimes populates a `size` field via
-  // the underlying MediaStore cursor. Try that first.
   const anyAsset = asset as any;
   if (typeof anyAsset.size === "number" && anyAsset.size > 0) {
     return anyAsset.size;
   }
-
   if (type === "video") {
-    // Rough: 1.5 MB per second of 1080p video
     return Math.round(Math.max(1, asset.duration || 0) * 1.5 * MB);
   }
   if (type === "audio") {
-    // Rough: 1 MB per minute of MP3
     return Math.round(Math.max(1, asset.duration || 0) * (MB / 60));
   }
-  // Photo: width × height × 3 bytes (RGB) / ~10 (JPEG compression)
   return Math.round(Math.max(1, (asset.width * asset.height * 3) / 10));
 }
 
 async function getAppsFromNative(): Promise<AppItem[]> {
   try {
-    const nativeApps = AndroidStorage.getInstalledApps();
-    if (nativeApps && nativeApps.length > 0) {
-      return nativeApps
-        .filter((a) => !a.isSystem && a.sizeBytes > 0)
-        .slice(0, 50)
-        .map((a) => ({
-          packageName: a.packageName,
-          label: a.label,
-          sizeBytes: a.sizeBytes,
-          cacheBytes: a.cacheBytes,
-          lastUsedAt: a.lastUsedAt > 0 ? a.lastUsedAt : Date.now(),
-          isSystem: a.isSystem,
-        }));
-    }
+    const raw = AndroidStorage.getInstalledApps();
+    if (!raw || raw.length === 0) return [];
+    return raw.map((a) => ({
+      packageName: a.packageName,
+      label: a.label,
+      sizeBytes: a.sizeBytes,
+      cacheBytes: a.cacheBytes,
+      lastUsedAt: a.lastUsedAt || Date.now(),
+      isSystem: a.isSystem,
+      iconUri: a.iconUri ?? undefined,
+    }));
   } catch {
-    // Native module unavailable
+    return [];
   }
-
-  // Fallback: a few well-known packages as a placeholder
-  return [
-    { packageName: "com.whatsapp", label: "WhatsApp", sizeBytes: 180 * MB, cacheBytes: 95 * MB, lastUsedAt: Date.now() - 3600000, isSystem: false },
-    { packageName: "com.spotify.music", label: "Spotify", sizeBytes: 210 * MB, cacheBytes: 340 * MB, lastUsedAt: Date.now() - 172800000, isSystem: false },
-  ];
 }
 
 function sum(files: ScannedFile[]): number {

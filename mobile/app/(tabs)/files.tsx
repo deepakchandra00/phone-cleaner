@@ -1,20 +1,24 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { View, Text, Pressable, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
-import Animated, { FadeInDown, SlideInRight } from "react-native-reanimated";
+import Animated, { SlideInRight } from "react-native-reanimated";
 import { AndroidStorage } from "android-storage";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
+import { FileDetailModal } from "@/components/FileDetailModal";
 import { useAppStore, useSelectedBytes } from "@/stores/useAppStore";
+import { StorageIndexService } from "@/db/StorageIndexService";
+import { DeleteCoordinator } from "@/services/DeleteCoordinator";
 import { CategoryColors, ThemeColors, StatusColors } from "@/theme/colors";
 import { formatSizeCompact, formatRelativeTime, formatCount } from "@/lib/format";
 import { track } from "@/lib/analytics";
-import type { CategoryKey, ScannedFile, AppItem } from "@/lib/types";
+import type { StorageItem } from "@/db/schema";
+import type { CategoryKey, AppItem } from "@/lib/types";
 
 type Section = "large" | "whatsapp" | "apps";
 
@@ -89,38 +93,46 @@ export default function FilesScreen() {
 function LargeFilesSection() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { scanResult, selectedFileIds, toggleFile } = useAppStore();
+  const { selectedFileIds, toggleFile } = useAppStore();
   const selectedBytes = useSelectedBytes();
   const [filter, setFilter] = useState<SizeFilterKey>("25mb");
+  const [modalItem, setModalItem] = useState<StorageItem | null>(null);
+  const [files, setFiles] = useState<StorageItem[]>([]);
+  const [totalBytes, setTotalBytes] = useState(0);
 
-  const files = useMemo(() => {
-    if (!scanResult) return [];
-    const min = SIZE_FILTERS.find((f) => f.key === filter)?.min ?? 0;
-    return scanResult.largeFiles
-      .filter((f) => f.sizeBytes >= min)
-      .sort((a, b) => b.sizeBytes - a.sizeBytes);
-  }, [scanResult, filter]);
+  const loadData = useCallback(() => {
+    const min = SIZE_FILTERS.find((f) => f.key === filter)?.min ?? 25 * 1024 ** 2;
+    const res = StorageIndexService.getItems({
+      isLarge: true,
+      minSizeBytes: min,
+      sortBy: "size_desc",
+      limit: 100,
+    });
+    setFiles(res.items);
+    setTotalBytes(res.totalBytes);
+  }, [filter]);
 
-  const totalBytes = useMemo(() => files.reduce((s, f) => s + f.sizeBytes, 0), [files]);
-  const selectedCount = useMemo(
-    () => files.filter((f) => selectedFileIds.has(f.id)).length,
-    [files, selectedFileIds]
-  );
+  useEffect(() => {
+    loadData();
+    const unsub = DeleteCoordinator.addListener(() => loadData());
+    return () => unsub();
+  }, [loadData]);
+
+  const selectedCount = files.filter((f) => selectedFileIds.has(f.id)).length;
 
   const renderFileRow = useCallback(
-    ({ item }: { item: ScannedFile }) => (
+    ({ item }: { item: StorageItem }) => (
       <View className="px-4 py-1">
         <FileRow
           file={item}
           selected={selectedFileIds.has(item.id)}
           onToggle={() => toggleFile(item.id)}
+          onPress={() => setModalItem(item)}
         />
       </View>
     ),
     [selectedFileIds, toggleFile]
   );
-
-  if (!scanResult) return <NoScanState />;
 
   return (
     <View className="flex-1">
@@ -185,6 +197,16 @@ function LargeFilesSection() {
           onReview={() => router.push("/review")}
         />
       )}
+
+      <FileDetailModal
+        item={modalItem}
+        visible={!!modalItem}
+        onClose={() => setModalItem(null)}
+        onDeleted={() => {
+          setModalItem(null);
+          loadData();
+        }}
+      />
     </View>
   );
 }
@@ -194,51 +216,50 @@ function LargeFilesSection() {
 function WhatsAppSection() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { scanResult, selectedFileIds, toggleFile } = useAppStore();
+  const { selectedFileIds, toggleFile } = useAppStore();
   const selectedBytes = useSelectedBytes();
   const [selectedSubtype, setSelectedSubtype] = useState<string>("all");
+  const [modalItem, setModalItem] = useState<StorageItem | null>(null);
+  const [files, setFiles] = useState<StorageItem[]>([]);
+  const [totalBytes, setTotalBytes] = useState(0);
 
-  const allFiles = scanResult?.whatsappFiles ?? [];
-  const totalBytes = useMemo(() => allFiles.reduce((s, f) => s + f.sizeBytes, 0), [allFiles]);
+  const loadData = useCallback(() => {
+    const res = StorageIndexService.getItems({
+      source: "whatsapp",
+      whatsappType: selectedSubtype !== "all" ? (selectedSubtype as any) : undefined,
+      sortBy: "size_desc",
+      limit: 100,
+    });
+    setFiles(res.items);
+    setTotalBytes(res.totalBytes);
+  }, [selectedSubtype]);
 
-  const subtypes = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const f of allFiles) {
-      const src = f.source || "Other";
-      map.set(src, (map.get(src) ?? 0) + 1);
-    }
-    return Array.from(map.entries()).map(([label, count]) => ({ label, count }));
-  }, [allFiles]);
+  useEffect(() => {
+    loadData();
+    const unsub = DeleteCoordinator.addListener(() => loadData());
+    return () => unsub();
+  }, [loadData]);
 
-  const filteredFiles = useMemo(() => {
-    if (selectedSubtype === "all") return allFiles;
-    return allFiles.filter((f) => (f.source || "Other") === selectedSubtype);
-  }, [allFiles, selectedSubtype]);
-
-  const selectedCount = useMemo(
-    () => filteredFiles.filter((f) => selectedFileIds.has(f.id)).length,
-    [filteredFiles, selectedFileIds]
-  );
+  const selectedCount = files.filter((f) => selectedFileIds.has(f.id)).length;
 
   const renderItem = useCallback(
-    ({ item }: { item: ScannedFile }) => (
+    ({ item }: { item: StorageItem }) => (
       <View className="px-4 py-1">
         <FileRow
           file={item}
           selected={selectedFileIds.has(item.id)}
           onToggle={() => toggleFile(item.id)}
+          onPress={() => setModalItem(item)}
         />
       </View>
     ),
     [selectedFileIds, toggleFile]
   );
 
-  if (!scanResult) return <NoScanState />;
-
   return (
     <View className="flex-1">
       <FlashList
-        data={filteredFiles}
+        data={files}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 110 }}
@@ -256,51 +277,35 @@ function WhatsAppSection() {
                 </View>
                 <View className="flex-1">
                   <Text className="text-white font-bold text-base">WhatsApp media</Text>
-                  <Text className="text-white/80 text-xs">{formatCount(allFiles.length)} files found</Text>
+                  <Text className="text-white/80 text-xs">{formatCount(files.length)} files found</Text>
                 </View>
                 <Text className="text-white text-2xl font-bold">{formatSizeCompact(totalBytes)}</Text>
               </View>
             </Pressable>
 
             {/* Subtype Filter chips */}
-            {subtypes.length > 0 && (
-              <View className="flex-row flex-wrap gap-2 mb-2">
-                <Pressable
-                  onPress={() => setSelectedSubtype("all")}
-                  className={`px-3 py-1.5 rounded-full border ${
-                    selectedSubtype === "all" ? "bg-primary border-primary" : "bg-card border-border"
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-medium ${
-                      selectedSubtype === "all" ? "text-primary-foreground" : "text-muted-foreground"
+            <View className="flex-row flex-wrap gap-2 mb-2">
+              {(["all", "image", "video", "audio", "document"] as const).map((type) => {
+                const active = selectedSubtype === type;
+                return (
+                  <Pressable
+                    key={type}
+                    onPress={() => setSelectedSubtype(type)}
+                    className={`px-3 py-1.5 rounded-full border ${
+                      active ? "bg-primary border-primary" : "bg-card border-border"
                     }`}
                   >
-                    All ({allFiles.length})
-                  </Text>
-                </Pressable>
-                {subtypes.map(({ label, count }) => {
-                  const active = selectedSubtype === label;
-                  return (
-                    <Pressable
-                      key={label}
-                      onPress={() => setSelectedSubtype(label)}
-                      className={`px-3 py-1.5 rounded-full border ${
-                        active ? "bg-primary border-primary" : "bg-card border-border"
+                    <Text
+                      className={`text-xs capitalize font-medium ${
+                        active ? "text-primary-foreground" : "text-muted-foreground"
                       }`}
                     >
-                      <Text
-                        className={`text-xs font-medium ${
-                          active ? "text-primary-foreground" : "text-muted-foreground"
-                        }`}
-                      >
-                        {label.replace("WhatsApp ", "")} ({count})
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            )}
+                      {type}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
         }
         ListEmptyComponent={
@@ -322,6 +327,16 @@ function WhatsAppSection() {
           onReview={() => router.push("/review")}
         />
       )}
+
+      <FileDetailModal
+        item={modalItem}
+        visible={!!modalItem}
+        onClose={() => setModalItem(null)}
+        onDeleted={() => {
+          setModalItem(null);
+          loadData();
+        }}
+      />
     </View>
   );
 }
@@ -332,13 +347,12 @@ function AppsSection() {
   const { scanResult } = useAppStore();
   const [sort, setSort] = useState<"size" | "unused">("size");
 
-  if (!scanResult) return <NoScanState />;
-
   const apps = useMemo(() => {
-    return [...scanResult.apps].sort((a, b) =>
+    const list = scanResult?.apps ?? [];
+    return [...list].sort((a, b) =>
       sort === "size" ? b.sizeBytes - a.sizeBytes : a.lastUsedAt - b.lastUsedAt,
     );
-  }, [scanResult.apps, sort]);
+  }, [scanResult?.apps, sort]);
 
   const totalSize = useMemo(() => apps.reduce((s, a) => s + a.sizeBytes, 0), [apps]);
   const unusedApps = useMemo(
@@ -440,32 +454,33 @@ function FileRow({
   file,
   selected,
   onToggle,
+  onPress,
 }: {
-  file: ScannedFile;
+  file: StorageItem;
   selected: boolean;
   onToggle: () => void;
+  onPress?: () => void;
 }) {
   const color = CategoryColors[file.category as CategoryKey] ?? CategoryColors.other;
-  const iconName = (CategoryIcons[file.category] ?? "document") as IconName;
+  const iconName = (CategoryIcons[file.category as CategoryKey] ?? "document") as IconName;
 
   const isVisual =
+    file.canPreview ||
     file.mimeType?.startsWith("image/") ||
     file.mimeType?.startsWith("video/") ||
-    /\.(jpe?g|png|webp|gif|bmp|heic|mp4|mov|mkv|3gp)$/i.test(file.name || file.path);
-
-  const fileUri = file.uri || (file.path ? `file://${file.path}` : undefined);
+    /\.(jpe?g|png|webp|gif|bmp|heic|mp4|mov|mkv|3gp)$/i.test(file.name || file.uri);
 
   return (
     <Pressable
-      onPress={onToggle}
-      className={`flex-row items-center gap-3 p-3 rounded-xl border ${
+      onPress={onPress}
+      className={`flex-row items-center gap-3 p-3 rounded-2xl border ${
         selected ? "border-primary bg-primary/5" : "border-border bg-card"
       } active:opacity-90`}
     >
-      {isVisual && fileUri ? (
+      {isVisual ? (
         <View className="w-11 h-11 rounded-lg overflow-hidden bg-muted relative">
           <Image
-            source={{ uri: fileUri }}
+            source={{ uri: file.uri }}
             style={{ width: "100%", height: "100%" }}
             contentFit="cover"
             transition={150}
@@ -491,17 +506,22 @@ function FileRow({
         </Text>
         <Text className="text-muted-foreground text-xs mt-0.5" numberOfLines={1}>
           {formatSizeCompact(file.sizeBytes)} · {formatRelativeTime(file.modifiedAt)}
-          {file.source ? ` · ${file.source}` : ""}
+          {file.path ? ` · ${file.path.replace(/^\/storage\/emulated\/0\/?/, "")}` : ""}
         </Text>
       </View>
 
-      <View
+      <Pressable
+        onPress={(e) => {
+          e.stopPropagation();
+          onToggle();
+        }}
+        hitSlop={8}
         className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
           selected ? "bg-primary border-primary" : "border-muted-foreground/30"
         }`}
       >
         {selected && <Icon name="checkmark" size={14} color="#fff" />}
-      </View>
+      </Pressable>
     </Pressable>
   );
 }
@@ -586,24 +606,6 @@ function SelectionBar({
         onPress={onReview}
       >
         Review cleanup
-      </Button>
-    </View>
-  );
-}
-
-function NoScanState() {
-  const router = useRouter();
-  return (
-    <View className="flex-1 items-center justify-center px-8">
-      <View className="w-20 h-20 rounded-full bg-accent items-center justify-center mb-4">
-        <Icon name="folder-open" size={36} color={ThemeColors.primary} />
-      </View>
-      <Text className="text-foreground font-semibold text-lg">No files yet</Text>
-      <Text className="text-muted-foreground text-sm text-center mt-1">
-        Run a scan to populate this section with large files, WhatsApp media, and your installed apps.
-      </Text>
-      <Button variant="primary" size="md" className="mt-5" onPress={() => router.push("/scan-progress")}>
-        Scan now
       </Button>
     </View>
   );

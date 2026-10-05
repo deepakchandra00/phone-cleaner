@@ -13,6 +13,8 @@ import { formatSizeCompact, bytesToGB } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey, ScannedFile } from "@/lib/types";
 
+import { StorageIndexService } from "@/db/StorageIndexService";
+
 interface ReviewGroup {
   key: CategoryKey;
   label: string;
@@ -33,27 +35,26 @@ export default function Review() {
   const [cleaning, setCleaning] = useState(false);
 
   const groups: ReviewGroup[] = useMemo(() => {
-    if (!scanResult) return [];
     const out: ReviewGroup[] = [];
-
-    // Group selected files by their category
     const byCat = new Map<CategoryKey, ScannedFile[]>();
-    const allFiles = [
-      ...(scanResult.allPhotos ?? []),
-      ...(scanResult.allVideos ?? []),
-      ...(scanResult.allAudio ?? []),
-      ...(scanResult.allDownloads ?? []),
-      ...(scanResult.obsoleteApks ?? []),
-      ...(scanResult.largeFiles ?? []),
-      ...(scanResult.junkFiles ?? []),
-      ...(scanResult.whatsappFiles ?? []),
-    ];
-    for (const f of allFiles) {
-      if (selectedFileIds.has(f.id)) {
-        const arr = byCat.get(f.category) ?? [];
-        arr.push(f);
-        byCat.set(f.category, arr);
-      }
+
+    // Fetch exact selected items from SQLite
+    const selectedItems = StorageIndexService.getItemsByIds(Array.from(selectedFileIds));
+    for (const f of selectedItems) {
+      const cat = f.category as CategoryKey;
+      const arr = byCat.get(cat) ?? [];
+      arr.push({
+        id: f.id,
+        path: f.path || f.uri,
+        uri: f.uri,
+        name: f.name,
+        category: cat,
+        sizeBytes: f.sizeBytes,
+        mimeType: f.mimeType || "application/octet-stream",
+        modifiedAt: f.modifiedAt,
+        source: f.source,
+      });
+      byCat.set(cat, arr);
     }
     for (const [cat, files] of byCat) {
       out.push({
@@ -69,7 +70,7 @@ export default function Review() {
     }
 
     // Add selected duplicate groups as a single pseudo-category
-    const selGroups = scanResult.duplicateGroups.filter((g) => selectedGroupIds.has(g.id));
+    const selGroups = scanResult?.duplicateGroups.filter((g) => selectedGroupIds.has(g.id)) ?? [];
     if (selGroups.length > 0) {
       const allDupFiles = selGroups.flatMap((g) => g.files);
       out.push({

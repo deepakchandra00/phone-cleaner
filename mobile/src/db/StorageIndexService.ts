@@ -1,0 +1,376 @@
+import * as SQLite from "expo-sqlite";
+import {
+  CREATE_STORAGE_ITEMS_TABLE_SQL,
+  mapRowToStorageItem,
+  type StorageCategory,
+  type StorageItem,
+  type StorageItemRow,
+  type StorageSource,
+  type WhatsAppType,
+  type DashboardSummary,
+  type DashboardCategoryAggregate,
+} from "./schema";
+
+export interface StorageQueryParams {
+  category?: StorageCategory;
+  source?: StorageSource;
+  minSizeBytes?: number;
+  maxSizeBytes?: number;
+  isLarge?: boolean;
+  isJunk?: boolean;
+  duplicateGroupId?: string;
+  whatsappType?: WhatsAppType;
+  search?: string;
+  sortBy?: "size_desc" | "size_asc" | "date_desc" | "date_asc" | "name_asc";
+  limit?: number;
+  offset?: number;
+}
+
+export interface StorageQueryResult {
+  items: StorageItem[];
+  totalCount: number;
+  totalBytes: number;
+}
+
+class StorageIndexServiceImpl {
+  private db: SQLite.SQLiteDatabase | null = null;
+  private initialized = false;
+
+  public getDb(): SQLite.SQLiteDatabase {
+    if (!this.db) {
+      this.db = SQLite.openDatabaseSync("phone_cleaner.db");
+    }
+    if (!this.initialized) {
+      this.db.execSync(CREATE_STORAGE_ITEMS_TABLE_SQL);
+      this.initialized = true;
+    }
+    return this.db;
+  }
+
+  /**
+   * Bulk upserts an array of storage items into SQLite inside a fast transaction.
+   */
+  public upsertItemsBatch(items: StorageItem[]): void {
+    if (items.length === 0) return;
+    const db = this.getDb();
+
+    db.withTransactionSync(() => {
+      const stmt = db.prepareSync(`
+        INSERT INTO storage_items (
+          id, uri, path, name, size_bytes, mime_type, extension,
+          category, source, modified_at, is_large, is_junk, junk_reason,
+          duplicate_group_id, can_open, can_preview, can_delete, requires_permission,
+          width, height, duration_ms, whatsapp_type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          uri=excluded.uri,
+          path=excluded.path,
+          name=excluded.name,
+          size_bytes=excluded.size_bytes,
+          mime_type=excluded.mime_type,
+          extension=excluded.extension,
+          category=excluded.category,
+          source=excluded.source,
+          modified_at=excluded.modified_at,
+          is_large=excluded.is_large,
+          is_junk=excluded.is_junk,
+          junk_reason=excluded.junk_reason,
+          duplicate_group_id=excluded.duplicate_group_id,
+          can_open=excluded.can_open,
+          can_preview=excluded.can_preview,
+          can_delete=excluded.can_delete,
+          requires_permission=excluded.requires_permission,
+          width=excluded.width,
+          height=excluded.height,
+          duration_ms=excluded.duration_ms,
+          whatsapp_type=excluded.whatsapp_type;
+      `);
+
+      try {
+        for (const item of items) {
+          stmt.executeSync([
+            item.id,
+            item.uri,
+            item.path ?? null,
+            item.name,
+            item.sizeBytes,
+            item.mimeType ?? null,
+            item.extension ?? null,
+            item.category,
+            item.source,
+            item.modifiedAt,
+            item.isLarge ? 1 : 0,
+            item.isJunk ? 1 : 0,
+            item.junkReason ?? null,
+            item.duplicateGroupId ?? null,
+            item.canOpen ? 1 : 0,
+            item.canPreview ? 1 : 0,
+            item.canDelete ? 1 : 0,
+            item.requiresPermission ? 1 : 0,
+            item.width ?? null,
+            item.height ?? null,
+            item.durationMs ?? null,
+            item.whatsappType ?? null,
+          ]);
+        }
+      } finally {
+        stmt.finalizeSync();
+      }
+    });
+  }
+
+  /**
+   * Fast paginated, sorted, and filtered query over the storage items table.
+   */
+  public getItems(params: StorageQueryParams = {}): StorageQueryResult {
+    const db = this.getDb();
+    const conditions: string[] = [];
+    const args: any[] = [];
+
+    if (params.category) {
+      conditions.push("category = ?");
+      args.push(params.category);
+    }
+    if (params.source) {
+      conditions.push("source = ?");
+      args.push(params.source);
+    }
+    if (params.minSizeBytes !== undefined) {
+      conditions.push("size_bytes >= ?");
+      args.push(params.minSizeBytes);
+    }
+    if (params.maxSizeBytes !== undefined) {
+      conditions.push("size_bytes <= ?");
+      args.push(params.maxSizeBytes);
+    }
+    if (params.isLarge !== undefined) {
+      conditions.push("is_large = ?");
+      args.push(params.isLarge ? 1 : 0);
+    }
+    if (params.isJunk !== undefined) {
+      conditions.push("is_junk = ?");
+      args.push(params.isJunk ? 1 : 0);
+    }
+    if (params.duplicateGroupId) {
+      conditions.push("duplicate_group_id = ?");
+      args.push(params.duplicateGroupId);
+    }
+    if (params.whatsappType) {
+      conditions.push("whatsapp_type = ?");
+      args.push(params.whatsappType);
+    }
+    if (params.search) {
+      conditions.push("name LIKE ?");
+      args.push(`%${params.search}%`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    // 1. Get totals
+    const countSql = `SELECT COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as total_bytes FROM storage_items ${whereClause}`;
+    const countRow = db.getFirstSync<{ count: number; total_bytes: number }>(countSql, args) ?? {
+      count: 0,
+      total_bytes: 0,
+    };
+
+    // 2. Determine sorting
+    let orderBy = "size_bytes DESC";
+    switch (params.sortBy) {
+      case "size_asc":
+        orderBy = "size_bytes ASC";
+        break;
+      case "date_desc":
+        orderBy = "modified_at DESC";
+        break;
+      case "date_asc":
+        orderBy = "modified_at ASC";
+        break;
+      case "name_asc":
+        orderBy = "name COLLATE NOCASE ASC";
+        break;
+      case "size_desc":
+      default:
+        orderBy = "size_bytes DESC";
+        break;
+    }
+
+    // 3. Paginate
+    const limit = Math.min(params.limit ?? 50, 200);
+    const offset = params.offset ?? 0;
+    const querySql = `SELECT * FROM storage_items ${whereClause} ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
+    const queryArgs = [...args, limit, offset];
+
+    const rows = db.getAllSync<StorageItemRow>(querySql, queryArgs);
+    const items = rows.map(mapRowToStorageItem);
+
+    return {
+      items,
+      totalCount: countRow.count,
+      totalBytes: countRow.total_bytes,
+    };
+  }
+
+  /**
+   * Retrieves a single item by ID.
+   */
+  public getItemById(id: string): StorageItem | null {
+    const db = this.getDb();
+    const row = db.getFirstSync<StorageItemRow>("SELECT * FROM storage_items WHERE id = ? LIMIT 1", [id]);
+    return row ? mapRowToStorageItem(row) : null;
+  }
+
+  /**
+   * Retrieves multiple items by their IDs.
+   */
+  public getItemsByIds(ids: string[]): StorageItem[] {
+    if (ids.length === 0) return [];
+    const db = this.getDb();
+    const items: StorageItem[] = [];
+    const chunkSize = 200;
+
+    for (let i = 0; i < ids.length; i += chunkSize) {
+      const chunk = ids.slice(i, i + chunkSize);
+      const placeholders = chunk.map(() => "?").join(",");
+      const rows = db.getAllSync<StorageItemRow>(
+        `SELECT * FROM storage_items WHERE id IN (${placeholders})`,
+        chunk
+      );
+      items.push(...rows.map(mapRowToStorageItem));
+    }
+
+    return items;
+  }
+
+  /**
+   * Deletes records by ID from SQLite in safe batches.
+   */
+  public deleteItemsByIds(ids: string[]): number {
+    if (ids.length === 0) return 0;
+    const db = this.getDb();
+    let deleted = 0;
+    const chunkSize = 200;
+
+    db.withTransactionSync(() => {
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize);
+        const placeholders = chunk.map(() => "?").join(",");
+        const res = db.runSync(`DELETE FROM storage_items WHERE id IN (${placeholders})`, chunk);
+        deleted += res.changes;
+      }
+    });
+
+    return deleted;
+  }
+
+  /**
+   * Computes unified dashboard aggregates derived purely from SQLite.
+   */
+  public getDashboardAggregates(
+    storageStats: { totalBytes: number; usedBytes: number; freeBytes: number },
+    appsStats: { count: number; bytes: number }
+  ): DashboardSummary {
+    const db = this.getDb();
+
+    // 1. By physical category
+    const catRows = db.getAllSync<{ category: string; file_count: number; total_bytes: number }>(`
+      SELECT category, COUNT(*) as file_count, COALESCE(SUM(size_bytes), 0) as total_bytes
+      FROM storage_items
+      GROUP BY category;
+    `);
+
+    const categoriesMap = new Map<StorageCategory, { count: number; bytes: number }>();
+    for (const r of catRows) {
+      categoriesMap.set(r.category as StorageCategory, { count: r.file_count, bytes: r.total_bytes });
+    }
+
+    // 2. Junk cleanable
+    const junkStats = db.getFirstSync<{ count: number; bytes: number }>(`
+      SELECT COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as bytes
+      FROM storage_items
+      WHERE is_junk = 1;
+    `) ?? { count: 0, bytes: 0 };
+
+    // 3. Large files (>= 10 MB)
+    const largeStats = db.getFirstSync<{ count: number; bytes: number }>(`
+      SELECT COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as bytes
+      FROM storage_items
+      WHERE is_large = 1;
+    `) ?? { count: 0, bytes: 0 };
+
+    // 4. WhatsApp files
+    const waStats = db.getFirstSync<{ count: number; bytes: number }>(`
+      SELECT COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as bytes
+      FROM storage_items
+      WHERE source = 'whatsapp';
+    `) ?? { count: 0, bytes: 0 };
+
+    // 5. Duplicates recoverable
+    const dupStats = db.getFirstSync<{ group_count: number; file_count: number; total_bytes: number }>(`
+      SELECT COUNT(DISTINCT duplicate_group_id) as group_count,
+             COUNT(*) as file_count,
+             COALESCE(SUM(size_bytes), 0) as total_bytes
+      FROM storage_items
+      WHERE duplicate_group_id IS NOT NULL;
+    `) ?? { group_count: 0, file_count: 0, total_bytes: 0 };
+
+    const duplicateRecoverableBytes = Math.max(0, Math.floor(dupStats.total_bytes * 0.5));
+
+    const ALL_CATEGORIES: StorageCategory[] = [
+      "photos",
+      "videos",
+      "audio",
+      "documents",
+      "downloads",
+      "apks",
+      "other",
+    ];
+
+    const categoryAggregates: DashboardCategoryAggregate[] = ALL_CATEGORIES.map((cat) => {
+      const data = categoriesMap.get(cat) ?? { count: 0, bytes: 0 };
+      let cleanable = 0;
+      if (cat === "downloads" || cat === "apks") {
+        cleanable = data.bytes;
+      }
+      return {
+        category: cat,
+        fileCount: data.count,
+        totalBytes: data.bytes,
+        cleanableBytes: cleanable,
+      };
+    });
+
+    const totalScannedBytes = Array.from(categoriesMap.values()).reduce((sum, c) => sum + c.bytes, 0);
+    const totalCleanableBytes = junkStats.bytes + duplicateRecoverableBytes;
+
+    return {
+      totalStorageBytes: storageStats.totalBytes,
+      usedStorageBytes: storageStats.usedBytes,
+      freeStorageBytes: storageStats.freeBytes,
+      totalScannedBytes,
+      totalCleanableBytes,
+      categories: categoryAggregates,
+      largeFilesCount: largeStats.count,
+      largeFilesBytes: largeStats.bytes,
+      junkFilesCount: junkStats.count,
+      junkFilesBytes: junkStats.bytes,
+      whatsappFilesCount: waStats.count,
+      whatsappFilesBytes: waStats.bytes,
+      duplicateGroupsCount: dupStats.group_count,
+      duplicateFilesCount: dupStats.file_count,
+      duplicateRecoverableBytes,
+      appsCount: appsStats.count,
+      appsBytes: appsStats.bytes,
+      lastScannedAt: Date.now(),
+    };
+  }
+
+  /**
+   * Resets database table.
+   */
+  public clearAll(): void {
+    const db = this.getDb();
+    db.execSync("DELETE FROM storage_items;");
+  }
+}
+
+export const StorageIndexService = new StorageIndexServiceImpl();
