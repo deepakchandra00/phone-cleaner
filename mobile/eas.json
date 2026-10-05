@@ -12,7 +12,9 @@
         "gradleCommand": ":app:assembleDebug"
       },
       "env": { "APP_VARIANT": "development" },
-      "cache": false
+      "cache": {
+        "disabled": true
+      }
     },
     "preview": {
       "distribution": "internal",
@@ -20,7 +22,9 @@
         "buildType": "apk"
       },
       "env": { "APP_VARIANT": "preview" },
-      "cache": false
+      "cache": {
+        "disabled": true
+      }
     },
     "production": {
       "autoIncrement": true,
@@ -28,7 +32,9 @@
         "buildType": "app-bundle"
       },
       "env": { "APP_VARIANT": "production" },
-      "cache": false
+      "cache": {
+        "disabled": true
+      }
     }
   },
   "submit": {
