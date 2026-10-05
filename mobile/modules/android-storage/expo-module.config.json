@@ -1,0 +1,10 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": [
+      "com.phonecleaner.app.androidstorage.AndroidStorageModule",
+      "com.phonecleaner.app.safbridge.SAFBridgeModule",
+      "com.phonecleaner.app.hashworker.HashWorkerModule"
+    ]
+  }
+}

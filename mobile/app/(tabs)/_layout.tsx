@@ -1,0 +1,37 @@
+import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Stack, useRouter, useSegments } from "expo-router";
+import { BottomNav } from "@/components/ui/BottomNav";
+
+const TAB_KEYS: Record<string, string> = {
+  home: "home",
+  photos: "photos",
+  scan: "scan",
+  files: "files",
+  settings: "settings",
+};
+
+export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+  const segments = useSegments();
+  const last = segments[segments.length - 1] as string | undefined;
+  const activeKey = (last && TAB_KEYS[last]) ?? "home";
+
+  return (
+    <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: "rgb(var(--background))" }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: "transparent" },
+        }}
+      >
+        <Stack.Screen name="home" />
+        <Stack.Screen name="photos" />
+        <Stack.Screen name="scan" />
+        <Stack.Screen name="files" />
+        <Stack.Screen name="settings" />
+      </Stack>
+      <BottomNav activeKey={activeKey} />
+    </View>
+  );
+}

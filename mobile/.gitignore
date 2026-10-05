@@ -1,0 +1,37 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# native
+/android/
+/ios/
+!modules/**/android/
+!modules/**/ios/
+*.orig.*
+
+# env
+.env.local
+.env.*.local
+
+# eas
+google-service-account.json
+
+# misc
+.DS_Store
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# typescript
+*.tsbuildinfo
+
+# testing
+coverage/
