@@ -12,7 +12,8 @@
     "build:prod": "eas build --profile production --platform android --clear-cache",
     "submit": "eas submit --platform android",
     "update": "eas update --branch production",
-    "prebuild": "expo prebuild"
+    "prebuild": "expo prebuild",
+    "test": "node --experimental-strip-types --test 'src/__tests__/**/*.test.ts'"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

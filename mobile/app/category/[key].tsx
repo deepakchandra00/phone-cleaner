@@ -42,6 +42,94 @@ const SIZE_FILTERS = [
 
 type SortOrder = "size_desc" | "date_desc" | "date_asc";
 
+interface FileRowProps {
+  item: StorageItem;
+  isSelected: boolean;
+  color: string;
+  iconName: IconName;
+  onToggle: (id: string, sizeBytes: number) => void;
+  onPress: (item: StorageItem) => void;
+}
+
+const FileRow = React.memo(function FileRow({
+  item,
+  isSelected,
+  color,
+  iconName,
+  onToggle,
+  onPress,
+}: FileRowProps) {
+  const isVisual =
+    item.canPreview ||
+    item.mimeType?.startsWith("image/") ||
+    item.mimeType?.startsWith("video/") ||
+    /\.(jpe?g|png|webp|gif|bmp|heic|mp4|mov|mkv|3gp)$/i.test(item.name || item.uri);
+
+  const locationText = item.path
+    ? item.path.replace(/^\/storage\/emulated\/0\/?/, "")
+    : item.source;
+
+  return (
+    <Pressable
+      onPress={() => onPress(item)}
+      className={`flex-row items-center gap-3 p-3 rounded-2xl border mb-2 active:opacity-95 ${
+        isSelected ? "border-primary bg-primary/5" : "border-border bg-card"
+      }`}
+    >
+      {/* Thumbnail preview */}
+      {isVisual ? (
+        <View className="w-12 h-12 rounded-xl overflow-hidden bg-muted relative">
+          <Image
+            source={{ uri: item.uri }}
+            style={{ width: "100%", height: "100%" }}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            priority="low"
+            recyclingKey={item.id}
+          />
+          {item.mimeType?.startsWith("video/") && (
+            <View className="absolute inset-0 items-center justify-center bg-black/35">
+              <Icon name="videocam" size={16} color="#fff" />
+            </View>
+          )}
+        </View>
+      ) : (
+        <View
+          className="w-12 h-12 rounded-xl items-center justify-center"
+          style={{ backgroundColor: `${color}15` }}
+        >
+          <Icon name={iconName} size={22} color={color} />
+        </View>
+      )}
+
+      {/* Details */}
+      <View className="flex-1 min-w-0">
+        <Text className="text-foreground text-sm font-semibold" numberOfLines={1}>
+          {item.name}
+        </Text>
+        <Text className="text-muted-foreground text-xs mt-0.5" numberOfLines={1}>
+          {formatSizeCompact(item.sizeBytes)} · {formatRelativeTime(item.modifiedAt)}
+          {locationText ? ` · ${locationText}` : ""}
+        </Text>
+      </View>
+
+      {/* Checkbox */}
+      <Pressable
+        onPress={(e) => {
+          e.stopPropagation();
+          onToggle(item.id, item.sizeBytes);
+        }}
+        hitSlop={10}
+        className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
+          isSelected ? "bg-primary border-primary" : "border-muted-foreground/40"
+        }`}
+      >
+        {isSelected && <Icon name="checkmark" size={14} color="#fff" />}
+      </Pressable>
+    </Pressable>
+  );
+});
+
 export default function CategoryDetail() {
   const { key } = useLocalSearchParams<{ key: string }>();
   const router = useRouter();
@@ -55,11 +143,19 @@ export default function CategoryDetail() {
   const iconName = (CategoryIcons[categoryKey] ?? "cube") as IconName;
 
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [sizeFilter, setSizeFilter] = useState<string>("all");
   const [subTypeFilter, setSubTypeFilter] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("size_desc");
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [selectedModalItem, setSelectedModalItem] = useState<StorageItem | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // SQLite data state
   const [items, setItems] = useState<StorageItem[]>([]);
@@ -85,7 +181,7 @@ export default function CategoryDetail() {
     const queryParams: StorageQueryParams = {
       minSizeBytes: minBytes > 0 ? minBytes : undefined,
       sortBy: sortOrder,
-      search: searchQuery.trim() || undefined,
+      search: debouncedSearch.trim() || undefined,
       limit: 150,
       offset: 0,
     };
@@ -123,17 +219,25 @@ export default function CategoryDetail() {
     setTotalCount(res.totalCount);
     setTotalBytes(res.totalBytes);
     setLoading(false);
-  }, [categoryKey, sizeFilter, subTypeFilter, sortOrder, searchQuery]);
+  }, [categoryKey, sizeFilter, subTypeFilter, sortOrder, debouncedSearch]);
 
   useEffect(() => {
-    checkPermissions();
-    loadData();
+    let isMounted = true;
+    (async () => {
+      await checkPermissions();
+      if (isMounted) {
+        loadData();
+      }
+    })();
 
     // Subscribe to DeleteCoordinator updates
     const unsubscribe = DeleteCoordinator.addListener(() => {
       loadData();
     });
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [checkPermissions, loadData]);
 
   const requestPermission = async () => {
@@ -173,86 +277,36 @@ export default function CategoryDetail() {
   const selectedCount = items.filter((f) => selectedFileIds.has(f.id)).length;
 
   const toggleSelectAll = () => {
-    const ids = items.map((f) => f.id);
     if (allCurrentSelected) {
-      deselectAllFiles(ids);
+      deselectAllFiles(items.map((f) => f.id));
     } else {
-      selectAllFiles(ids);
+      selectAllFiles(items.map((f) => ({ id: f.id, sizeBytes: f.sizeBytes })));
     }
   };
 
-  const renderItem = useCallback(
-    ({ item }: { item: StorageItem }) => {
-      const selected = selectedFileIds.has(item.id);
-      const isVisual =
-        item.canPreview ||
-        item.mimeType?.startsWith("image/") ||
-        item.mimeType?.startsWith("video/") ||
-        /\.(jpe?g|png|webp|gif|bmp|heic|mp4|mov|mkv|3gp)$/i.test(item.name || item.uri);
-
-      const locationText = item.path
-        ? item.path.replace(/^\/storage\/emulated\/0\/?/, "")
-        : item.source;
-
-      return (
-        <Pressable
-          onPress={() => setSelectedModalItem(item)}
-          className={`flex-row items-center gap-3 p-3 rounded-2xl border mb-2 active:opacity-95 ${
-            selected ? "border-primary bg-primary/5" : "border-border bg-card"
-          }`}
-        >
-          {/* Thumbnail preview */}
-          {isVisual ? (
-            <View className="w-12 h-12 rounded-xl overflow-hidden bg-muted relative">
-              <Image
-                source={{ uri: item.uri }}
-                style={{ width: "100%", height: "100%" }}
-                contentFit="cover"
-                transition={150}
-              />
-              {item.mimeType?.startsWith("video/") && (
-                <View className="absolute inset-0 items-center justify-center bg-black/30">
-                  <Icon name="videocam" size={16} color="#fff" />
-                </View>
-              )}
-            </View>
-          ) : (
-            <View
-              className="w-12 h-12 rounded-xl items-center justify-center"
-              style={{ backgroundColor: `${color}15` }}
-            >
-              <Icon name={iconName} size={22} color={color} />
-            </View>
-          )}
-
-          {/* Details */}
-          <View className="flex-1 min-w-0">
-            <Text className="text-foreground text-sm font-semibold" numberOfLines={1}>
-              {item.name}
-            </Text>
-            <Text className="text-muted-foreground text-xs mt-0.5" numberOfLines={1}>
-              {formatSizeCompact(item.sizeBytes)} · {formatRelativeTime(item.modifiedAt)}
-              {locationText ? ` · ${locationText}` : ""}
-            </Text>
-          </View>
-
-          {/* Checkbox */}
-          <Pressable
-            onPress={(e) => {
-              e.stopPropagation();
-              toggleFile(item.id);
-            }}
-            hitSlop={8}
-            className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
-              selected ? "bg-primary border-primary" : "border-muted-foreground/40"
-            }`}
-          >
-            {selected && <Icon name="checkmark" size={14} color="#fff" />}
-          </Pressable>
-        </Pressable>
-      );
+  const handleToggle = useCallback(
+    (id: string, sizeBytes: number) => {
+      toggleFile(id, sizeBytes);
     },
-    [selectedFileIds, toggleFile, color, iconName]
+    [toggleFile]
+  );
+
+  const handlePress = useCallback((item: StorageItem) => {
+    setSelectedModalItem(item);
+  }, []);
+
+  const renderItem = useCallback(
+    ({ item }: { item: StorageItem }) => (
+      <FileRow
+        item={item}
+        isSelected={selectedFileIds.has(item.id)}
+        color={color}
+        iconName={iconName}
+        onToggle={handleToggle}
+        onPress={handlePress}
+      />
+    ),
+    [selectedFileIds, color, iconName, handleToggle, handlePress]
   );
 
   return (
@@ -422,24 +476,42 @@ export default function CategoryDetail() {
             data={items}
             renderItem={renderItem}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingBottom: 130 }}
+            extraData={selectedFileIds}
+            contentContainerStyle={{ paddingBottom: 160 }}
             showsVerticalScrollIndicator={false}
           />
         </View>
       )}
 
       {/* Sticky Action Footer */}
-      {selectedCount > 0 && (
-        <View
-          className="absolute left-0 right-0 bg-card border-t border-border px-4 pt-3"
-          style={{ bottom: 0, paddingBottom: Math.max(insets.bottom + 12, 24) }}
-        >
-          <View className="flex-row items-center justify-between mb-2">
+      <View
+        className="absolute left-0 right-0 bg-card border-t border-border px-4 pt-3.5 shadow-lg"
+        style={{
+          bottom: 0,
+          paddingBottom: Math.max(insets.bottom + 12, 28),
+        }}
+      >
+        <View className="flex-row items-center justify-between mb-2.5">
+          <View className="flex-row items-center gap-2">
             <Text className="text-foreground text-sm">
-              <Text className="font-bold">{selectedCount}</Text> selected
+              <Text className="font-bold text-base">{selectedCount}</Text> of {items.length} selected
             </Text>
-            <Text className="text-primary font-bold">{formatSizeCompact(selectedBytes)}</Text>
+            {selectedCount > 0 && (
+              <Pressable
+                onPress={() => deselectAllFiles(items.map((f) => f.id))}
+                hitSlop={8}
+                className="bg-muted px-2 py-0.5 rounded-full"
+              >
+                <Text className="text-muted-foreground text-xs font-medium">Clear</Text>
+              </Pressable>
+            )}
           </View>
+          <Text className="text-primary font-bold text-base">
+            {formatSizeCompact(selectedBytes)}
+          </Text>
+        </View>
+
+        {selectedCount > 0 ? (
           <Button
             variant="primary"
             size="lg"
@@ -449,8 +521,18 @@ export default function CategoryDetail() {
           >
             Review cleanup ({formatSizeCompact(selectedBytes)})
           </Button>
-        </View>
-      )}
+        ) : (
+          <Button
+            variant="secondary"
+            size="lg"
+            fullWidth
+            leftIcon={<Icon name="checkbox-outline" size={18} color={ThemeColors.primary} />}
+            onPress={toggleSelectAll}
+          >
+            Select all {items.length} items to clean
+          </Button>
+        )}
+      </View>
 
       {/* File Details & Real Preview Modal */}
       <FileDetailModal

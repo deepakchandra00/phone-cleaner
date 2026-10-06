@@ -43,10 +43,24 @@ export async function initAds(): Promise<void> {
   }
 }
 
+function getInterstitialAdUnitId(): string | null {
+  if (process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID) {
+    return process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID;
+  }
+  if (__DEV__) {
+    return TestIds.INTERSTITIAL;
+  }
+  console.warn("[ads] EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID is not configured for production build. Ads disabled.");
+  return null;
+}
+
 function preloadInterstitial() {
   if (usePremiumStore.getState().isPro) return;
+  const adUnitId = getInterstitialAdUnitId();
+  if (!adUnitId) return;
+
   try {
-    interstitialAd = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
+    interstitialAd = InterstitialAd.createForAdRequest(adUnitId, {
       requestNonPersonalizedAdsOnly: true,
     });
     interstitialAd.addAdEventListener(AdEventType.LOADED, () => {

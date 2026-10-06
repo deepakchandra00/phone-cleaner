@@ -4,6 +4,7 @@ import { getRealStorageSummary, runRealScan, performRealCleanup } from "@/lib/re
 import { getStorageSummary } from "@/lib/mockData";
 import { StorageIndexService } from "@/db/StorageIndexService";
 import { DeleteCoordinator } from "@/services/DeleteCoordinator";
+import { isSafeToCleanAutomatically } from "@/lib/safety";
 import type { ScanResult, StorageSummary, CategoryKey } from "@/lib/types";
 import { track } from "@/lib/analytics";
 
@@ -18,14 +19,17 @@ interface AppState {
 
   selectedFileIds: Set<string>;
   selectedGroupIds: Set<string>;
+  selectedFileBytesMap: Map<string, number>;
+  selectedBytes: number;
 
   lastFreedBytes: number | null; // for the success animation
 
   loadStorage: () => Promise<void>;
   startScan: () => Promise<ScanResult | null>;
-  toggleFile: (id: string) => void;
+  selectSmartCleanable: () => number;
+  toggleFile: (id: string, sizeBytes?: number) => void;
   toggleGroup: (id: string) => void;
-  selectAllFiles: (ids: string[]) => void;
+  selectAllFiles: (itemsOrIds: { id: string; sizeBytes: number }[] | string[]) => void;
   deselectAllFiles: (ids: string[]) => void;
   clearSelection: () => void;
   applyCleanup: (freedBytes: number, fileCount: number) => void;
@@ -37,10 +41,15 @@ export const useAppStore = create<AppState>((set, get) => {
   // Listen for deletions from DeleteCoordinator to keep Zustand in sync
   DeleteCoordinator.addListener((deletedIds) => {
     const curFiles = new Set(get().selectedFileIds);
+    const curMap = new Map(get().selectedFileBytesMap);
+    let curBytes = get().selectedBytes;
     for (const id of deletedIds) {
       curFiles.delete(id);
+      const size = curMap.get(id) ?? 0;
+      curMap.delete(id);
+      curBytes = Math.max(0, curBytes - size);
     }
-    set({ selectedFileIds: curFiles });
+    set({ selectedFileIds: curFiles, selectedFileBytesMap: curMap, selectedBytes: curBytes });
     get().loadStorage();
   });
 
@@ -52,18 +61,13 @@ export const useAppStore = create<AppState>((set, get) => {
     scanStage: "",
     selectedFileIds: new Set(),
     selectedGroupIds: new Set(),
+    selectedFileBytesMap: new Map(),
+    selectedBytes: 0,
     lastFreedBytes: null,
 
     loadStorage: async () => {
       try {
         const summary = await getRealStorageSummary();
-        const totalFreed = storage.getNumber(KEYS.totalFreedBytes) ?? 0;
-        if (totalFreed > 0) {
-          summary.usedBytes = Math.max(0, summary.usedBytes - totalFreed);
-          summary.freeBytes = summary.totalBytes - summary.usedBytes;
-          summary.usedPercent = summary.totalBytes > 0 ? Math.round((summary.usedBytes / summary.totalBytes) * 100) : 0;
-        }
-
         const existing = get().scanResult;
         if (existing) {
           summary.cleanableBytes = existing.totalCleanableBytes;
@@ -109,34 +113,152 @@ export const useAppStore = create<AppState>((set, get) => {
       }
     },
 
-    toggleFile: (id) => {
-      const cur = new Set(get().selectedFileIds);
-      if (cur.has(id)) cur.delete(id);
-      else cur.add(id);
-      set({ selectedFileIds: cur });
+    selectSmartCleanable: () => {
+      const { scanResult } = get();
+      const fileIds = new Set<string>();
+      const groupIds = new Set<string>();
+      const bytesMap = new Map<string, number>();
+      let totalBytes = 0;
+
+      if (scanResult) {
+        // Safe cleanable files verified against central safety policy
+        for (const j of scanResult.junkFiles) {
+          if (isSafeToCleanAutomatically(j)) {
+            fileIds.add(j.id);
+            bytesMap.set(j.id, j.sizeBytes);
+            totalBytes += j.sizeBytes;
+          }
+        }
+        for (const a of scanResult.obsoleteApks) {
+          if (isSafeToCleanAutomatically(a)) {
+            fileIds.add(a.id);
+            bytesMap.set(a.id, a.sizeBytes);
+            totalBytes += a.sizeBytes;
+          }
+        }
+        for (const w of scanResult.whatsappFiles) {
+          if (isSafeToCleanAutomatically(w)) {
+            fileIds.add(w.id);
+            bytesMap.set(w.id, w.sizeBytes);
+            totalBytes += w.sizeBytes;
+          }
+        }
+        // Redundant duplicate photos (groups ensure keepId is never deleted)
+        for (const g of scanResult.duplicateGroups) {
+          groupIds.add(g.id);
+          totalBytes += g.recoverableBytes;
+        }
+      }
+
+      set({
+        selectedFileIds: fileIds,
+        selectedGroupIds: groupIds,
+        selectedFileBytesMap: bytesMap,
+        selectedBytes: totalBytes,
+      });
+      return fileIds.size + groupIds.size;
+    },
+
+    toggleFile: (id, sizeBytes) => {
+      const curIds = new Set(get().selectedFileIds);
+      const curMap = new Map(get().selectedFileBytesMap);
+      let curBytes = get().selectedBytes;
+
+      if (curIds.has(id)) {
+        curIds.delete(id);
+        const removedSize = curMap.get(id) ?? sizeBytes ?? 0;
+        curMap.delete(id);
+        curBytes = Math.max(0, curBytes - removedSize);
+      } else {
+        curIds.add(id);
+        // Fast path: use passed sizeBytes or lookup from map
+        let size = sizeBytes;
+        if (size === undefined) {
+          const item = StorageIndexService.getItemsByIds([id])[0];
+          size = item?.sizeBytes ?? 0;
+        }
+        curMap.set(id, size);
+        curBytes += size;
+      }
+
+      set({
+        selectedFileIds: curIds,
+        selectedFileBytesMap: curMap,
+        selectedBytes: curBytes,
+      });
     },
 
     toggleGroup: (id) => {
       const cur = new Set(get().selectedGroupIds);
-      if (cur.has(id)) cur.delete(id);
-      else cur.add(id);
-      set({ selectedGroupIds: cur });
+      const { scanResult } = get();
+      const group = scanResult?.duplicateGroups.find((g) => g.id === id);
+      const groupBytes = group?.recoverableBytes ?? 0;
+      let curBytes = get().selectedBytes;
+
+      if (cur.has(id)) {
+        cur.delete(id);
+        curBytes = Math.max(0, curBytes - groupBytes);
+      } else {
+        cur.add(id);
+        curBytes += groupBytes;
+      }
+      set({ selectedGroupIds: cur, selectedBytes: curBytes });
     },
 
-    selectAllFiles: (ids) => {
-      const cur = new Set(get().selectedFileIds);
-      for (const id of ids) cur.add(id);
-      set({ selectedFileIds: cur });
+    selectAllFiles: (itemsOrIds) => {
+      const curIds = new Set(get().selectedFileIds);
+      const curMap = new Map(get().selectedFileBytesMap);
+      let curBytes = get().selectedBytes;
+
+      if (itemsOrIds.length > 0 && typeof itemsOrIds[0] === "object") {
+        const items = itemsOrIds as { id: string; sizeBytes: number }[];
+        for (const item of items) {
+          if (!curIds.has(item.id)) {
+            curIds.add(item.id);
+            curMap.set(item.id, item.sizeBytes);
+            curBytes += item.sizeBytes;
+          }
+        }
+      } else {
+        const ids = itemsOrIds as string[];
+        const needed = ids.filter((id) => !curIds.has(id));
+        if (needed.length > 0) {
+          const fetched = StorageIndexService.getItemsByIds(needed);
+          for (const item of fetched) {
+            curIds.add(item.id);
+            curMap.set(item.id, item.sizeBytes);
+            curBytes += item.sizeBytes;
+          }
+        }
+      }
+
+      set({ selectedFileIds: curIds, selectedFileBytesMap: curMap, selectedBytes: curBytes });
     },
 
     deselectAllFiles: (ids) => {
-      const cur = new Set(get().selectedFileIds);
-      for (const id of ids) cur.delete(id);
-      set({ selectedFileIds: cur });
+      const curIds = new Set(get().selectedFileIds);
+      const curMap = new Map(get().selectedFileBytesMap);
+      let curBytes = get().selectedBytes;
+
+      for (const id of ids) {
+        if (curIds.has(id)) {
+          curIds.delete(id);
+          const size = curMap.get(id) ?? 0;
+          curMap.delete(id);
+          curBytes = Math.max(0, curBytes - size);
+        }
+      }
+
+      set({ selectedFileIds: curIds, selectedFileBytesMap: curMap, selectedBytes: curBytes });
     },
 
     clearSelection: () => {
-      set({ selectedFileIds: new Set(), selectedGroupIds: new Set() });
+      set({
+        selectedFileIds: new Set(),
+        selectedGroupIds: new Set(),
+        selectedFileBytesMap: new Map(),
+        selectedBytes: 0,
+      });
     },
 
     applyCleanup: (freedBytes, fileCount) => {
@@ -157,18 +279,68 @@ export const useAppStore = create<AppState>((set, get) => {
 
       let updatedResult: ScanResult | null = null;
       if (currentResult) {
+        const remainingJunk = currentResult.junkFiles.filter((f) => !deletedFileIds.has(f.id));
+        const remainingApks = currentResult.obsoleteApks.filter((f) => !deletedFileIds.has(f.id));
+        const remainingLarge = currentResult.largeFiles.filter((f) => !deletedFileIds.has(f.id));
+        const remainingWa = currentResult.whatsappFiles.filter((f) => !deletedFileIds.has(f.id));
+        const remainingDups = currentResult.duplicateGroups.filter((g) => !deletedGroupIds.has(g.id));
+
+        const junkBytes = remainingJunk.reduce((s, f) => s + f.sizeBytes, 0);
+        const apksBytes = remainingApks.reduce((s, f) => s + f.sizeBytes, 0);
+        const waSentBytes = remainingWa
+          .filter((f) => f.source === "WhatsApp Sent" || f.path?.includes("/Sent/") || f.path?.includes("/sent/"))
+          .reduce((s, f) => s + f.sizeBytes, 0);
+        const dupRecoverable = remainingDups.reduce((s, g) => s + g.recoverableBytes, 0);
+
+        const totalCleanable = junkBytes + apksBytes + waSentBytes + dupRecoverable;
+
+        const updatedCategories = currentResult.categories.map((c) => {
+          if (c.key === "junk") {
+            return {
+              ...c,
+              bytes: junkBytes,
+              fileCount: remainingJunk.length,
+              cleanableBytes: junkBytes,
+              cleanableCount: remainingJunk.length,
+            };
+          }
+          if (c.key === "downloads") {
+            return {
+              ...c,
+              cleanableBytes: apksBytes,
+              cleanableCount: remainingApks.length,
+            };
+          }
+          if (c.key === "whatsapp") {
+            return {
+              ...c,
+              cleanableBytes: waSentBytes,
+              cleanableCount: remainingWa.filter((f) => f.source === "WhatsApp Sent" || f.path?.includes("/Sent/") || f.path?.includes("/sent/")).length,
+            };
+          }
+          if (c.key === "photos") {
+            return {
+              ...c,
+              cleanableBytes: dupRecoverable,
+              cleanableCount: remainingDups.length,
+            };
+          }
+          return c;
+        });
+
         updatedResult = {
           ...currentResult,
-          totalCleanableBytes: Math.max(0, currentResult.totalCleanableBytes - freedBytes),
-          allPhotos: currentResult.allPhotos.filter((f) => !deletedFileIds.has(f.id)),
-          allVideos: currentResult.allVideos.filter((f) => !deletedFileIds.has(f.id)),
-          allAudio: currentResult.allAudio.filter((f) => !deletedFileIds.has(f.id)),
-          allDownloads: currentResult.allDownloads.filter((f) => !deletedFileIds.has(f.id)),
-          obsoleteApks: currentResult.obsoleteApks.filter((f) => !deletedFileIds.has(f.id)),
-          largeFiles: currentResult.largeFiles.filter((f) => !deletedFileIds.has(f.id)),
-          junkFiles: currentResult.junkFiles.filter((f) => !deletedFileIds.has(f.id)),
-          whatsappFiles: currentResult.whatsappFiles.filter((f) => !deletedFileIds.has(f.id)),
-          duplicateGroups: currentResult.duplicateGroups.filter((g) => !deletedGroupIds.has(g.id)),
+          totalCleanableBytes: totalCleanable,
+          categories: updatedCategories,
+          allPhotos: [],
+          allVideos: [],
+          allAudio: [],
+          allDownloads: [],
+          obsoleteApks: remainingApks,
+          largeFiles: remainingLarge,
+          junkFiles: remainingJunk,
+          whatsappFiles: remainingWa,
+          duplicateGroups: remainingDups,
         };
       }
 
@@ -176,6 +348,8 @@ export const useAppStore = create<AppState>((set, get) => {
         scanResult: updatedResult,
         selectedFileIds: new Set(),
         selectedGroupIds: new Set(),
+        selectedFileBytesMap: new Map(),
+        selectedBytes: 0,
       });
       get().loadStorage();
     },
@@ -195,7 +369,15 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     resetScan: () => {
-      set({ scanPhase: "idle", scanProgress: 0, scanStage: "" });
+      set({
+        scanPhase: "idle",
+        scanProgress: 0,
+        scanStage: "",
+        selectedFileIds: new Set(),
+        selectedGroupIds: new Set(),
+        selectedFileBytesMap: new Map(),
+        selectedBytes: 0,
+      });
     },
   };
 });
@@ -206,20 +388,7 @@ export function useSelectedCount() {
 }
 
 export function useSelectedBytes(): number {
-  const { scanResult, selectedFileIds, selectedGroupIds } = useAppStore();
-  if (selectedFileIds.size === 0 && selectedGroupIds.size === 0) return 0;
-
-  // Exact sum from SQLite
-  const items = StorageIndexService.getItemsByIds(Array.from(selectedFileIds));
-  let bytes = items.reduce((sum, item) => sum + item.sizeBytes, 0);
-
-  if (scanResult) {
-    for (const g of scanResult.duplicateGroups) {
-      if (selectedGroupIds.has(g.id)) bytes += g.recoverableBytes;
-    }
-  }
-
-  return bytes;
+  return useAppStore((s) => s.selectedBytes);
 }
 
 export type { CategoryKey };

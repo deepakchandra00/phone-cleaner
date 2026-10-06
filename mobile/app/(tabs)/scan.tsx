@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { useAppStore } from "@/stores/useAppStore";
 import { CategoryColors, ThemeColors } from "@/theme/colors";
-import { formatSizeCompact, bytesToGB, formatCount, formatRelativeTime } from "@/lib/format";
+import { formatSizeCompact, formatHeadlineSize, bytesToGB, formatCount, formatRelativeTime } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey } from "@/lib/types";
 
@@ -54,14 +54,8 @@ export default function ScanScreen() {
       label: "Videos",
       icon: "videocam" as IconName,
       color: CategoryColors.videos,
-      bytes: (scanResult.allVideos && scanResult.allVideos.length > 0)
-        ? scanResult.allVideos.reduce((s, f) => s + f.sizeBytes, 0)
-        : scanResult.largeFiles
-            .filter((f) => f.category === "videos")
-            .reduce((s, f) => s + f.sizeBytes, 0),
-      count: (scanResult.allVideos && scanResult.allVideos.length > 0)
-        ? scanResult.allVideos.length
-        : scanResult.largeFiles.filter((f) => f.category === "videos").length,
+      bytes: scanResult.categories.find((c) => c.key === "videos")?.bytes ?? 0,
+      count: scanResult.categories.find((c) => c.key === "videos")?.fileCount ?? 0,
       route: "/category/videos",
     },
     {
@@ -104,7 +98,8 @@ export default function ScanScreen() {
         <Card className="items-center py-6">
           <Text className="text-muted-foreground text-sm">You can free up to</Text>
           <Text className="text-primary text-5xl font-bold mt-1">
-            {bytesToGB(totalCleanable).toFixed(1)} GB
+            {formatHeadlineSize(totalCleanable).value}{" "}
+            <Text className="text-3xl font-semibold">{formatHeadlineSize(totalCleanable).unit}</Text>
           </Text>
           <Text className="text-muted-foreground text-xs mt-2">
             Scan took {(scanResult.durationMs / 1000).toFixed(1)}s · {formatCount(scanResult.filesScanned)} files

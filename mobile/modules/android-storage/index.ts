@@ -28,6 +28,26 @@ export interface NativeScannedFile {
   isSent?: boolean;
 }
 
+export interface NativeVideoItem {
+  id: string;
+  uri: string;
+  path: string;
+  name: string;
+  sizeBytes: number;
+  modifiedAt: number;
+  durationSec: number;
+  mimeType: string;
+  width: number;
+  height: number;
+}
+
+export interface NativeDeleteResult {
+  deletedCount: number;
+  freedBytes: number;
+  deletedPaths: string[];
+  failedPaths: string[];
+}
+
 export const AndroidStorage = {
   getStorageStats(): NativeStorageStats | null {
     try {
@@ -35,6 +55,22 @@ export const AndroidStorage = {
       return module.getStorageStats();
     } catch {
       return null;
+    }
+  },
+  isExternalStorageManager(): boolean {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      return Boolean(module.isExternalStorageManager());
+    } catch {
+      return true;
+    }
+  },
+  async requestManageAllFilesAccess(): Promise<boolean> {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      return await module.requestManageAllFilesAccess();
+    } catch {
+      return false;
     }
   },
   getInstalledApps(): NativeAppInfo[] {
@@ -77,12 +113,42 @@ export const AndroidStorage = {
       return [];
     }
   },
-  async deleteNativeFiles(paths: string[]): Promise<{ deletedCount: number; freedBytes: number }> {
+  async scanMediaStoreVideos(): Promise<NativeVideoItem[]> {
     try {
       const module = requireNativeModule("AndroidStorage");
-      return await module.deleteNativeFiles(paths);
+      return await module.scanMediaStoreVideos();
     } catch {
-      return { deletedCount: 0, freedBytes: 0 };
+      return [];
+    }
+  },
+  async openFile(uriOrPath: string, mimeType?: string): Promise<boolean> {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      return await module.openFile(uriOrPath, mimeType ?? null);
+    } catch {
+      return false;
+    }
+  },
+  async locateFile(uriOrPath: string): Promise<boolean> {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      return await module.locateFile(uriOrPath);
+    } catch {
+      return false;
+    }
+  },
+  async deleteNativeFiles(paths: string[]): Promise<NativeDeleteResult> {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      const res = await module.deleteNativeFiles(paths);
+      return {
+        deletedCount: res.deletedCount ?? 0,
+        freedBytes: res.freedBytes ?? 0,
+        deletedPaths: res.deletedPaths ?? [],
+        failedPaths: res.failedPaths ?? [],
+      };
+    } catch {
+      return { deletedCount: 0, freedBytes: 0, deletedPaths: [], failedPaths: paths };
     }
   },
 };
@@ -121,6 +187,24 @@ export const HashWorker = {
       return await module.hashFiles(paths);
     } catch {
       return paths.map((p) => ({ path: p, hash: null }));
+    }
+  },
+  async computeDHash(path: string): Promise<string | null> {
+    try {
+      const module = requireNativeModule("HashWorker");
+      return await module.computeDHash(path);
+    } catch {
+      return null;
+    }
+  },
+  async hashPhotos(
+    paths: string[],
+  ): Promise<Array<{ path: string; sha256: string | null; dhash: string | null }>> {
+    try {
+      const module = requireNativeModule("HashWorker");
+      return await module.hashPhotos(paths);
+    } catch {
+      return paths.map((p) => ({ path: p, sha256: null, dhash: null }));
     }
   },
 };

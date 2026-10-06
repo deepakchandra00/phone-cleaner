@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { View, Text, ScrollView, Pressable, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,8 +9,9 @@ import { Card } from "@/components/ui/Card";
 import { Icon, CategoryIcons } from "@/components/ui/Icon";
 import { useAppStore } from "@/stores/useAppStore";
 import { usePremiumStore } from "@/stores/usePremiumStore";
+import { LinearGradient } from "expo-linear-gradient";
 import { CategoryColors, ThemeColors } from "@/theme/colors";
-import { formatSizeCompact, bytesToGB } from "@/lib/format";
+import { formatSizeCompact, formatHeadlineSize, bytesToGB } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey } from "@/lib/types";
 
@@ -20,10 +21,22 @@ export default function HomeScreen() {
   const { storage, scanResult, loadStorage } = useAppStore();
   const isPro = usePremiumStore((s) => s.isPro);
   const showPaywall = usePremiumStore((s) => s.showPaywall);
-  const refreshing = useRef(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    loadStorage();
+    let isMounted = true;
+    (async () => {
+      if (isMounted) await loadStorage();
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [loadStorage]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadStorage();
+    setRefreshing(false);
   }, [loadStorage]);
 
   if (!storage) {
@@ -63,7 +76,7 @@ export default function HomeScreen() {
       className="flex-1 bg-background"
       contentContainerStyle={{ paddingBottom: 100, paddingTop: Math.max(insets.top, 20) + 8 }}
       refreshControl={
-        <RefreshControl refreshing={refreshing.current} onRefresh={loadStorage} tintColor={ThemeColors.primary} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ThemeColors.primary} />
       }
     >
       {/* Greeting */}
@@ -88,7 +101,10 @@ export default function HomeScreen() {
             {storage.cleanableBytes > 0 ? (
               <View className="items-center">
                 <Text className="text-3xl font-bold text-primary">
-                  {bytesToGB(storage.cleanableBytes).toFixed(1)} GB
+                  {formatHeadlineSize(storage.cleanableBytes).value}{" "}
+                  <Text className="text-xl font-semibold">
+                    {formatHeadlineSize(storage.cleanableBytes).unit}
+                  </Text>
                 </Text>
                 <Text className="text-sm text-muted-foreground mt-0.5">can be cleaned</Text>
               </View>
@@ -115,29 +131,46 @@ export default function HomeScreen() {
 
       {/* One-tap smart clean CTA */}
       {scanResult && storage.cleanableBytes > 0 && (
-        <Animated.View entering={FadeInDown.delay(120).springify()} className="px-4 mt-3">
+        <Animated.View entering={FadeInDown.delay(120).springify()} className="px-4 mt-4">
           <Pressable
-            onPress={() => router.push("/review")}
-            className="bg-gradient-to-br from-primary to-teal-600 rounded-2xl p-4 active:opacity-95"
+            onPress={() => {
+              const count = useAppStore.getState().selectSmartCleanable();
+              if (count > 0) {
+                router.push("/review");
+              } else {
+                router.push("/(tabs)/scan");
+              }
+            }}
+            className="rounded-2xl active:opacity-95 overflow-hidden"
             style={{
               shadowColor: "#10b981",
               shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.25,
+              shadowOpacity: 0.35,
               shadowRadius: 16,
               elevation: 6,
             }}
           >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-white font-bold text-lg">Smart Clean</Text>
-                <Text className="text-white/80 text-sm mt-0.5">
-                  Free up {formatSizeCompact(storage.cleanableBytes)} in one tap
-                </Text>
+            <LinearGradient
+              colors={["#10b981", "#0d9488"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="px-5 py-5 border border-emerald-400/20 rounded-2xl"
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1 pr-3">
+                  <View className="flex-row items-center gap-2 mb-1">
+                    <Icon name="flash" size={18} color="#fff" />
+                    <Text className="text-white font-bold text-lg">Smart Clean</Text>
+                  </View>
+                  <Text className="text-white/85 text-sm leading-5">
+                    Free up {formatSizeCompact(storage.cleanableBytes)} safely in one tap
+                  </Text>
+                </View>
+                <View className="bg-white/20 rounded-full w-12 h-12 items-center justify-center border border-white/20 shadow-sm">
+                  <Icon name="arrow-forward" size={20} color="#fff" />
+                </View>
               </View>
-              <View className="bg-white/20 rounded-full w-12 h-12 items-center justify-center">
-                <Icon name="arrow-forward" size={22} color="#fff" />
-              </View>
-            </View>
+            </LinearGradient>
           </Pressable>
         </Animated.View>
       )}

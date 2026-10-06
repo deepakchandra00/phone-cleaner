@@ -35,6 +35,29 @@ export function bytesToGB(bytes: number): number {
   return Math.round((bytes / 1024 ** 3) * 10) / 10;
 }
 
+/**
+ * Splits size into value and unit for headline displays.
+ * Automatically chooses appropriate unit (GB, MB, KB) so sizes like 3.5 MB
+ * never get truncated to "0.0 GB".
+ */
+export function formatHeadlineSize(bytes: number): { value: string; unit: string } {
+  if (bytes <= 0) return { value: "0", unit: "MB" };
+  const GB = 1024 ** 3;
+  const MB = 1024 ** 2;
+  const KB = 1024;
+
+  if (bytes >= GB) {
+    return { value: (bytes / GB).toFixed(1), unit: "GB" };
+  }
+  if (bytes >= MB) {
+    return { value: (bytes / MB).toFixed(1), unit: "MB" };
+  }
+  if (bytes >= KB) {
+    return { value: (bytes / KB).toFixed(0), unit: "KB" };
+  }
+  return { value: String(bytes), unit: "B" };
+}
+
 export function gbToBytes(gb: number): number {
   return Math.round(gb * 1024 ** 3);
 }

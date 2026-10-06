@@ -31,7 +31,7 @@ interface PremiumState {
 
   setEntitlement: (e: Entitlement) => void;
   syncFromRevenueCat: (e: Partial<Entitlement>) => void;
-  loadCached: () => void;
+  loadCached: () => Promise<void>;
   showPaywall: () => void;
   hidePaywall: () => void;
 }
@@ -61,7 +61,8 @@ export const usePremiumStore = create<PremiumState>((set) => ({
     set({ entitlement, isPro: entitlement.isActive });
   },
 
-  loadCached: () => {
+  loadCached: async () => {
+    await storage.waitForHydration();
     const cached = getJSON<Entitlement>(KEYS.premiumEntitlement, DEFAULT_ENTITLEMENT);
     const ts = storage.getNumber(KEYS.premiumCacheTs) ?? 0;
     if (Date.now() - ts > CACHE_TTL) {

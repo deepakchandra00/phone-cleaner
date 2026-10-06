@@ -97,27 +97,43 @@ function LargeFilesSection() {
   const selectedBytes = useSelectedBytes();
   const [filter, setFilter] = useState<SizeFilterKey>("10mb");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [modalItem, setModalItem] = useState<StorageItem | null>(null);
   const [files, setFiles] = useState<StorageItem[]>([]);
   const [totalBytes, setTotalBytes] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const loadData = useCallback(() => {
     const min = SIZE_FILTERS.find((f) => f.key === filter)?.min ?? 10 * 1024 ** 2;
     const res = StorageIndexService.getItems({
       isLarge: true,
       minSizeBytes: min,
-      search: searchQuery.trim() || undefined,
+      search: debouncedSearch.trim() || undefined,
       sortBy: "size_desc",
       limit: 100,
     });
     setFiles(res.items);
     setTotalBytes(res.totalBytes);
-  }, [filter, searchQuery]);
+  }, [filter, debouncedSearch]);
 
   useEffect(() => {
-    loadData();
-    const unsub = DeleteCoordinator.addListener(() => loadData());
-    return () => unsub();
+    let isMounted = true;
+    (async () => {
+      if (isMounted) loadData();
+    })();
+    const unsub = DeleteCoordinator.addListener(() => {
+      if (isMounted) loadData();
+    });
+    return () => {
+      isMounted = false;
+      unsub();
+    };
   }, [loadData]);
 
   const selectedCount = files.filter((f) => selectedFileIds.has(f.id)).length;
@@ -267,26 +283,42 @@ function WhatsAppSection() {
   const selectedBytes = useSelectedBytes();
   const [selectedSubtype, setSelectedSubtype] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [modalItem, setModalItem] = useState<StorageItem | null>(null);
   const [files, setFiles] = useState<StorageItem[]>([]);
   const [totalBytes, setTotalBytes] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const loadData = useCallback(() => {
     const res = StorageIndexService.getItems({
       source: "whatsapp",
       whatsappType: selectedSubtype !== "all" ? (selectedSubtype as any) : undefined,
-      search: searchQuery.trim() || undefined,
+      search: debouncedSearch.trim() || undefined,
       sortBy: "size_desc",
       limit: 100,
     });
     setFiles(res.items);
     setTotalBytes(res.totalBytes);
-  }, [selectedSubtype, searchQuery]);
+  }, [selectedSubtype, debouncedSearch]);
 
   useEffect(() => {
-    loadData();
-    const unsub = DeleteCoordinator.addListener(() => loadData());
-    return () => unsub();
+    let isMounted = true;
+    (async () => {
+      if (isMounted) loadData();
+    })();
+    const unsub = DeleteCoordinator.addListener(() => {
+      if (isMounted) loadData();
+    });
+    return () => {
+      isMounted = false;
+      unsub();
+    };
   }, [loadData]);
 
   const selectedCount = files.filter((f) => selectedFileIds.has(f.id)).length;
@@ -455,10 +487,11 @@ function AppsSection() {
     );
   }, [scanResult?.apps, sort]);
 
+  const [currentTimestamp] = useState(() => Date.now());
   const totalSize = useMemo(() => apps.reduce((s, a) => s + a.sizeBytes, 0), [apps]);
   const unusedApps = useMemo(
-    () => apps.filter((a) => Date.now() - a.lastUsedAt > 90 * 86400000),
-    [apps]
+    () => apps.filter((a) => currentTimestamp - a.lastUsedAt > 90 * 86400000),
+    [apps, currentTimestamp],
   );
   const unusedBytes = useMemo(() => unusedApps.reduce((s, a) => s + a.sizeBytes, 0), [unusedApps]);
   const totalCacheBytes = useMemo(() => apps.reduce((s, a) => s + a.cacheBytes, 0), [apps]);
@@ -466,10 +499,10 @@ function AppsSection() {
   const renderAppRow = useCallback(
     ({ item }: { item: AppItem }) => (
       <View className="px-4 py-1">
-        <AppRow app={item} />
+        <AppRow app={item} now={currentTimestamp} />
       </View>
     ),
-    []
+    [currentTimestamp],
   );
 
   return (
@@ -627,8 +660,9 @@ function FileRow({
   );
 }
 
-function AppRow({ app }: { app: AppItem }) {
-  const daysUnused = Math.floor((Date.now() - app.lastUsedAt) / 86400000);
+function AppRow({ app, now }: { app: AppItem; now?: number }) {
+  const referenceTime = now ?? app.lastUsedAt;
+  const daysUnused = Math.floor((referenceTime - app.lastUsedAt) / 86400000);
   const isUnused = daysUnused > 90;
 
   return (

@@ -3,6 +3,7 @@ import { View, Text, Pressable, Dimensions, ScrollView } from "react-native";
 import { Image } from "expo-image";
 import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
@@ -115,21 +116,35 @@ export default function PhotosScreen() {
         <FlashList
           data={groups}
           keyExtractor={(g) => g.id}
-          contentContainerStyle={{ paddingBottom: 130 }}
+          contentContainerStyle={{ paddingBottom: 160 }}
           ListHeaderComponent={
             <View className="mb-3">
               <Pressable
                 onPress={selectAllKeepBest}
-                className="bg-gradient-to-br from-primary to-teal-600 rounded-2xl p-3.5 flex-row items-center justify-between active:opacity-95"
+                className="rounded-2xl active:opacity-95 overflow-hidden"
+                style={{
+                  shadowColor: "#10b981",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 10,
+                  elevation: 4,
+                }}
               >
-                <View className="flex-row items-center gap-2">
-                  <Icon name="sparkles" size={18} color="#fff" />
-                  <View>
-                    <Text className="text-white font-semibold text-sm">Keep best, delete rest</Text>
-                    <Text className="text-white/80 text-xs">Auto-select across all {groups.length} groups</Text>
+                <LinearGradient
+                  colors={["#10b981", "#0d9488"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  className="p-3.5 flex-row items-center justify-between"
+                >
+                  <View className="flex-row items-center gap-2">
+                    <Icon name="sparkles" size={18} color="#fff" />
+                    <View>
+                      <Text className="text-white font-semibold text-sm">Keep best, delete rest</Text>
+                      <Text className="text-white/80 text-xs">Auto-select across all {groups.length} groups</Text>
+                    </View>
                   </View>
-                </View>
-                <Icon name="arrow-forward" size={16} color="#fff" />
+                  <Icon name="arrow-forward" size={16} color="#fff" />
+                </LinearGradient>
               </Pressable>
             </View>
           }
@@ -153,7 +168,7 @@ export default function PhotosScreen() {
       {selectedGroupIds.size + selectedFileIds.size > 0 && (
         <View
           className="absolute left-0 right-0 bg-card border-t border-border px-4 pt-3"
-          style={{ bottom: 0, paddingBottom: Math.max(insets.bottom + 12, 24) }}
+          style={{ bottom: 0, paddingBottom: Math.max(insets.bottom + 12, 28) }}
         >
           <View className="flex-row items-center justify-between mb-2">
             <Text className="text-foreground text-sm">

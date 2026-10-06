@@ -64,6 +64,41 @@ function withAndroidQueries(config: ExpoConfig): ExpoConfig {
   });
 }
 
+/**
+ * Config plugin: injects FileProvider into AndroidManifest.xml for native file opening.
+ */
+function withFileProvider(config: ExpoConfig): ExpoConfig {
+  return withAndroidManifest(config, (modConfig) => {
+    const manifest = modConfig.modResults.manifest as any;
+    const app = manifest.application?.[0];
+    if (app) {
+      if (!app.provider) app.provider = [];
+      const hasFileProvider = app.provider.some(
+        (p: any) => p.$?.["android:name"] === "androidx.core.content.FileProvider",
+      );
+      if (!hasFileProvider) {
+        app.provider.push({
+          $: {
+            "android:name": "androidx.core.content.FileProvider",
+            "android:authorities": "${applicationId}.fileprovider",
+            "android:exported": "false",
+            "android:grantUriPermissions": "true",
+          },
+          "meta-data": [
+            {
+              $: {
+                "android:name": "android.support.FILE_PROVIDER_PATHS",
+                "android:resource": "@xml/file_paths",
+              },
+            },
+          ],
+        });
+      }
+    }
+    return modConfig;
+  });
+}
+
 export default ({ config }: ConfigContext): ExpoConfig => {
   const base: ExpoConfig = {
     ...config,
@@ -171,5 +206,5 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
   };
 
-  return withAndroidQueries(base);
+  return withFileProvider(withAndroidQueries(base));
 };

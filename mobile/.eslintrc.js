@@ -1,5 +1,6 @@
 // https://docs.expo.dev/guides/using-eslint/
 module.exports = {
+  root: true,
   extends: 'expo',
-  ignorePatterns: ['/dist/*'],
+  ignorePatterns: ['/dist/*', 'node_modules', 'android'],
 };

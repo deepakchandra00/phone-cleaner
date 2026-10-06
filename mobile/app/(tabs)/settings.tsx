@@ -9,6 +9,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { usePremiumStore } from "@/stores/usePremiumStore";
 import { storage, KEYS } from "@/lib/storage";
 import { setAnalyticsEnabled } from "@/lib/analytics";
+import { registerScheduledScanTask, unregisterScheduledScanTask } from "@/lib/backgroundTasks";
 import { formatSizeCompact, formatRelativeTime } from "@/lib/format";
 import { ThemeColors } from "@/theme/colors";
 
@@ -75,7 +76,7 @@ export default function SettingsScreen() {
     setAnalyticsEnabled(next);
   };
 
-  const handleToggleScheduled = () => {
+  const handleToggleScheduled = async () => {
     if (!isPro) {
       Alert.alert(
         "Pro feature",
@@ -90,7 +91,11 @@ export default function SettingsScreen() {
     const next = !scheduledOn;
     setScheduledOn(next);
     storage.set(KEYS.scheduledScanEnabled, next);
-    // In production: register/unregister expo-background-fetch task here.
+    if (next) {
+      await registerScheduledScanTask();
+    } else {
+      await unregisterScheduledScanTask();
+    }
   };
 
   const handleReset = () => {

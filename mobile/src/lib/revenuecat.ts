@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import Purchases, { type CustomerInfo } from "react-native-purchases";
+// eslint-disable-next-line import/no-unresolved
 import { REVENUECAT_ANDROID_KEY } from "@env";
 import type { Entitlement } from "@/stores/usePremiumStore";
 
@@ -60,7 +61,10 @@ export async function purchase(plan: "yearly" | "monthly"): Promise<Entitlement>
   trackPurchase("premium_purchase", plan);
 
   if (!isRevenueCatConfigured()) {
-    // Dev/sandbox simulation
+    if (!__DEV__) {
+      throw new Error("In-app purchases are temporarily unavailable. Please try again later.");
+    }
+    // Dev/sandbox simulation (only when developing locally)
     await new Promise((r) => setTimeout(r, 800));
     return {
       isActive: true,

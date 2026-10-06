@@ -13,6 +13,7 @@ class SafeStorage implements IStorage {
   private mmkvInstance: any = null;
   private memoryCache = new Map<string, any>();
   private initialized = false;
+  private hydrationPromise: Promise<void>;
 
   constructor() {
     try {
@@ -29,7 +30,11 @@ class SafeStorage implements IStorage {
     }
 
     // Hydrate memory cache from AsyncStorage in background
-    this.hydrateFromAsyncStorage();
+    this.hydrationPromise = this.hydrateFromAsyncStorage();
+  }
+
+  public async waitForHydration(): Promise<void> {
+    await this.hydrationPromise;
   }
 
   private async hydrateFromAsyncStorage() {

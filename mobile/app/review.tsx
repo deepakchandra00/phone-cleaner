@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { useAppStore, useSelectedBytes } from "@/stores/useAppStore";
 import { CategoryColors, ThemeColors } from "@/theme/colors";
-import { formatSizeCompact, bytesToGB } from "@/lib/format";
+import { formatSizeCompact, formatHeadlineSize, bytesToGB } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey, ScannedFile } from "@/lib/types";
 
@@ -72,13 +72,14 @@ export default function Review() {
     // Add selected duplicate groups as a single pseudo-category
     const selGroups = scanResult?.duplicateGroups.filter((g) => selectedGroupIds.has(g.id)) ?? [];
     if (selGroups.length > 0) {
-      const allDupFiles = selGroups.flatMap((g) => g.files);
+      // Only show the non-keep duplicate copies that will actually be removed
+      const nonKeepDupFiles = selGroups.flatMap((g) => g.files.filter((f) => f.id !== g.keepId));
       out.push({
         key: "duplicates",
         label: "Duplicate photos",
         icon: "copy",
         color: CategoryColors.duplicates,
-        files: allDupFiles,
+        files: nonKeepDupFiles,
         bytes: selGroups.reduce((s, g) => s + g.recoverableBytes, 0),
         groupIds: selGroups.map((g) => g.id),
         groupBytes: selGroups.reduce((s, g) => s + g.recoverableBytes, 0),
@@ -94,7 +95,7 @@ export default function Review() {
   const handleClean = () => {
     Alert.alert(
       "Confirm cleanup",
-      `You're about to free up ${bytesToGB(selectedBytes).toFixed(1)} GB by removing ${totalFiles} item${totalFiles === 1 ? "" : "s"}. This cannot be undone.`,
+      `You're about to free up ${formatSizeCompact(selectedBytes)} by removing ${totalFiles} item${totalFiles === 1 ? "" : "s"}. This cannot be undone.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -142,13 +143,14 @@ export default function Review() {
     <View className="flex-1 bg-background">
       <ScreenHeader title="Review cleanup" subtitle="Confirm before we delete" showBack />
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 140 }}>
         {/* Hero: total */}
         <Animated.View entering={FadeIn.springify()} className="px-4">
           <Card className="items-center py-6">
             <Text className="text-muted-foreground text-sm">You will free up</Text>
             <Text className="text-primary text-5xl font-bold mt-1">
-              {bytesToGB(selectedBytes).toFixed(1)} GB
+              {formatHeadlineSize(selectedBytes).value}{" "}
+              <Text className="text-3xl font-semibold">{formatHeadlineSize(selectedBytes).unit}</Text>
             </Text>
             <Text className="text-muted-foreground text-xs mt-2">
               {totalFiles} item{totalFiles === 1 ? "" : "s"} selected
@@ -227,7 +229,7 @@ export default function Review() {
       {/* Sticky action bar */}
       <View
         className="absolute left-0 right-0 bg-card border-t border-border px-4 pt-3"
-        style={{ bottom: 0, paddingBottom: Math.max(insets.bottom + 12, 24) }}
+        style={{ bottom: 0, paddingBottom: Math.max(insets.bottom + 12, 28) }}
       >
         <Button
           variant="destructive"

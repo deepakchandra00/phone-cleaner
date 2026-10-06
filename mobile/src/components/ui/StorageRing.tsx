@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { View, Text } from "react-native";
-import Svg, { Circle, Path } from "react-native-svg";
+import Svg, { Circle } from "react-native-svg";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -82,31 +82,36 @@ export function StorageRing({
         />
 
         {/* Category segments — drawn proportionally on the same circle */}
-        {(() => {
-          let offset = 0;
-          return segments.map((seg) => {
-            const frac = seg.bytes / totalUsed;
-            const dashLen = circumference * frac;
-            const gap = circumference - dashLen;
-            const rot = (offset / circumference) * 360 - 90;
-            offset += dashLen;
-            return (
-              <Circle
-                key={seg.key}
-                cx={cx}
-                cy={cy}
-                r={r}
-                stroke={seg.color}
-                strokeWidth={strokeWidth}
-                fill="none"
-                strokeDasharray={`${dashLen} ${gap}`}
-                rotation={rot}
-                origin={`${cx}, ${cy}`}
-                strokeLinecap="butt"
-              />
-            );
-          });
-        })()}
+        {segments
+          .reduce<{ offset: number; nodes: React.ReactNode[] }>(
+            (acc, seg) => {
+              const frac = seg.bytes / totalUsed;
+              const dashLen = circumference * frac;
+              const gap = circumference - dashLen;
+              const rot = (acc.offset / circumference) * 360 - 90;
+              const node = (
+                <Circle
+                  key={seg.key}
+                  cx={cx}
+                  cy={cy}
+                  r={r}
+                  stroke={seg.color}
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                  strokeDasharray={`${dashLen} ${gap}`}
+                  rotation={rot}
+                  origin={`${cx}, ${cy}`}
+                  strokeLinecap="butt"
+                />
+              );
+              return {
+                offset: acc.offset + dashLen,
+                nodes: [...acc.nodes, node],
+              };
+            },
+            { offset: 0, nodes: [] },
+          )
+          .nodes}
 
         {/* Animated overlay: re-draws the used portion with a smooth sweep.
             We keep it transparent so the category colours show through but

@@ -58,6 +58,17 @@ class StorageIndexServiceImpl {
       } catch {}
 
       this.db.execSync(CREATE_STORAGE_ITEMS_TABLE_SQL);
+      this.db.execSync(`
+        CREATE TABLE IF NOT EXISTS file_hashes (
+          path_or_uri TEXT PRIMARY KEY,
+          size_bytes INTEGER NOT NULL,
+          modified_at INTEGER NOT NULL,
+          sha256 TEXT,
+          dhash TEXT,
+          cached_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_file_hashes_lookup ON file_hashes(path_or_uri, size_bytes, modified_at);
+      `);
       this.initialized = true;
     }
     return this.db;
@@ -386,6 +397,87 @@ class StorageIndexServiceImpl {
     const db = this.getDb();
     const row = db.getFirstSync<{ count: number }>("SELECT COUNT(*) as count FROM storage_items;");
     return row?.count ?? 0;
+  }
+
+  /**
+   * Retrieves cached SHA-256 and dHash values for files that have not changed
+   * (matching path, exact size, and modification timestamp).
+   */
+  public getCachedHashes(
+    items: Array<{ pathOrUri: string; sizeBytes: number; modifiedAt: number }>,
+  ): Map<string, { sha256: string | null; dhash: string | null }> {
+    const result = new Map<string, { sha256: string | null; dhash: string | null }>();
+    if (items.length === 0) return result;
+    const db = this.getDb();
+    const chunkSize = 150;
+
+    for (let i = 0; i < items.length; i += chunkSize) {
+      const chunk = items.slice(i, i + chunkSize);
+      const placeholders = chunk.map(() => "?").join(",");
+      const paths = chunk.map((c) => c.pathOrUri);
+      const rows = db.getAllSync<{
+        path_or_uri: string;
+        size_bytes: number;
+        modified_at: number;
+        sha256: string | null;
+        dhash: string | null;
+      }>(
+        `SELECT path_or_uri, size_bytes, modified_at, sha256, dhash FROM file_hashes WHERE path_or_uri IN (${placeholders});`,
+        paths,
+      );
+
+      for (const row of rows) {
+        const match = chunk.find(
+          (c) =>
+            c.pathOrUri === row.path_or_uri &&
+            c.sizeBytes === row.size_bytes &&
+            c.modifiedAt === row.modified_at,
+        );
+        if (match) {
+          result.set(row.path_or_uri, { sha256: row.sha256, dhash: row.dhash });
+        }
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Persists computed hashes into SQLite file_hashes table for incremental caching.
+   */
+  public saveCachedHashes(
+    hashes: Array<{
+      pathOrUri: string;
+      sizeBytes: number;
+      modifiedAt: number;
+      sha256: string | null;
+      dhash: string | null;
+    }>,
+  ): void {
+    if (hashes.length === 0) return;
+    const db = this.getDb();
+
+    db.withTransactionSync(() => {
+      const stmt = db.prepareSync(`
+        INSERT OR REPLACE INTO file_hashes (
+          path_or_uri, size_bytes, modified_at, sha256, dhash, cached_at
+        ) VALUES (?, ?, ?, ?, ?, ?);
+      `);
+      try {
+        const now = Date.now();
+        for (const h of hashes) {
+          stmt.executeSync([
+            h.pathOrUri,
+            h.sizeBytes,
+            h.modifiedAt,
+            h.sha256 ?? null,
+            h.dhash ?? null,
+            now,
+          ]);
+        }
+      } finally {
+        stmt.finalizeSync();
+      }
+    });
   }
 
   /**

@@ -106,10 +106,14 @@ class DeleteCoordinatorImpl {
     if (filesystemPaths.length > 0) {
       try {
         const nativeRes = await AndroidStorage.deleteNativeFiles(filesystemPaths);
-        // Mark all matching items as deleted
+        const deletedSet = new Set(nativeRes.deletedPaths);
         for (const item of items.filter((i) => i.path && filesystemPaths.includes(i.path))) {
-          deletedIds.push(item.id);
-          freedBytes += item.sizeBytes;
+          if (item.path && deletedSet.has(item.path)) {
+            deletedIds.push(item.id);
+            freedBytes += item.sizeBytes;
+          } else {
+            failedCount++;
+          }
         }
       } catch (err) {
         console.warn("[DeleteCoordinator] Native filesystem delete error:", err);

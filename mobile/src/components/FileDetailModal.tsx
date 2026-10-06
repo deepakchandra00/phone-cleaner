@@ -5,6 +5,7 @@ import { Image } from "expo-image";
 import * as Linking from "expo-linking";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/Button";
+import { AndroidStorage } from "android-storage";
 import { DeleteCoordinator } from "@/services/DeleteCoordinator";
 import { CategoryColors, ThemeColors } from "@/theme/colors";
 import { formatSizeCompact } from "@/lib/format";
@@ -36,18 +37,41 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
     ? item.path.replace(/^\/storage\/emulated\/0\/?/, "")
     : item.uri.replace(/^content:\/\/media\/external\//, "Media: ");
 
+  const handleLocate = async () => {
+    try {
+      const target = item.path || item.uri;
+      const located = await AndroidStorage.locateFile(target);
+      if (!located) {
+        await handleOpen();
+      }
+    } catch (err) {
+      console.warn("[FileDetailModal] Could not locate file:", err);
+      await handleOpen();
+    }
+  };
+
   const handleOpen = async () => {
     try {
-      if (item.uri.startsWith("file://") || item.uri.startsWith("content://")) {
-        await Share.share({
-          url: item.uri,
-          title: item.name,
-        });
-      } else {
-        await Linking.openURL(item.uri);
+      const target = item.path || item.uri;
+      const opened = await AndroidStorage.openFile(target, item.mimeType);
+      if (!opened) {
+        if (item.uri.startsWith("file://") || item.uri.startsWith("content://")) {
+          await Share.share({
+            url: item.uri,
+            title: item.name,
+          });
+        } else {
+          const canOpen = await Linking.canOpenURL(item.uri);
+          if (canOpen) {
+            await Linking.openURL(item.uri);
+          } else {
+            Alert.alert("Unable to open file", "No compatible app was found on your device to open this file type.");
+          }
+        }
       }
     } catch (err) {
       console.warn("[FileDetailModal] Could not open file:", err);
+      Alert.alert("Unable to open file", "No compatible application was found to open this file.");
     }
   };
 
@@ -147,12 +171,18 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
 
             {/* Metadata Table */}
             <View className="bg-muted rounded-2xl p-4 gap-3 mb-6">
-              <View className="flex-row justify-between">
+              <Pressable
+                onPress={handleLocate}
+                className="flex-row justify-between items-center active:opacity-70"
+              >
                 <Text className="text-muted-foreground text-xs">Location</Text>
-                <Text className="text-foreground text-xs font-medium max-w-[65%] text-right" numberOfLines={2}>
-                  {displayLocation}
-                </Text>
-              </View>
+                <View className="flex-row items-center gap-1 max-w-[68%]">
+                  <Text className="text-primary text-xs font-medium text-right underline" numberOfLines={2}>
+                    {displayLocation}
+                  </Text>
+                  <Icon name="folder-open-outline" size={14} color={ThemeColors.primary} />
+                </View>
+              </Pressable>
               <View className="flex-row justify-between">
                 <Text className="text-muted-foreground text-xs">Modified</Text>
                 <Text className="text-foreground text-xs font-medium">
@@ -176,21 +206,32 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
             </View>
 
             {/* Action Buttons */}
-            <View className="flex-row gap-3">
-              <Button
-                variant="secondary"
-                size="lg"
-                className="flex-1"
-                leftIcon={<Icon name="open-outline" size={18} color={ThemeColors.primary} />}
-                onPress={handleOpen}
-              >
-                Open / Share
-              </Button>
+            <View className="gap-2.5">
+              <View className="flex-row gap-3">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="flex-1"
+                  leftIcon={<Icon name="folder-open-outline" size={18} color={ThemeColors.primary} />}
+                  onPress={handleLocate}
+                >
+                  Locate file
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="flex-1"
+                  leftIcon={<Icon name="open-outline" size={18} color={ThemeColors.primary} />}
+                  onPress={handleOpen}
+                >
+                  Open / Share
+                </Button>
+              </View>
               {item.canDelete && (
                 <Button
                   variant="destructive"
                   size="lg"
-                  className="flex-1"
+                  fullWidth
                   loading={deleting}
                   leftIcon={<Icon name="trash" size={18} color="#fff" />}
                   onPress={handleDelete}

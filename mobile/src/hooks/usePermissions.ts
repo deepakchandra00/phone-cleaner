@@ -20,11 +20,23 @@ export interface PermissionState {
  * Onboarding only *explains* permissions and requests the one permission
  * needed for the first scan: media library access.
  */
+import { AndroidStorage } from "android-storage";
+
 export function usePermissions() {
   const [state, setState] = useState<PermissionState>({
     media: "undetermined",
     notifications: "undetermined",
   });
+
+  const checkStorageManager = useCallback((): boolean => {
+    if (Platform.OS !== "android") return true;
+    return AndroidStorage.isExternalStorageManager();
+  }, []);
+
+  const requestStorageManager = useCallback(async (): Promise<boolean> => {
+    if (Platform.OS !== "android") return true;
+    return await AndroidStorage.requestManageAllFilesAccess();
+  }, []);
 
   const requestMedia = useCallback(async (): Promise<PermissionStatus> => {
     track("permission_request", { permission: "media_library" });
@@ -47,12 +59,15 @@ export function usePermissions() {
   }, []);
 
   const openSystemSettings = useCallback(() => {
-    if (Platform.OS === "android") {
-      Linking.openSettings();
-    } else {
-      Linking.openSettings();
-    }
+    Linking.openSettings();
   }, []);
 
-  return { state, requestMedia, requestNotifications, openSystemSettings };
+  return {
+    state,
+    requestMedia,
+    requestNotifications,
+    openSystemSettings,
+    checkStorageManager,
+    requestStorageManager,
+  };
 }

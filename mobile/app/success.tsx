@@ -17,12 +17,12 @@ import { useAppStore } from "@/stores/useAppStore";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { storage, KEYS } from "@/lib/storage";
-import { bytesToGB, formatSizeCompact } from "@/lib/format";
+import { bytesToGB, formatSizeCompact, formatHeadlineSize } from "@/lib/format";
 import { maybeShowInterstitial } from "@/lib/ads";
 
 const CONFETTI_COLORS = ["#10b981", "#14b8a6", "#f59e0b", "#ec4899", "#f97316", "#22c55e"];
 
-interface ConfettiPiece {
+interface ConfettiPieceItem {
   id: number;
   color: string;
   x: number;
@@ -31,6 +31,21 @@ interface ConfettiPiece {
   rotation: number;
   size: number;
 }
+
+const STATIC_CONFETTI: ConfettiPieceItem[] = Array.from({ length: 40 }, (_, i) => {
+  const seed = ((i * 9301 + 49297) % 233280) / 233280;
+  const seed2 = (((i + 13) * 9301 + 49297) % 233280) / 233280;
+  const seed3 = (((i + 27) * 9301 + 49297) % 233280) / 233280;
+  return {
+    id: i,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    x: (i / 40) * 100 + (seed * 6 - 3),
+    delay: seed2 * 400,
+    duration: 1400 + seed3 * 800,
+    rotation: seed * 720 - 360,
+    size: 6 + seed2 * 8,
+  };
+});
 
 export default function Success() {
   const router = useRouter();
@@ -60,19 +75,7 @@ export default function Success() {
     }
   }, [checkScale, numberScale, loadStorage, isPurchase]);
 
-  const confetti = useMemo<ConfettiPiece[]>(
-    () =>
-      Array.from({ length: 40 }, (_, i) => ({
-        id: i,
-        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-        x: (i / 40) * 100 + (Math.random() * 6 - 3),
-        delay: Math.random() * 400,
-        duration: 1400 + Math.random() * 800,
-        rotation: Math.random() * 720 - 360,
-        size: 6 + Math.random() * 8,
-      })),
-    [],
-  );
+  const confetti = STATIC_CONFETTI;
 
   const checkStyle = useAnimatedStyle(() => ({
     transform: [{ scale: checkScale.value }],
@@ -115,8 +118,12 @@ export default function Success() {
           ) : (
             <>
               <Text className="text-muted-foreground text-base">You freed up</Text>
-              <Text className="text-primary text-6xl font-bold mt-1">{freedGB.toFixed(1)}</Text>
-              <Text className="text-primary text-2xl font-semibold">GB</Text>
+              <Text className="text-primary text-6xl font-bold mt-1">
+                {formatHeadlineSize(lastFreedBytes ?? 0).value}
+              </Text>
+              <Text className="text-primary text-2xl font-semibold">
+                {formatHeadlineSize(lastFreedBytes ?? 0).unit}
+              </Text>
             </>
           )}
         </Animated.View>
@@ -174,7 +181,7 @@ export default function Success() {
   );
 }
 
-function ConfettiPiece({ piece }: { piece: ConfettiPiece }) {
+function ConfettiPiece({ piece }: { piece: ConfettiPieceItem }) {
   const style = useAnimatedStyle(() => {
     "worklet";
     const y = withDelay(
