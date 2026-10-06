@@ -182,23 +182,22 @@ export default function Success() {
 }
 
 function ConfettiPiece({ piece }: { piece: ConfettiPieceItem }) {
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = withDelay(
+      piece.delay,
+      withTiming(1, { duration: piece.duration, easing: Easing.in(Easing.quad) }),
+    );
+  }, [piece.delay, piece.duration, progress]);
+
   const style = useAnimatedStyle(() => {
-    "worklet";
-    const y = withDelay(
-      piece.delay,
-      withTiming(700, { duration: piece.duration, easing: Easing.in(Easing.quad) }),
-    );
-    const r = withDelay(
-      piece.delay,
-      withTiming(piece.rotation, { duration: piece.duration }),
-    );
-    const o = withDelay(
-      piece.delay + piece.duration - 400,
-      withTiming(0, { duration: 400 }),
-    );
+    const y = interpolate(progress.value, [0, 1], [0, 700]);
+    const rot = interpolate(progress.value, [0, 1], [0, piece.rotation]);
+    const opacity = interpolate(progress.value, [0, 0.7, 1], [1, 1, 0]);
     return {
-      transform: [{ translateY: y }, { rotate: `${r}deg` }],
-      opacity: o,
+      transform: [{ translateY: y }, { rotate: `${rot}deg` }],
+      opacity,
     };
   });
   return (

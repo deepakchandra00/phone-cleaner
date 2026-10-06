@@ -8,6 +8,14 @@ import { isSafeToCleanAutomatically } from "@/lib/safety";
 import type { ScanResult, StorageSummary, CategoryKey } from "@/lib/types";
 import { track } from "@/lib/analytics";
 
+export const fileSizesCache = new Map<string, number>();
+
+export function registerFileSizes(items: { id: string; sizeBytes: number }[]): void {
+  for (const item of items) {
+    fileSizesCache.set(item.id, item.sizeBytes);
+  }
+}
+
 type ScanPhase = "idle" | "scanning" | "done" | "error";
 
 interface AppState {
@@ -25,7 +33,8 @@ interface AppState {
   lastFreedBytes: number | null; // for the success animation
 
   loadStorage: () => Promise<void>;
-  startScan: () => Promise<ScanResult | null>;
+  startScan: (options?: { includeDuplicates?: boolean }) => Promise<ScanResult | null>;
+  prepareScan: () => void;
   selectSmartCleanable: () => number;
   toggleFile: (id: string, sizeBytes?: number) => void;
   toggleGroup: (id: string) => void;
@@ -33,7 +42,14 @@ interface AppState {
   deselectAllFiles: (ids: string[]) => void;
   clearSelection: () => void;
   applyCleanup: (freedBytes: number, fileCount: number) => void;
-  executeCleanup: () => Promise<{ freedBytes: number; fileCount: number }>;
+  executeCleanup: () => Promise<{
+    freedBytes: number;
+    fileCount: number;
+    requestedCount: number;
+    failedCount: number;
+    permissionBlockedCount: number;
+    missingPermission?: "manage_external_storage" | "media_library" | "saf" | null;
+  }>;
   resetScan: () => void;
 }
 
@@ -80,14 +96,36 @@ export const useAppStore = create<AppState>((set, get) => {
       }
     },
 
-    startScan: async () => {
+    prepareScan: () => {
+      set({
+        scanPhase: "idle",
+        scanProgress: 0,
+        scanStage: "Preparing scan…",
+        selectedFileIds: new Set(),
+        selectedGroupIds: new Set(),
+        selectedFileBytesMap: new Map(),
+        selectedBytes: 0,
+      });
+    },
+
+    startScan: async (options) => {
       set({ scanPhase: "scanning", scanProgress: 0, scanStage: "Preparing scan…" });
       track("scan_started");
 
       try {
         const result = await runRealScan((stage, progress) => {
           set({ scanStage: stage, scanProgress: progress });
-        });
+        }, options);
+
+        if (result) {
+          const allItems: { id: string; sizeBytes: number }[] = [];
+          for (const p of result.allPhotos) allItems.push({ id: p.id, sizeBytes: p.sizeBytes });
+          for (const v of result.allVideos) allItems.push({ id: v.id, sizeBytes: v.sizeBytes });
+          for (const d of result.allDownloads) allItems.push({ id: d.id, sizeBytes: d.sizeBytes });
+          for (const j of result.junkFiles) allItems.push({ id: j.id, sizeBytes: j.sizeBytes });
+          for (const w of result.whatsappFiles) allItems.push({ id: w.id, sizeBytes: w.sizeBytes });
+          registerFileSizes(allItems);
+        }
 
         set({
           scanResult: result,
@@ -121,14 +159,16 @@ export const useAppStore = create<AppState>((set, get) => {
       let totalBytes = 0;
 
       if (scanResult) {
-        // Safe cleanable files verified against central safety policy
+        // 1. Visible & temporary app caches + empty folders (Safe Clean)
         for (const j of scanResult.junkFiles) {
-          if (isSafeToCleanAutomatically(j)) {
+          const isTrashOrThumb = Boolean(j.source && (j.source.includes("Trash") || j.source.includes("Thumbnail")));
+          if (!isTrashOrThumb && isSafeToCleanAutomatically(j)) {
             fileIds.add(j.id);
             bytesMap.set(j.id, j.sizeBytes);
             totalBytes += j.sizeBytes;
           }
         }
+        // 2. Installed / Obsolete APKs in Downloads (Safe Clean)
         for (const a of scanResult.obsoleteApks) {
           if (isSafeToCleanAutomatically(a)) {
             fileIds.add(a.id);
@@ -136,18 +176,8 @@ export const useAppStore = create<AppState>((set, get) => {
             totalBytes += a.sizeBytes;
           }
         }
-        for (const w of scanResult.whatsappFiles) {
-          if (isSafeToCleanAutomatically(w)) {
-            fileIds.add(w.id);
-            bytesMap.set(w.id, w.sizeBytes);
-            totalBytes += w.sizeBytes;
-          }
-        }
-        // Redundant duplicate photos (groups ensure keepId is never deleted)
-        for (const g of scanResult.duplicateGroups) {
-          groupIds.add(g.id);
-          totalBytes += g.recoverableBytes;
-        }
+        // Note: Duplicate photos, WhatsApp media, and Trashed media remain unchecked
+        // by default under "Files to Review" for safety, exactly matching CCleaner.
       }
 
       set({
@@ -166,17 +196,13 @@ export const useAppStore = create<AppState>((set, get) => {
 
       if (curIds.has(id)) {
         curIds.delete(id);
-        const removedSize = curMap.get(id) ?? sizeBytes ?? 0;
+        const removedSize = curMap.get(id) ?? sizeBytes ?? fileSizesCache.get(id) ?? 0;
         curMap.delete(id);
         curBytes = Math.max(0, curBytes - removedSize);
       } else {
         curIds.add(id);
-        // Fast path: use passed sizeBytes or lookup from map
-        let size = sizeBytes;
-        if (size === undefined) {
-          const item = StorageIndexService.getItemsByIds([id])[0];
-          size = item?.sizeBytes ?? 0;
-        }
+        // Fast path: use passed sizeBytes or lookup from in-memory cache with zero blocking
+        const size = sizeBytes ?? curMap.get(id) ?? fileSizesCache.get(id) ?? 0;
         curMap.set(id, size);
         curBytes += size;
       }
@@ -217,17 +243,17 @@ export const useAppStore = create<AppState>((set, get) => {
             curIds.add(item.id);
             curMap.set(item.id, item.sizeBytes);
             curBytes += item.sizeBytes;
+            fileSizesCache.set(item.id, item.sizeBytes);
           }
         }
       } else {
         const ids = itemsOrIds as string[];
-        const needed = ids.filter((id) => !curIds.has(id));
-        if (needed.length > 0) {
-          const fetched = StorageIndexService.getItemsByIds(needed);
-          for (const item of fetched) {
-            curIds.add(item.id);
-            curMap.set(item.id, item.sizeBytes);
-            curBytes += item.sizeBytes;
+        for (const id of ids) {
+          if (!curIds.has(id)) {
+            const size = fileSizesCache.get(id) ?? 0;
+            curIds.add(id);
+            curMap.set(id, size);
+            curBytes += size;
           }
         }
       }
@@ -356,22 +382,39 @@ export const useAppStore = create<AppState>((set, get) => {
 
     executeCleanup: async () => {
       const { scanResult, selectedFileIds, selectedGroupIds, applyCleanup } = get();
-      if (!scanResult) return { freedBytes: 0, fileCount: 0 };
+      if (!scanResult) {
+        return {
+          freedBytes: 0,
+          fileCount: 0,
+          requestedCount: 0,
+          failedCount: 0,
+          permissionBlockedCount: 0,
+        };
+      }
 
-      const { freedBytes, deletedCount } = await performRealCleanup(
+      const res = await performRealCleanup(
         selectedFileIds,
         selectedGroupIds,
         scanResult,
       );
 
-      applyCleanup(freedBytes, deletedCount);
-      return { freedBytes, fileCount: deletedCount };
+      applyCleanup(res.freedBytes, res.deletedCount);
+      return {
+        freedBytes: res.freedBytes,
+        fileCount: res.deletedCount,
+        requestedCount: res.requestedCount,
+        failedCount: res.failedCount,
+        permissionBlockedCount: res.permissionBlockedCount,
+        missingPermission: res.missingPermission,
+      };
     },
 
     resetScan: () => {
       set({
-        scanPhase: "idle",
-        scanProgress: 0,
+        // Keep scanResult so scan tab shows results after navigate
+        // Only reset progress/stage indicators and selection
+        scanPhase: "done",
+        scanProgress: 1,
         scanStage: "",
         selectedFileIds: new Set(),
         selectedGroupIds: new Set(),
@@ -389,6 +432,28 @@ export function useSelectedCount() {
 
 export function useSelectedBytes(): number {
   return useAppStore((s) => s.selectedBytes);
+}
+
+export function getAutoCleanableBytes(scanResult: ScanResult | null): number {
+  if (!scanResult) return 0;
+  let total = 0;
+  for (const j of scanResult.junkFiles) {
+    if (isSafeToCleanAutomatically(j)) total += j.sizeBytes;
+  }
+  for (const a of scanResult.obsoleteApks) {
+    if (isSafeToCleanAutomatically(a)) total += a.sizeBytes;
+  }
+  for (const w of scanResult.whatsappFiles) {
+    if (isSafeToCleanAutomatically(w)) total += w.sizeBytes;
+  }
+  for (const g of scanResult.duplicateGroups) {
+    total += g.recoverableBytes;
+  }
+  return total;
+}
+
+export function useAutoCleanableBytes(): number {
+  return useAppStore((s) => getAutoCleanableBytes(s.scanResult));
 }
 
 export type { CategoryKey };

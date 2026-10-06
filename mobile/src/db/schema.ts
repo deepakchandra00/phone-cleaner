@@ -22,7 +22,14 @@ export type WhatsAppType =
   | "sticker"
   | "sent";
 
-export type JunkType = "cache" | "temp" | "apk" | "thumbnail" | "other";
+export type JunkType = "cache" | "temp" | "apk" | "thumbnail" | "empty_folder" | "trash" | "browser" | "other";
+
+export type DeleteStrategy =
+  | "media_store"
+  | "document_uri"
+  | "filesystem"
+  | "manage_external_storage"
+  | "unsupported";
 
 export interface StorageItem {
   id: string;
@@ -43,6 +50,7 @@ export interface StorageItem {
   canOpen: boolean;
   canPreview: boolean;
   canDelete: boolean;
+  deleteStrategy?: DeleteStrategy;
   requiresPermission: boolean;
   width?: number;
   height?: number;
@@ -145,6 +153,25 @@ export interface StorageItemRow {
   is_sent: number;
 }
 
+export function determineDeleteStrategy(
+  source: string,
+  uri: string,
+  path?: string,
+  canDelete = true,
+): DeleteStrategy {
+  if (!canDelete) return "unsupported";
+  if (source === "media_store" || uri.startsWith("content://media/")) {
+    return "media_store";
+  }
+  if (source === "saf" || uri.startsWith("content://com.android.externalstorage.documents/")) {
+    return "document_uri";
+  }
+  if (source === "filesystem" || source === "whatsapp") {
+    return "filesystem";
+  }
+  return "filesystem";
+}
+
 export function mapRowToStorageItem(row: StorageItemRow): StorageItem {
   return {
     id: row.id,
@@ -165,6 +192,7 @@ export function mapRowToStorageItem(row: StorageItemRow): StorageItem {
     canOpen: row.can_open === 1,
     canPreview: row.can_preview === 1,
     canDelete: row.can_delete === 1,
+    deleteStrategy: determineDeleteStrategy(row.source, row.uri, row.path ?? undefined, row.can_delete === 1),
     requiresPermission: row.requires_permission === 1,
     width: row.width ?? undefined,
     height: row.height ?? undefined,

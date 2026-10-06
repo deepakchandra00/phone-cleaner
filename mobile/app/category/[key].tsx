@@ -9,7 +9,7 @@ import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Button } from "@/components/ui/Button";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { FileDetailModal } from "@/components/FileDetailModal";
-import { useAppStore, useSelectedBytes } from "@/stores/useAppStore";
+import { useAppStore, useSelectedBytes, registerFileSizes } from "@/stores/useAppStore";
 import { StorageIndexService, type StorageQueryParams } from "@/db/StorageIndexService";
 import { DeleteCoordinator } from "@/services/DeleteCoordinator";
 import { CategoryColors, ThemeColors, StatusColors } from "@/theme/colors";
@@ -218,6 +218,7 @@ export default function CategoryDetail() {
     setItems(filtered);
     setTotalCount(res.totalCount);
     setTotalBytes(res.totalBytes);
+    registerFileSizes(filtered);
     setLoading(false);
   }, [categoryKey, sizeFilter, subTypeFilter, sortOrder, debouncedSearch]);
 
@@ -519,7 +520,7 @@ export default function CategoryDetail() {
             rightIcon={<Icon name="arrow-forward" size={18} color="#fff" />}
             onPress={() => router.push("/review")}
           >
-            Review cleanup ({formatSizeCompact(selectedBytes)})
+            {`Review cleanup (${formatSizeCompact(selectedBytes)})`}
           </Button>
         ) : (
           <Button
@@ -529,7 +530,7 @@ export default function CategoryDetail() {
             leftIcon={<Icon name="checkbox-outline" size={18} color={ThemeColors.primary} />}
             onPress={toggleSelectAll}
           >
-            Select all {items.length} items to clean
+            {`Select all ${items.length} items to clean`}
           </Button>
         )}
       </View>

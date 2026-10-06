@@ -3,6 +3,9 @@ import * as TaskManager from "expo-task-manager";
 import { runRealScan } from "./realScanner";
 import { storage, KEYS } from "./storage";
 
+import * as Notifications from "expo-notifications";
+import { formatSizeCompact } from "./format";
+
 export const SCHEDULED_SCAN_TASK = "BACKGROUND_SCHEDULED_SCAN";
 
 try {
@@ -13,8 +16,21 @@ try {
         return BackgroundFetch.BackgroundFetchResult.NoData;
       }
 
-      await runRealScan();
+      const result = await runRealScan();
       storage.set(KEYS.lastScanTs, Date.now());
+
+      if (result && result.totalCleanableBytes > 500 * 1024 * 1024) {
+        try {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: "Phone Cleaner — Junk Detected",
+              body: `Found ${formatSizeCompact(result.totalCleanableBytes)} of junk files. Tap to quick clean.`,
+            },
+            trigger: null,
+          });
+        } catch {}
+      }
+
       return BackgroundFetch.BackgroundFetchResult.NewData;
     } catch (err) {
       console.warn("[BackgroundTasks] Scheduled scan task error:", err);

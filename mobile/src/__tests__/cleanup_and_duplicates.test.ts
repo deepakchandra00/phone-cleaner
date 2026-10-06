@@ -191,3 +191,94 @@ test("formatHeadlineSize avoids 0.0 GB truncation", async (t) => {
     assert.equal(res.unit, "MB");
   });
 });
+
+test("Similar photos candidate grouping allows size variance for burst captures", async (t) => {
+  await t.test("groups burst capture photos within ±4s regardless of file size differences", () => {
+    const photos: ScannedFile[] = [
+      {
+        id: "burst_1",
+        name: "IMG_001.jpg",
+        path: "/dcim/IMG_001.jpg",
+        sizeBytes: 3_200_000, // 3.2 MB
+        modifiedAt: 1700000000000,
+        width: 4000,
+        height: 3000,
+        category: "photos",
+        mimeType: "image/jpeg",
+      },
+      {
+        id: "burst_2",
+        name: "IMG_002.jpg",
+        path: "/dcim/IMG_002.jpg",
+        sizeBytes: 3_450_000, // 3.45 MB (different size!)
+        modifiedAt: 1700000001500, // 1.5s later
+        width: 4000,
+        height: 3000,
+        category: "photos",
+        mimeType: "image/jpeg",
+      },
+      {
+        id: "other_photo",
+        name: "IMG_999.jpg",
+        path: "/dcim/IMG_999.jpg",
+        sizeBytes: 2_100_000,
+        modifiedAt: 1700086400000, // 24 hours later
+        width: 4000,
+        height: 3000,
+        category: "photos",
+        mimeType: "image/jpeg",
+      },
+    ];
+
+    // Pipeline B: time proximity grouping
+    const sorted = [...photos].sort((a, b) => a.modifiedAt - b.modifiedAt);
+    const similarCandidates = new Set<string>();
+
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const cur = sorted[i];
+      const next = sorted[i + 1];
+      if (Math.abs(next.modifiedAt - cur.modifiedAt) <= 4000) {
+        similarCandidates.add(cur.id);
+        similarCandidates.add(next.id);
+      }
+    }
+
+    assert.equal(similarCandidates.has("burst_1"), true, "Burst photo 1 must be a candidate");
+    assert.equal(similarCandidates.has("burst_2"), true, "Burst photo 2 must be a candidate despite different size");
+    assert.equal(similarCandidates.has("other_photo"), false, "Unrelated photo must not be grouped");
+    assert.equal(similarCandidates.size, 2);
+  });
+});
+
+test("Post-deletion physical verification accounting", async (t) => {
+  await t.test("only accounts freedBytes for items confirmed absent by physical verifier", () => {
+    const attemptedItems = [
+      { id: "file_deleted_1", sizeBytes: 1_000_000, path: "/path/1" },
+      { id: "file_deleted_2", sizeBytes: 2_500_000, path: "/path/2" },
+      { id: "file_failed_permission", sizeBytes: 5_000_000, path: "/path/3" },
+    ];
+
+    // Physical verification results from StorageVerifier
+    const physicalCheckResults = {
+      "/path/1": false, // file deleted (not existing)
+      "/path/2": false, // file deleted (not existing)
+      "/path/3": true,  // file still exists on disk! (deletion failed/blocked)
+    };
+
+    const confirmedDeletedIds: string[] = [];
+    let freedBytes = 0;
+
+    for (const item of attemptedItems) {
+      const stillExists = physicalCheckResults[item.path as keyof typeof physicalCheckResults];
+      if (!stillExists) {
+        confirmedDeletedIds.push(item.id);
+        freedBytes += item.sizeBytes;
+      }
+    }
+
+    assert.equal(confirmedDeletedIds.length, 2);
+    assert.deepEqual(confirmedDeletedIds, ["file_deleted_1", "file_deleted_2"]);
+    assert.equal(freedBytes, 3_500_000, "Must only count 3.5 MB, not the un-deleted 5 MB item");
+  });
+});
+

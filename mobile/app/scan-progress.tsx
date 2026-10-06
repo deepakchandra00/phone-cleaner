@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { View, Text } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useSharedValue,
@@ -8,7 +8,6 @@ import Animated, {
   withRepeat,
   withTiming,
   Easing,
-  withSpring,
   FadeIn,
 } from "react-native-reanimated";
 import { useAppStore } from "@/stores/useAppStore";
@@ -28,6 +27,8 @@ const STAGE_META: Record<string, { icon: IconName; color: string }> = {
 export default function ScanProgress() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { includeDuplicates: incDupsParam } = useLocalSearchParams<{ includeDuplicates?: string }>();
+  const includeDuplicates = incDupsParam === "true";
   const { scanPhase, scanProgress, scanStage, startScan, storage } = useAppStore();
 
   // Radar pulse animation
@@ -55,14 +56,19 @@ export default function ScanProgress() {
 
   useEffect(() => {
     if (scanPhase === "idle") {
-      startScan();
+      startScan({ includeDuplicates });
     }
     if (scanPhase === "done") {
-      // Brief delay so the user sees 100% before navigating
-      const t = setTimeout(() => router.replace("/(tabs)/scan"), 500);
+      // Navigate to scan results tab first, then reset — resetting before navigation
+      // would set phase back to "idle" and re-trigger startScan immediately.
+      const t = setTimeout(() => {
+        router.replace("/(tabs)/scan");
+        // Small delay to let navigation commit before resetting state
+        setTimeout(() => useAppStore.getState().resetScan(), 200);
+      }, 600);
       return () => clearTimeout(t);
     }
-  }, [scanPhase, startScan, router]);
+  }, [scanPhase, startScan, router, includeDuplicates]);
 
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 0.6 + pulse.value * 0.4 }],
@@ -74,8 +80,8 @@ export default function ScanProgress() {
     opacity: ringOpacity.value,
   }));
   const ring2Style = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(ringScale.value, { damping: 12 }) }],
-    opacity: ringOpacity.value,
+    transform: [{ scale: ringScale.value * 0.85 }],
+    opacity: ringOpacity.value * 0.75,
   }));
 
   const meta = STAGE_META[scanStage] ?? STAGE_META["Preparing scan…"];

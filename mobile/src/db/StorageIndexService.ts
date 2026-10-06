@@ -38,14 +38,24 @@ class StorageIndexServiceImpl {
   private db: SQLite.SQLiteDatabase | null = null;
   private initialized = false;
 
+  public resetConnection(): void {
+    try {
+      if (this.db) {
+        this.db.closeSync();
+      }
+    } catch {}
+    this.db = null;
+    this.initialized = false;
+  }
+
   public getDb(): SQLite.SQLiteDatabase {
     if (!this.db) {
-      this.db = SQLite.openDatabaseSync("phone_cleaner.db");
+      this.db = SQLite.openDatabaseSync("phone_cleaner.db", { useNewConnection: true });
     }
     if (!this.initialized) {
       try {
         const tableSql = this.db.getFirstSync<{ sql: string }>(
-          "SELECT sql FROM sqlite_master WHERE type='table' AND name='storage_items';"
+          "SELECT sql FROM sqlite_master WHERE type='table' AND name='storage_items';",
         );
         if (
           tableSql &&
@@ -75,11 +85,35 @@ class StorageIndexServiceImpl {
   }
 
   /**
+   * Resilient execution wrapper that self-heals stale JNI database handles on Android.
+   */
+  public executeWithRetry<T>(operation: (db: SQLite.SQLiteDatabase) => T): T {
+    try {
+      const db = this.getDb();
+      return operation(db);
+    } catch (err: any) {
+      const msg = String(err?.message || err);
+      if (
+        msg.includes("NullPointerException") ||
+        msg.includes("closed") ||
+        msg.includes("rejected") ||
+        msg.includes("NativeDatabase") ||
+        msg.includes("prepareSync")
+      ) {
+        console.warn("[StorageIndexService] Database connection stale or failed, resetting connection...", err);
+        this.resetConnection();
+        const freshDb = this.getDb();
+        return operation(freshDb);
+      }
+      throw err;
+    }
+  }
+
+  /**
    * Bulk upserts an array of storage items into SQLite inside a fast transaction.
    */
   public upsertItemsBatch(items: StorageItem[]): void {
     if (items.length === 0) return;
-    const db = this.getDb();
 
     // Deduplicate items by ID keeping latest
     const uniqueMap = new Map<string, StorageItem>();
@@ -88,48 +122,51 @@ class StorageIndexServiceImpl {
     }
     const uniqueItems = Array.from(uniqueMap.values());
 
-    db.withTransactionSync(() => {
-      const stmt = db.prepareSync(`
-        INSERT OR REPLACE INTO storage_items (
-          id, uri, path, name, size_bytes, mime_type, extension,
-          category, source, modified_at, is_large, is_junk, junk_type, junk_reason,
-          duplicate_group_id, can_open, can_preview, can_delete, requires_permission,
-          width, height, duration_ms, whatsapp_type, is_sent
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-      `);
+    const UPSERT_SQL = `
+      INSERT OR REPLACE INTO storage_items (
+        id, uri, path, name, size_bytes, mime_type, extension,
+        category, source, modified_at, is_large, is_junk, junk_type, junk_reason,
+        duplicate_group_id, can_open, can_preview, can_delete, requires_permission,
+        width, height, duration_ms, whatsapp_type, is_sent
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    `;
 
-      try {
-        for (const item of uniqueItems) {
-          stmt.executeSync([
-            item.id,
-            item.uri,
-            item.path ?? null,
-            item.name,
-            item.sizeBytes,
-            item.mimeType ?? null,
-            item.extension ?? null,
-            item.category,
-            item.source,
-            item.modifiedAt,
-            item.isLarge ? 1 : 0,
-            item.isJunk ? 1 : 0,
-            item.junkType ?? null,
-            item.junkReason ?? null,
-            item.duplicateGroupId ?? null,
-            item.canOpen ? 1 : 0,
-            item.canPreview ? 1 : 0,
-            item.canDelete ? 1 : 0,
-            item.requiresPermission ? 1 : 0,
-            item.width ?? null,
-            item.height ?? null,
-            item.durationMs ?? null,
-            item.whatsappType ?? null,
-            item.isSent ? 1 : 0,
-          ]);
+    this.executeWithRetry((db) => {
+      db.withTransactionSync(() => {
+        const stmt = db.prepareSync(UPSERT_SQL);
+        try {
+          for (const item of uniqueItems) {
+            stmt.executeSync([
+              item.id,
+              item.uri,
+              item.path ?? null,
+              item.name,
+              item.sizeBytes,
+              item.mimeType ?? null,
+              item.extension ?? null,
+              item.category,
+              item.source,
+              item.modifiedAt,
+              item.isLarge ? 1 : 0,
+              item.isJunk ? 1 : 0,
+              item.junkType ?? null,
+              item.junkReason ?? null,
+              item.duplicateGroupId ?? null,
+              item.canOpen ? 1 : 0,
+              item.canPreview ? 1 : 0,
+              item.canDelete ? 1 : 0,
+              item.requiresPermission ? 1 : 0,
+              item.width ?? null,
+              item.height ?? null,
+              item.durationMs ?? null,
+              item.whatsappType ?? null,
+              item.isSent ? 1 : 0,
+            ]);
+          }
+        } finally {
+          stmt.finalizeSync();
         }
-      } finally {
-        stmt.finalizeSync();
-      }
+      });
     });
   }
 
@@ -137,112 +174,114 @@ class StorageIndexServiceImpl {
    * Fast paginated, sorted, and filtered query over the storage items table.
    */
   public getItems(params: StorageQueryParams = {}): StorageQueryResult {
-    const db = this.getDb();
-    const conditions: string[] = [];
-    const args: any[] = [];
+    return this.executeWithRetry((db) => {
+      const conditions: string[] = [];
+      const args: any[] = [];
 
-    if (params.category) {
-      conditions.push("category = ?");
-      args.push(params.category);
-    }
-    if (params.source) {
-      conditions.push("source = ?");
-      args.push(params.source);
-    }
-    if (params.minSizeBytes !== undefined) {
-      conditions.push("size_bytes >= ?");
-      args.push(params.minSizeBytes);
-    }
-    if (params.maxSizeBytes !== undefined) {
-      conditions.push("size_bytes <= ?");
-      args.push(params.maxSizeBytes);
-    }
-    if (params.isLarge !== undefined) {
-      conditions.push("is_large = ?");
-      args.push(params.isLarge ? 1 : 0);
-    }
-    if (params.isJunk !== undefined) {
-      conditions.push("is_junk = ?");
-      args.push(params.isJunk ? 1 : 0);
-    }
-    if (params.junkType) {
-      conditions.push("junk_type = ?");
-      args.push(params.junkType);
-    }
-    if (params.isSent !== undefined) {
-      conditions.push("is_sent = ?");
-      args.push(params.isSent ? 1 : 0);
-    }
-    if (params.duplicateGroupId) {
-      conditions.push("duplicate_group_id = ?");
-      args.push(params.duplicateGroupId);
-    }
-    if (params.whatsappType) {
-      if (params.whatsappType === "sent") {
-        conditions.push("is_sent = 1");
-      } else {
-        conditions.push("whatsapp_type = ?");
-        args.push(params.whatsappType);
+      if (params.category) {
+        conditions.push("category = ?");
+        args.push(params.category);
       }
-    }
-    if (params.search) {
-      conditions.push("name LIKE ?");
-      args.push(`%${params.search}%`);
-    }
+      if (params.source) {
+        conditions.push("source = ?");
+        args.push(params.source);
+      }
+      if (params.minSizeBytes !== undefined) {
+        conditions.push("size_bytes >= ?");
+        args.push(params.minSizeBytes);
+      }
+      if (params.maxSizeBytes !== undefined) {
+        conditions.push("size_bytes <= ?");
+        args.push(params.maxSizeBytes);
+      }
+      if (params.isLarge !== undefined) {
+        conditions.push("is_large = ?");
+        args.push(params.isLarge ? 1 : 0);
+      }
+      if (params.isJunk !== undefined) {
+        conditions.push("is_junk = ?");
+        args.push(params.isJunk ? 1 : 0);
+      }
+      if (params.junkType) {
+        conditions.push("junk_type = ?");
+        args.push(params.junkType);
+      }
+      if (params.isSent !== undefined) {
+        conditions.push("is_sent = ?");
+        args.push(params.isSent ? 1 : 0);
+      }
+      if (params.duplicateGroupId) {
+        conditions.push("duplicate_group_id = ?");
+        args.push(params.duplicateGroupId);
+      }
+      if (params.whatsappType) {
+        if (params.whatsappType === "sent") {
+          conditions.push("is_sent = 1");
+        } else {
+          conditions.push("whatsapp_type = ?");
+          args.push(params.whatsappType);
+        }
+      }
+      if (params.search) {
+        conditions.push("name LIKE ?");
+        args.push(`%${params.search}%`);
+      }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    // 1. Get totals
-    const countSql = `SELECT COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as total_bytes FROM storage_items ${whereClause}`;
-    const countRow = db.getFirstSync<{ count: number; total_bytes: number }>(countSql, args) ?? {
-      count: 0,
-      total_bytes: 0,
-    };
+      // 1. Get totals
+      const countSql = `SELECT COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as total_bytes FROM storage_items ${whereClause}`;
+      const countRow = db.getFirstSync<{ count: number; total_bytes: number }>(countSql, args) ?? {
+        count: 0,
+        total_bytes: 0,
+      };
 
-    // 2. Determine sorting
-    let orderBy = "size_bytes DESC";
-    switch (params.sortBy) {
-      case "size_asc":
-        orderBy = "size_bytes ASC";
-        break;
-      case "date_desc":
-        orderBy = "modified_at DESC";
-        break;
-      case "date_asc":
-        orderBy = "modified_at ASC";
-        break;
-      case "name_asc":
-        orderBy = "name COLLATE NOCASE ASC";
-        break;
-      case "size_desc":
-      default:
-        orderBy = "size_bytes DESC";
-        break;
-    }
+      // 2. Determine sorting
+      let orderBy = "size_bytes DESC";
+      switch (params.sortBy) {
+        case "size_asc":
+          orderBy = "size_bytes ASC";
+          break;
+        case "date_desc":
+          orderBy = "modified_at DESC";
+          break;
+        case "date_asc":
+          orderBy = "modified_at ASC";
+          break;
+        case "name_asc":
+          orderBy = "name COLLATE NOCASE ASC";
+          break;
+        case "size_desc":
+        default:
+          orderBy = "size_bytes DESC";
+          break;
+      }
 
-    // 3. Paginate
-    const limit = Math.min(params.limit ?? 50, 200);
-    const offset = params.offset ?? 0;
-    const querySql = `SELECT * FROM storage_items ${whereClause} ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
-    const queryArgs = [...args, limit, offset];
+      // 3. Paginate
+      const limit = Math.min(params.limit ?? 50, 200);
+      const offset = params.offset ?? 0;
+      const querySql = `SELECT * FROM storage_items ${whereClause} ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
+      const queryArgs = [...args, limit, offset];
 
-    const rows = db.getAllSync<StorageItemRow>(querySql, queryArgs);
-    const items = rows.map(mapRowToStorageItem);
+      const rows = db.getAllSync<StorageItemRow>(querySql, queryArgs);
+      const items = rows.map(mapRowToStorageItem);
 
-    return {
-      items,
-      totalCount: countRow.count,
-      totalBytes: countRow.total_bytes,
-    };
+      return {
+        items,
+        totalCount: countRow.count,
+        totalBytes: countRow.total_bytes,
+      };
+    });
   }
 
   /**
    * Retrieves a single item by ID.
    */
   public getItemById(id: string): StorageItem | null {
-    const db = this.getDb();
-    const row = db.getFirstSync<StorageItemRow>("SELECT * FROM storage_items WHERE id = ? LIMIT 1", [id]);
-    return row ? mapRowToStorageItem(row) : null;
+    return this.executeWithRetry((db) => {
+      const row = db.getFirstSync<StorageItemRow>("SELECT * FROM storage_items WHERE id = ? LIMIT 1", [id]);
+      return row ? mapRowToStorageItem(row) : null;
+    });
   }
 
   /**
@@ -250,21 +289,22 @@ class StorageIndexServiceImpl {
    */
   public getItemsByIds(ids: string[]): StorageItem[] {
     if (ids.length === 0) return [];
-    const db = this.getDb();
-    const items: StorageItem[] = [];
-    const chunkSize = 200;
+    return this.executeWithRetry((db) => {
+      const items: StorageItem[] = [];
+      const chunkSize = 200;
 
-    for (let i = 0; i < ids.length; i += chunkSize) {
-      const chunk = ids.slice(i, i + chunkSize);
-      const placeholders = chunk.map(() => "?").join(",");
-      const rows = db.getAllSync<StorageItemRow>(
-        `SELECT * FROM storage_items WHERE id IN (${placeholders})`,
-        chunk
-      );
-      items.push(...rows.map(mapRowToStorageItem));
-    }
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize);
+        const placeholders = chunk.map(() => "?").join(",");
+        const rows = db.getAllSync<StorageItemRow>(
+          `SELECT * FROM storage_items WHERE id IN (${placeholders})`,
+          chunk,
+        );
+        items.push(...rows.map(mapRowToStorageItem));
+      }
 
-    return items;
+      return items;
+    });
   }
 
   /**
@@ -272,75 +312,30 @@ class StorageIndexServiceImpl {
    */
   public deleteItemsByIds(ids: string[]): number {
     if (ids.length === 0) return 0;
-    const db = this.getDb();
-    let deleted = 0;
-    const chunkSize = 200;
+    return this.executeWithRetry((db) => {
+      let deleted = 0;
+      const chunkSize = 200;
 
-    db.withTransactionSync(() => {
-      for (let i = 0; i < ids.length; i += chunkSize) {
-        const chunk = ids.slice(i, i + chunkSize);
-        const placeholders = chunk.map(() => "?").join(",");
-        const res = db.runSync(`DELETE FROM storage_items WHERE id IN (${placeholders})`, chunk);
-        deleted += res.changes;
-      }
+      db.withTransactionSync(() => {
+        for (let i = 0; i < ids.length; i += chunkSize) {
+          const chunk = ids.slice(i, i + chunkSize);
+          const placeholders = chunk.map(() => "?").join(",");
+          const res = db.runSync(`DELETE FROM storage_items WHERE id IN (${placeholders})`, chunk);
+          deleted += res.changes;
+        }
+      });
+
+      return deleted;
     });
-
-    return deleted;
   }
 
   /**
-   * Computes unified dashboard aggregates derived purely from SQLite.
+   * Computes unified dashboard aggregates derived purely from SQLite with fallback.
    */
   public getDashboardAggregates(
     storageStats: { totalBytes: number; usedBytes: number; freeBytes: number },
-    appsStats: { count: number; bytes: number }
+    appsStats: { count: number; bytes: number },
   ): DashboardSummary {
-    const db = this.getDb();
-
-    // 1. By physical category
-    const catRows = db.getAllSync<{ category: string; file_count: number; total_bytes: number }>(`
-      SELECT category, COUNT(*) as file_count, COALESCE(SUM(size_bytes), 0) as total_bytes
-      FROM storage_items
-      GROUP BY category;
-    `);
-
-    const categoriesMap = new Map<StorageCategory, { count: number; bytes: number }>();
-    for (const r of catRows) {
-      categoriesMap.set(r.category as StorageCategory, { count: r.file_count, bytes: r.total_bytes });
-    }
-
-    // 2. Junk cleanable
-    const junkStats = db.getFirstSync<{ count: number; bytes: number }>(`
-      SELECT COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as bytes
-      FROM storage_items
-      WHERE is_junk = 1;
-    `) ?? { count: 0, bytes: 0 };
-
-    // 3. Large files (>= 10 MB)
-    const largeStats = db.getFirstSync<{ count: number; bytes: number }>(`
-      SELECT COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as bytes
-      FROM storage_items
-      WHERE is_large = 1;
-    `) ?? { count: 0, bytes: 0 };
-
-    // 4. WhatsApp files
-    const waStats = db.getFirstSync<{ count: number; bytes: number }>(`
-      SELECT COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as bytes
-      FROM storage_items
-      WHERE source = 'whatsapp';
-    `) ?? { count: 0, bytes: 0 };
-
-    // 5. Duplicates recoverable
-    const dupStats = db.getFirstSync<{ group_count: number; file_count: number; total_bytes: number }>(`
-      SELECT COUNT(DISTINCT duplicate_group_id) as group_count,
-             COUNT(*) as file_count,
-             COALESCE(SUM(size_bytes), 0) as total_bytes
-      FROM storage_items
-      WHERE duplicate_group_id IS NOT NULL;
-    `) ?? { group_count: 0, file_count: 0, total_bytes: 0 };
-
-    const duplicateRecoverableBytes = Math.max(0, Math.floor(dupStats.total_bytes * 0.5));
-
     const ALL_CATEGORIES: StorageCategory[] = [
       "photos",
       "videos",
@@ -351,52 +346,128 @@ class StorageIndexServiceImpl {
       "other",
     ];
 
-    const categoryAggregates: DashboardCategoryAggregate[] = ALL_CATEGORIES.map((cat) => {
-      const data = categoriesMap.get(cat) ?? { count: 0, bytes: 0 };
-      let cleanable = 0;
-      if (cat === "downloads" || cat === "apks") {
-        cleanable = data.bytes;
-      }
+    try {
+      return this.executeWithRetry((db) => {
+        // 1. By physical category
+        const catRows = db.getAllSync<{ category: string; file_count: number; total_bytes: number }>(`
+          SELECT category, COUNT(*) as file_count, COALESCE(SUM(size_bytes), 0) as total_bytes
+          FROM storage_items
+          GROUP BY category;
+        `);
+
+        const categoriesMap = new Map<StorageCategory, { count: number; bytes: number }>();
+        for (const r of catRows) {
+          categoriesMap.set(r.category as StorageCategory, { count: r.file_count, bytes: r.total_bytes });
+        }
+
+        // 2. Junk cleanable
+        const junkStats = db.getFirstSync<{ count: number; bytes: number }>(`
+          SELECT COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as bytes
+          FROM storage_items
+          WHERE is_junk = 1;
+        `) ?? { count: 0, bytes: 0 };
+
+        // 3. Large files (>= 10 MB)
+        const largeStats = db.getFirstSync<{ count: number; bytes: number }>(`
+          SELECT COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as bytes
+          FROM storage_items
+          WHERE is_large = 1;
+        `) ?? { count: 0, bytes: 0 };
+
+        // 4. WhatsApp files
+        const waStats = db.getFirstSync<{ count: number; bytes: number }>(`
+          SELECT COUNT(*) as count, COALESCE(SUM(size_bytes), 0) as bytes
+          FROM storage_items
+          WHERE source = 'whatsapp';
+        `) ?? { count: 0, bytes: 0 };
+
+        // 5. Duplicates recoverable
+        const dupStats = db.getFirstSync<{ group_count: number; file_count: number; total_bytes: number }>(`
+          SELECT COUNT(DISTINCT duplicate_group_id) as group_count,
+                 COUNT(*) as file_count,
+                 COALESCE(SUM(size_bytes), 0) as total_bytes
+          FROM storage_items
+          WHERE duplicate_group_id IS NOT NULL;
+        `) ?? { group_count: 0, file_count: 0, total_bytes: 0 };
+
+        const duplicateRecoverableBytes = Math.max(0, Math.floor(dupStats.total_bytes * 0.5));
+
+        const categoryAggregates: DashboardCategoryAggregate[] = ALL_CATEGORIES.map((cat) => {
+          const data = categoriesMap.get(cat) ?? { count: 0, bytes: 0 };
+          let cleanable = 0;
+          if (cat === "downloads" || cat === "apks") {
+            cleanable = data.bytes;
+          }
+          return {
+            category: cat,
+            fileCount: data.count,
+            totalBytes: data.bytes,
+            cleanableBytes: cleanable,
+          };
+        });
+
+        const totalScannedBytes = Array.from(categoriesMap.values()).reduce((sum, c) => sum + c.bytes, 0);
+        const totalCleanableBytes = junkStats.bytes + duplicateRecoverableBytes;
+
+        return {
+          totalStorageBytes: storageStats.totalBytes,
+          usedStorageBytes: storageStats.usedBytes,
+          freeStorageBytes: storageStats.freeBytes,
+          totalScannedBytes,
+          totalCleanableBytes,
+          categories: categoryAggregates,
+          largeFilesCount: largeStats.count,
+          largeFilesBytes: largeStats.bytes,
+          junkFilesCount: junkStats.count,
+          junkFilesBytes: junkStats.bytes,
+          whatsappFilesCount: waStats.count,
+          whatsappFilesBytes: waStats.bytes,
+          duplicateGroupsCount: dupStats.group_count,
+          duplicateFilesCount: dupStats.file_count,
+          duplicateRecoverableBytes,
+          appsCount: appsStats.count,
+          appsBytes: appsStats.bytes,
+          lastScannedAt: Date.now(),
+        };
+      });
+    } catch (err) {
+      console.warn("[StorageIndexService] getDashboardAggregates fallback due to error:", err);
       return {
-        category: cat,
-        fileCount: data.count,
-        totalBytes: data.bytes,
-        cleanableBytes: cleanable,
+        totalStorageBytes: storageStats.totalBytes,
+        usedStorageBytes: storageStats.usedBytes,
+        freeStorageBytes: storageStats.freeBytes,
+        totalScannedBytes: 0,
+        totalCleanableBytes: 0,
+        categories: ALL_CATEGORIES.map((cat) => ({
+          category: cat,
+          fileCount: 0,
+          totalBytes: 0,
+          cleanableBytes: 0,
+        })),
+        largeFilesCount: 0,
+        largeFilesBytes: 0,
+        junkFilesCount: 0,
+        junkFilesBytes: 0,
+        whatsappFilesCount: 0,
+        whatsappFilesBytes: 0,
+        duplicateGroupsCount: 0,
+        duplicateFilesCount: 0,
+        duplicateRecoverableBytes: 0,
+        appsCount: appsStats.count,
+        appsBytes: appsStats.bytes,
+        lastScannedAt: Date.now(),
       };
-    });
-
-    const totalScannedBytes = Array.from(categoriesMap.values()).reduce((sum, c) => sum + c.bytes, 0);
-    const totalCleanableBytes = junkStats.bytes + duplicateRecoverableBytes;
-
-    return {
-      totalStorageBytes: storageStats.totalBytes,
-      usedStorageBytes: storageStats.usedBytes,
-      freeStorageBytes: storageStats.freeBytes,
-      totalScannedBytes,
-      totalCleanableBytes,
-      categories: categoryAggregates,
-      largeFilesCount: largeStats.count,
-      largeFilesBytes: largeStats.bytes,
-      junkFilesCount: junkStats.count,
-      junkFilesBytes: junkStats.bytes,
-      whatsappFilesCount: waStats.count,
-      whatsappFilesBytes: waStats.bytes,
-      duplicateGroupsCount: dupStats.group_count,
-      duplicateFilesCount: dupStats.file_count,
-      duplicateRecoverableBytes,
-      appsCount: appsStats.count,
-      appsBytes: appsStats.bytes,
-      lastScannedAt: Date.now(),
-    };
+    }
   }
 
   /**
    * Returns total count of indexed items.
    */
   public getItemCount(): number {
-    const db = this.getDb();
-    const row = db.getFirstSync<{ count: number }>("SELECT COUNT(*) as count FROM storage_items;");
-    return row?.count ?? 0;
+    return this.executeWithRetry((db) => {
+      const row = db.getFirstSync<{ count: number }>("SELECT COUNT(*) as count FROM storage_items;");
+      return row?.count ?? 0;
+    });
   }
 
   /**
@@ -408,37 +479,39 @@ class StorageIndexServiceImpl {
   ): Map<string, { sha256: string | null; dhash: string | null }> {
     const result = new Map<string, { sha256: string | null; dhash: string | null }>();
     if (items.length === 0) return result;
-    const db = this.getDb();
-    const chunkSize = 150;
 
-    for (let i = 0; i < items.length; i += chunkSize) {
-      const chunk = items.slice(i, i + chunkSize);
-      const placeholders = chunk.map(() => "?").join(",");
-      const paths = chunk.map((c) => c.pathOrUri);
-      const rows = db.getAllSync<{
-        path_or_uri: string;
-        size_bytes: number;
-        modified_at: number;
-        sha256: string | null;
-        dhash: string | null;
-      }>(
-        `SELECT path_or_uri, size_bytes, modified_at, sha256, dhash FROM file_hashes WHERE path_or_uri IN (${placeholders});`,
-        paths,
-      );
+    return this.executeWithRetry((db) => {
+      const chunkSize = 150;
 
-      for (const row of rows) {
-        const match = chunk.find(
-          (c) =>
-            c.pathOrUri === row.path_or_uri &&
-            c.sizeBytes === row.size_bytes &&
-            c.modifiedAt === row.modified_at,
+      for (let i = 0; i < items.length; i += chunkSize) {
+        const chunk = items.slice(i, i + chunkSize);
+        const placeholders = chunk.map(() => "?").join(",");
+        const paths = chunk.map((c) => c.pathOrUri);
+        const rows = db.getAllSync<{
+          path_or_uri: string;
+          size_bytes: number;
+          modified_at: number;
+          sha256: string | null;
+          dhash: string | null;
+        }>(
+          `SELECT path_or_uri, size_bytes, modified_at, sha256, dhash FROM file_hashes WHERE path_or_uri IN (${placeholders});`,
+          paths,
         );
-        if (match) {
-          result.set(row.path_or_uri, { sha256: row.sha256, dhash: row.dhash });
+
+        for (const row of rows) {
+          const match = chunk.find(
+            (c) =>
+              c.pathOrUri === row.path_or_uri &&
+              c.sizeBytes === row.size_bytes &&
+              c.modifiedAt === row.modified_at,
+          );
+          if (match) {
+            result.set(row.path_or_uri, { sha256: row.sha256, dhash: row.dhash });
+          }
         }
       }
-    }
-    return result;
+      return result;
+    });
   }
 
   /**
@@ -454,29 +527,30 @@ class StorageIndexServiceImpl {
     }>,
   ): void {
     if (hashes.length === 0) return;
-    const db = this.getDb();
 
-    db.withTransactionSync(() => {
-      const stmt = db.prepareSync(`
-        INSERT OR REPLACE INTO file_hashes (
-          path_or_uri, size_bytes, modified_at, sha256, dhash, cached_at
-        ) VALUES (?, ?, ?, ?, ?, ?);
-      `);
-      try {
-        const now = Date.now();
-        for (const h of hashes) {
-          stmt.executeSync([
-            h.pathOrUri,
-            h.sizeBytes,
-            h.modifiedAt,
-            h.sha256 ?? null,
-            h.dhash ?? null,
-            now,
-          ]);
+    this.executeWithRetry((db) => {
+      db.withTransactionSync(() => {
+        const stmt = db.prepareSync(`
+          INSERT OR REPLACE INTO file_hashes (
+            path_or_uri, size_bytes, modified_at, sha256, dhash, cached_at
+          ) VALUES (?, ?, ?, ?, ?, ?);
+        `);
+        try {
+          const now = Date.now();
+          for (const h of hashes) {
+            stmt.executeSync([
+              h.pathOrUri,
+              h.sizeBytes,
+              h.modifiedAt,
+              h.sha256 ?? null,
+              h.dhash ?? null,
+              now,
+            ]);
+          }
+        } finally {
+          stmt.finalizeSync();
         }
-      } finally {
-        stmt.finalizeSync();
-      }
+      });
     });
   }
 
@@ -484,8 +558,9 @@ class StorageIndexServiceImpl {
    * Resets database table.
    */
   public clearAll(): void {
-    const db = this.getDb();
-    db.execSync("DELETE FROM storage_items;");
+    this.executeWithRetry((db) => {
+      db.execSync("DELETE FROM storage_items;");
+    });
   }
 }
 

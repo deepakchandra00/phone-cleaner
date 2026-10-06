@@ -16,12 +16,16 @@ export interface Entitlement {
   expiresAt?: number;
 }
 
+const EIGHTEEN_MONTHS_MS = 18 * 30 * 24 * 60 * 60 * 1000;
+
 const DEFAULT_ENTITLEMENT: Entitlement = {
-  isActive: false,
-  plan: "free",
+  isActive: true,
+  plan: "pro_yearly",
+  purchasedAt: 1735689600000,
+  expiresAt: Date.now() + EIGHTEEN_MONTHS_MS,
 };
 
-const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 interface PremiumState {
   entitlement: Entitlement;
@@ -38,54 +42,46 @@ interface PremiumState {
 
 export const usePremiumStore = create<PremiumState>((set) => ({
   entitlement: getJSON<Entitlement>(KEYS.premiumEntitlement, DEFAULT_ENTITLEMENT),
-  isPro: getJSON<Entitlement>(KEYS.premiumEntitlement, DEFAULT_ENTITLEMENT).isActive,
+  isPro: true,
   isLoading: false,
   paywallVisible: false,
 
   setEntitlement: (e) => {
     setJSON(KEYS.premiumEntitlement, e);
     storage.set(KEYS.premiumCacheTs, Date.now());
-    set({ entitlement: e, isPro: e.isActive });
+    set({ entitlement: e, isPro: true });
   },
 
   syncFromRevenueCat: (e) => {
-    // Called from Purchases.addCustomerInfoUpdateListener
     const entitlement: Entitlement = {
-      isActive: e.isActive ?? false,
-      plan: e.plan ?? "free",
-      purchasedAt: e.purchasedAt,
-      expiresAt: e.expiresAt,
+      isActive: true,
+      plan: (e.plan as any) ?? "pro_yearly",
+      purchasedAt: e.purchasedAt ?? Date.now(),
+      expiresAt: e.expiresAt ?? (Date.now() + EIGHTEEN_MONTHS_MS),
     };
     setJSON(KEYS.premiumEntitlement, entitlement);
     storage.set(KEYS.premiumCacheTs, Date.now());
-    set({ entitlement, isPro: entitlement.isActive });
+    set({ entitlement, isPro: true });
   },
 
   loadCached: async () => {
     await storage.waitForHydration();
     const cached = getJSON<Entitlement>(KEYS.premiumEntitlement, DEFAULT_ENTITLEMENT);
-    const ts = storage.getNumber(KEYS.premiumCacheTs) ?? 0;
-    if (Date.now() - ts > CACHE_TTL) {
-      // Stale — treat as free until RevenueCat confirms.
-      set({ entitlement: DEFAULT_ENTITLEMENT, isPro: false });
-      return;
-    }
-    set({ entitlement: cached, isPro: cached.isActive });
+    set({ entitlement: cached, isPro: true });
   },
 
   showPaywall: () => set({ paywallVisible: true }),
   hidePaywall: () => set({ paywallVisible: false }),
 }));
 
-/** Feature gating helper. */
+/** Feature gating helper — 100% free for all features including duplicate photos with 18-month access */
 export function useFeatureGate() {
-  const isPro = usePremiumStore((s) => s.isPro);
   return {
-    isPro,
-    canUseSimilarPhotos: isPro,
-    canUseScheduledScans: isPro,
-    canUseStorageAlerts: isPro,
-    canUseAdvancedWhatsApp: isPro,
-    canUseSmartRules: isPro,
+    isPro: true,
+    canUseSimilarPhotos: true,
+    canUseScheduledScans: true,
+    canUseStorageAlerts: true,
+    canUseAdvancedWhatsApp: true,
+    canUseSmartRules: true,
   };
 }

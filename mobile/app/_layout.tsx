@@ -5,7 +5,14 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useColorScheme } from "react-native";
+import { configureReanimatedLogger, ReanimatedLogLevel } from "react-native-reanimated";
 import "../global.css";
+
+// Disable Reanimated strict mode to prevent false positive reading/writing warnings on layout animations
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
 
 import { useAppStore } from "@/stores/useAppStore";
 import { usePremiumStore } from "@/stores/usePremiumStore";
@@ -74,6 +81,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="premium" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
             <Stack.Screen name="scan-progress" options={{ animation: "fade" }} />
+            <Stack.Screen name="quick-clean" />
             <Stack.Screen name="review" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
             <Stack.Screen name="success" options={{ animation: "fade" }} />
             <Stack.Screen name="category/[key]" />

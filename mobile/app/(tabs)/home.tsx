@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { View, Text, ScrollView, Pressable, RefreshControl } from "react-native";
+import { View, Text, ScrollView, Pressable, RefreshControl, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
@@ -7,26 +7,54 @@ import { StorageRing, CategoryBar } from "@/components/ui/StorageRing";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon, CategoryIcons } from "@/components/ui/Icon";
-import { useAppStore } from "@/stores/useAppStore";
+import { useAppStore, useAutoCleanableBytes } from "@/stores/useAppStore";
 import { usePremiumStore } from "@/stores/usePremiumStore";
 import { LinearGradient } from "expo-linear-gradient";
 import { CategoryColors, ThemeColors } from "@/theme/colors";
 import { formatSizeCompact, formatHeadlineSize, bytesToGB } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey } from "@/lib/types";
+import { AndroidStorage } from "android-storage";
+
+import { PreScanSheet, type PreScanOptions } from "@/components/scan/PreScanSheet";
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { storage, scanResult, loadStorage } = useAppStore();
+  const autoCleanableBytes = useAutoCleanableBytes();
   const isPro = usePremiumStore((s) => s.isPro);
   const showPaywall = usePremiumStore((s) => s.showPaywall);
   const [refreshing, setRefreshing] = useState(false);
+  const [memory, setMemory] = useState(() => AndroidStorage.getMemoryInfo());
+  const [boosting, setBoosting] = useState(false);
+  const [preScanVisible, setPreScanVisible] = useState(false);
+
+  const onBoostRam = useCallback(async () => {
+    setBoosting(true);
+    try {
+      const res = await AndroidStorage.boostRam();
+      const updated = AndroidStorage.getMemoryInfo();
+      setMemory(updated);
+      Alert.alert(
+        "Phone Boosted! ⚡",
+        `Freed ${formatSizeCompact(res.freedBytes)} RAM and closed ${res.killedCount} background processes to optimize performance.`,
+        [{ text: "Great" }],
+      );
+    } catch (err) {
+      console.warn("Boost error:", err);
+    } finally {
+      setBoosting(false);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
     (async () => {
-      if (isMounted) await loadStorage();
+      if (isMounted) {
+        await loadStorage();
+        setMemory(AndroidStorage.getMemoryInfo());
+      }
     })();
     return () => {
       isMounted = false;
@@ -36,6 +64,7 @@ export default function HomeScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadStorage();
+    setMemory(AndroidStorage.getMemoryInfo());
     setRefreshing(false);
   }, [loadStorage]);
 
@@ -53,7 +82,16 @@ export default function HomeScreen() {
     }));
 
   const onScan = () => {
-    router.push("/scan-progress");
+    setPreScanVisible(true);
+  };
+
+  const handleStartScan = (options: PreScanOptions) => {
+    setPreScanVisible(false);
+    useAppStore.getState().prepareScan();
+    router.push({
+      pathname: "/scan-progress",
+      params: { includeDuplicates: String(options.includeDuplicates) },
+    });
   };
 
   const onCategoryPress = (key: string) => {
@@ -72,13 +110,14 @@ export default function HomeScreen() {
   ).slice(0, 4);
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerStyle={{ paddingBottom: 100, paddingTop: Math.max(insets.top, 20) + 8 }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ThemeColors.primary} />
-      }
-    >
+    <>
+      <ScrollView
+        className="flex-1 bg-background"
+        contentContainerStyle={{ paddingBottom: 100, paddingTop: insets.top > 0 ? insets.top : 12 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ThemeColors.primary} />
+        }
+      >
       {/* Greeting */}
       <Animated.View entering={FadeIn} className="px-4 pt-2 pb-1">
         <Text className="text-sm text-muted-foreground">
@@ -129,9 +168,46 @@ export default function HomeScreen() {
         </Card>
       </Animated.View>
 
+      {/* RAM Booster Card */}
+      <Animated.View entering={FadeInDown.delay(90).springify()} className="px-4 mt-3">
+        <Card className="p-4">
+          <View className="flex-row items-center justify-between mb-3">
+            <View className="flex-row items-center gap-2.5">
+              <View className="w-10 h-10 rounded-xl bg-blue-500/10 items-center justify-center">
+                <Icon name="speedometer" size={20} color="#3b82f6" />
+              </View>
+              <View>
+                <Text className="text-foreground font-bold text-base">RAM Memory</Text>
+                <Text className="text-muted-foreground text-xs">
+                  {memory.usedPercent}% used · {formatSizeCompact(memory.availMemBytes)} free
+                </Text>
+              </View>
+            </View>
+            <Button
+              variant="primary"
+              size="sm"
+              loading={boosting}
+              onPress={onBoostRam}
+              leftIcon={<Icon name="flash" size={14} color="#fff" />}
+            >
+              Boost RAM
+            </Button>
+          </View>
+          <View className="h-2 bg-muted rounded-full overflow-hidden">
+            <View
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.min(Math.max(memory.usedPercent, 5), 100)}%`,
+                backgroundColor: memory.usedPercent > 80 ? "#ef4444" : "#3b82f6",
+              }}
+            />
+          </View>
+        </Card>
+      </Animated.View>
+
       {/* One-tap smart clean CTA */}
-      {scanResult && storage.cleanableBytes > 0 && (
-        <Animated.View entering={FadeInDown.delay(120).springify()} className="px-4 mt-4">
+      {scanResult && autoCleanableBytes > 0 && (
+        <Animated.View entering={FadeInDown.delay(120).springify()} className="px-4 mt-4 mb-1">
           <Pressable
             onPress={() => {
               const count = useAppStore.getState().selectSmartCleanable();
@@ -154,16 +230,16 @@ export default function HomeScreen() {
               colors={["#10b981", "#0d9488"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              className="px-5 py-5 border border-emerald-400/20 rounded-2xl"
+              className="p-5 border border-emerald-400/20 rounded-2xl"
             >
               <View className="flex-row items-center justify-between">
-                <View className="flex-1 pr-3">
-                  <View className="flex-row items-center gap-2 mb-1">
-                    <Icon name="flash" size={18} color="#fff" />
+                <View className="flex-1 pr-4">
+                  <View className="flex-row items-center gap-2 mb-1.5">
+                    <Icon name="flash" size={20} color="#fff" />
                     <Text className="text-white font-bold text-lg">Smart Clean</Text>
                   </View>
-                  <Text className="text-white/85 text-sm leading-5">
-                    Free up {formatSizeCompact(storage.cleanableBytes)} safely in one tap
+                  <Text className="text-white/90 text-sm leading-5">
+                    Free up {formatSizeCompact(autoCleanableBytes)} safely in one tap
                   </Text>
                 </View>
                 <View className="bg-white/20 rounded-full w-12 h-12 items-center justify-center border border-white/20 shadow-sm">
@@ -272,7 +348,13 @@ export default function HomeScreen() {
           </Pressable>
         </Animated.View>
       )}
-    </ScrollView>
+      </ScrollView>
+      <PreScanSheet
+        visible={preScanVisible}
+        onClose={() => setPreScanVisible(false)}
+        onStartScan={handleStartScan}
+      />
+    </>
   );
 }
 

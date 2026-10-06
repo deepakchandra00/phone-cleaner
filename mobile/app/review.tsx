@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { View, Text, ScrollView, Pressable, Alert } from "react-native";
+import { useMemo, useState, useRef, useEffect, useCallback } from "react";
+import { View, Text, ScrollView, Pressable, Alert, AppState } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
@@ -12,7 +12,7 @@ import { CategoryColors, ThemeColors } from "@/theme/colors";
 import { formatSizeCompact, formatHeadlineSize, bytesToGB } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey, ScannedFile } from "@/lib/types";
-
+import { AndroidStorage } from "android-storage";
 import { StorageIndexService } from "@/db/StorageIndexService";
 
 interface ReviewGroup {
@@ -92,7 +92,86 @@ export default function Review() {
   const totalFiles =
     groups.reduce((s, g) => s + g.files.length, 0) + groups.reduce((s, g) => s + g.groupIds.length, 0);
 
+  const pendingCleanRef = useRef(false);
+
+  const performCleanAction = useCallback(async () => {
+    setCleaning(true);
+    track("cleanup_started", { bytes: selectedBytes, count: totalFiles });
+    let cleanupResult = { freedBytes: 0, fileCount: 0 };
+    try {
+      cleanupResult = await executeCleanup();
+    } catch (err) {
+      console.warn("[review] cleanup error:", err);
+    } finally {
+      setCleaning(false);
+    }
+
+    if (cleanupResult.fileCount === 0) {
+      if (!AndroidStorage.isExternalStorageManager()) {
+        Alert.alert(
+          "Storage Permission Required",
+          "On Android 11+, cleaning WhatsApp media, APKs, and external files requires 'All files access'.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Grant Access",
+              onPress: () => {
+                pendingCleanRef.current = true;
+                AndroidStorage.requestManageAllFilesAccess();
+              },
+            },
+          ],
+        );
+      } else {
+        Alert.alert(
+          "Cleanup Incomplete",
+          "Selected items could not be deleted or were already removed by another app.",
+          [{ text: "OK" }],
+        );
+      }
+      return;
+    }
+
+    track("cleanup_completed", { bytes: cleanupResult.freedBytes, count: cleanupResult.fileCount });
+    router.replace("/success");
+  }, [selectedBytes, totalFiles, executeCleanup, router]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active" && pendingCleanRef.current) {
+        if (AndroidStorage.isExternalStorageManager()) {
+          pendingCleanRef.current = false;
+          // Auto-resume cleanup now that permission is granted
+          performCleanAction();
+        }
+      }
+    });
+    return () => sub.remove();
+  }, [performCleanAction]);
+
   const handleClean = () => {
+    const hasFilesystemFiles = groups.some(
+      (g) => g.key === "whatsapp" || g.key === "downloads" || g.key === "apks" || g.key === "junk",
+    );
+
+    if (hasFilesystemFiles && !AndroidStorage.isExternalStorageManager()) {
+      Alert.alert(
+        "Storage Permission Required",
+        "To clean WhatsApp media, downloads, and app files on Android 11+, please enable 'All files access' in Settings.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Open Settings",
+            onPress: () => {
+              pendingCleanRef.current = true;
+              AndroidStorage.requestManageAllFilesAccess();
+            },
+          },
+        ],
+      );
+      return;
+    }
+
     Alert.alert(
       "Confirm cleanup",
       `You're about to free up ${formatSizeCompact(selectedBytes)} by removing ${totalFiles} item${totalFiles === 1 ? "" : "s"}. This cannot be undone.`,
@@ -101,19 +180,7 @@ export default function Review() {
         {
           text: "Clean",
           style: "destructive",
-          onPress: async () => {
-            setCleaning(true);
-            track("cleanup_started", { bytes: selectedBytes, count: totalFiles });
-            try {
-              await executeCleanup();
-            } catch (err) {
-              console.warn("[review] cleanup error:", err);
-            } finally {
-              setCleaning(false);
-              track("cleanup_completed");
-              router.replace("/success");
-            }
-          },
+          onPress: performCleanAction,
         },
       ],
     );
@@ -193,7 +260,7 @@ export default function Review() {
               {g.files.slice(0, 3).map((f) => (
                 <Pressable
                   key={f.id}
-                  onPress={() => toggleFile(f.id)}
+                  onPress={() => toggleFile(f.id, f.sizeBytes)}
                   className="flex-row items-center gap-2 px-4 py-2 border-t border-border"
                 >
                   <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: g.color }} />
@@ -214,7 +281,7 @@ export default function Review() {
               {/* Remove entire group */}
               <Pressable
                 onPress={() => {
-                  g.files.forEach((f) => selectedFileIds.has(f.id) && toggleFile(f.id));
+                  g.files.forEach((f) => selectedFileIds.has(f.id) && toggleFile(f.id, f.sizeBytes));
                   g.groupIds.forEach((id) => selectedGroupIds.has(id) && toggleGroup(id));
                 }}
                 className="px-4 py-3 border-t border-border active:bg-muted"

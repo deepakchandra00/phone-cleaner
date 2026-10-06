@@ -1,5 +1,5 @@
 import { Pressable, type PressableProps, Text, View, ActivityIndicator } from "react-native";
-import { type ReactNode } from "react";
+import { type ReactNode, isValidElement } from "react";
 import { cn } from "@/lib/utils";
 
 type Variant = "primary" | "secondary" | "outline" | "ghost" | "destructive" | "success";
@@ -52,6 +52,25 @@ export function Button({
   ...props
 }: ButtonProps) {
   const isPrimary = variant === "primary" || variant === "destructive" || variant === "success";
+
+  const renderChildren = () => {
+    if (children == null || typeof children === "boolean") return null;
+    if (isValidElement(children)) {
+      return children;
+    }
+    return (
+      <Text
+        className={cn(
+          "font-semibold",
+          textSizes[size],
+          isPrimary ? "text-primary-foreground" : "text-foreground",
+        )}
+      >
+        {children}
+      </Text>
+    );
+  };
+
   return (
     <Pressable
       disabled={disabled || loading}
@@ -71,19 +90,7 @@ export function Button({
       ) : (
         <>
           {leftIcon}
-          {typeof children === "string" ? (
-            <Text
-              className={cn(
-                "font-semibold",
-                textSizes[size],
-                isPrimary ? "text-primary-foreground" : "text-foreground",
-              )}
-            >
-              {children}
-            </Text>
-          ) : (
-            children
-          )}
+          {renderChildren()}
           {rightIcon}
         </>
       )}

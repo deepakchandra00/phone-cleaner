@@ -17,12 +17,22 @@ export function isSafeToCleanAutomatically(item: StorageItem | ScannedFile): boo
 
   const name = item.name.toLowerCase();
   const path = (item.path || "").toLowerCase();
+  const source = (item.source || "").toLowerCase();
+  const category = (item.category || "").toLowerCase();
 
-  // 1. App caches, temp files, and logs
-  if ("isJunk" in item && item.isJunk) {
+  // 1. Explicit junk category or flag
+  if (("isJunk" in item && item.isJunk) || category === "junk") {
     return true;
   }
+
+  // 2. App caches, temp files, empty folders, and logs
   if (
+    source.includes("cache") ||
+    source.includes("temp") ||
+    source.includes("empty folder") ||
+    source.includes("thumbnail") ||
+    path.includes("/cache/") ||
+    path.includes("/.cache/") ||
     name.endsWith(".tmp") ||
     name.endsWith(".temp") ||
     name.endsWith(".log") ||
@@ -32,7 +42,7 @@ export function isSafeToCleanAutomatically(item: StorageItem | ScannedFile): boo
     return true;
   }
 
-  // 2. Thumbnail caches (restricted to actual cache directories or hidden thumb files)
+  // 3. Thumbnail caches (restricted to actual cache directories or hidden thumb files)
   if (
     path.includes("/.thumbnails/") ||
     path.includes("/thumbnails/") ||
@@ -43,14 +53,20 @@ export function isSafeToCleanAutomatically(item: StorageItem | ScannedFile): boo
     return true;
   }
 
-  // 3. Obsolete standalone Android installation packages (.apk) in public downloads
-  if (name.endsWith(".apk") || ("junkType" in item && item.junkType === "apk")) {
+  // 4. Standalone Android installation packages (.apk)
+  if (
+    name.endsWith(".apk") ||
+    ("junkType" in item && item.junkType === "apk") ||
+    source.includes("apk") ||
+    category === "apks"
+  ) {
     return true;
   }
 
-  // 4. WhatsApp Sent media (duplicates generated when forwarding/sending media)
+  // 5. WhatsApp Sent media (duplicates generated when forwarding/sending media)
   if (
     ("isSent" in item && item.isSent) ||
+    source.includes("sent") ||
     path.includes("/sent/")
   ) {
     return true;

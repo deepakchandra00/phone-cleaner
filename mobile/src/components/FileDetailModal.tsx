@@ -7,7 +7,7 @@ import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/Button";
 import { AndroidStorage } from "android-storage";
 import { DeleteCoordinator } from "@/services/DeleteCoordinator";
-import { CategoryColors, ThemeColors } from "@/theme/colors";
+import { CategoryColors, ThemeColors, StatusColors } from "@/theme/colors";
 import { formatSizeCompact } from "@/lib/format";
 import type { StorageItem } from "@/db/schema";
 
@@ -21,6 +21,7 @@ interface FileDetailModalProps {
 export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetailModalProps) {
   const insets = useSafeAreaInsets();
   const [deleting, setDeleting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   if (!item) return null;
 
@@ -37,16 +38,31 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
     ? item.path.replace(/^\/storage\/emulated\/0\/?/, "")
     : item.uri.replace(/^content:\/\/media\/external\//, "Media: ");
 
+  const handleCopyPath = () => {
+    const rawPath = item.path || item.uri;
+    AndroidStorage.copyToClipboard(rawPath);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleLocate = async () => {
     try {
       const target = item.path || item.uri;
       const located = await AndroidStorage.locateFile(target);
       if (!located) {
-        await handleOpen();
+        Alert.alert(
+          "Cannot Highlight Folder",
+          "Android prevents third-party apps from highlighting files in some system file managers. You can copy the file path or open the file directly.",
+          [
+            { text: "Copy Path", onPress: handleCopyPath },
+            { text: "Open File", onPress: handleOpen },
+            { text: "Cancel", style: "cancel" },
+          ],
+        );
       }
     } catch (err) {
       console.warn("[FileDetailModal] Could not locate file:", err);
-      await handleOpen();
+      handleCopyPath();
     }
   };
 
@@ -171,18 +187,26 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
 
             {/* Metadata Table */}
             <View className="bg-muted rounded-2xl p-4 gap-3 mb-6">
-              <Pressable
-                onPress={handleLocate}
-                className="flex-row justify-between items-center active:opacity-70"
-              >
+              <View className="flex-row justify-between items-center">
                 <Text className="text-muted-foreground text-xs">Location</Text>
-                <View className="flex-row items-center gap-1 max-w-[68%]">
-                  <Text className="text-primary text-xs font-medium text-right underline" numberOfLines={2}>
-                    {displayLocation}
-                  </Text>
-                  <Icon name="folder-open-outline" size={14} color={ThemeColors.primary} />
+                <View className="flex-row items-center gap-2 max-w-[72%]">
+                  <Pressable onPress={handleLocate} className="flex-1 active:opacity-70">
+                    <Text className="text-primary text-xs font-medium text-right underline" numberOfLines={2}>
+                      {displayLocation}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleCopyPath}
+                    className="p-1 rounded bg-muted-foreground/10 active:opacity-60"
+                  >
+                    <Icon
+                      name={copied ? "checkmark" : "copy-outline"}
+                      size={15}
+                      color={copied ? StatusColors.success : ThemeColors.primary}
+                    />
+                  </Pressable>
                 </View>
-              </Pressable>
+              </View>
               <View className="flex-row justify-between">
                 <Text className="text-muted-foreground text-xs">Modified</Text>
                 <Text className="text-foreground text-xs font-medium">
@@ -207,24 +231,39 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
 
             {/* Action Buttons */}
             <View className="gap-2.5">
-              <View className="flex-row gap-3">
+              <View className="flex-row gap-2">
                 <Button
                   variant="secondary"
-                  size="lg"
+                  size="md"
                   className="flex-1"
-                  leftIcon={<Icon name="folder-open-outline" size={18} color={ThemeColors.primary} />}
-                  onPress={handleLocate}
+                  leftIcon={<Icon name="open-outline" size={16} color={ThemeColors.primary} />}
+                  onPress={handleOpen}
                 >
-                  Locate file
+                  Open
                 </Button>
                 <Button
                   variant="secondary"
-                  size="lg"
+                  size="md"
                   className="flex-1"
-                  leftIcon={<Icon name="open-outline" size={18} color={ThemeColors.primary} />}
-                  onPress={handleOpen}
+                  leftIcon={<Icon name="folder-open-outline" size={16} color={ThemeColors.primary} />}
+                  onPress={handleLocate}
                 >
-                  Open / Share
+                  Locate
+                </Button>
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="px-3"
+                  leftIcon={
+                    <Icon
+                      name={copied ? "checkmark" : "copy-outline"}
+                      size={16}
+                      color={copied ? StatusColors.success : ThemeColors.primary}
+                    />
+                  }
+                  onPress={handleCopyPath}
+                >
+                  {copied ? "Copied" : "Copy"}
                 </Button>
               </View>
               {item.canDelete && (

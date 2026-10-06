@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { View, Text, Pressable, Dimensions, ScrollView } from "react-native";
 import { Image } from "expo-image";
 import { FlashList } from "@shopify/flash-list";
@@ -118,10 +118,10 @@ export default function PhotosScreen() {
           keyExtractor={(g) => g.id}
           contentContainerStyle={{ paddingBottom: 160 }}
           ListHeaderComponent={
-            <View className="mb-3">
+            <View className="pt-2 pb-4">
               <Pressable
                 onPress={selectAllKeepBest}
-                className="rounded-2xl active:opacity-95 overflow-hidden"
+                className="rounded-2xl active:opacity-95 overflow-hidden shadow-md"
                 style={{
                   shadowColor: "#10b981",
                   shadowOffset: { width: 0, height: 4 },
@@ -134,16 +134,20 @@ export default function PhotosScreen() {
                   colors={["#10b981", "#0d9488"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  className="p-3.5 flex-row items-center justify-between"
+                  className="py-5 px-5 flex-row items-center justify-between"
                 >
-                  <View className="flex-row items-center gap-2">
-                    <Icon name="sparkles" size={18} color="#fff" />
-                    <View>
-                      <Text className="text-white font-semibold text-sm">Keep best, delete rest</Text>
-                      <Text className="text-white/80 text-xs">Auto-select across all {groups.length} groups</Text>
+                  <View className="flex-row items-center gap-3.5 flex-1 pr-2">
+                    <View className="w-11 h-11 rounded-full bg-white/20 items-center justify-center">
+                      <Icon name="sparkles" size={22} color="#fff" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-white font-bold text-base leading-tight">Keep best, delete rest</Text>
+                      <Text className="text-white/90 text-xs mt-1">Auto-select duplicates across all {groups.length} groups</Text>
                     </View>
                   </View>
-                  <Icon name="arrow-forward" size={16} color="#fff" />
+                  <View className="w-9 h-9 rounded-full bg-white/20 items-center justify-center">
+                    <Icon name="arrow-forward" size={18} color="#fff" />
+                  </View>
                 </LinearGradient>
               </Pressable>
             </View>
@@ -194,7 +198,7 @@ export default function PhotosScreen() {
   );
 }
 
-function DuplicateGroupCard({
+const DuplicateGroupCard = React.memo(function DuplicateGroupCard({
   group,
   isPro,
   selected,
@@ -207,9 +211,8 @@ function DuplicateGroupCard({
   selected: boolean;
   onToggleGroup: () => void;
   selectedFileIds: Set<string>;
-  onToggleFile: (id: string) => void;
+  onToggleFile: (id: string, sizeBytes?: number) => void;
 }) {
-  const locked = group.kind === "similar" && !isPro;
   const keepId = group.keepId;
   const groupSelectedFiles = group.files.filter(
     (f) => f.id !== keepId && selectedFileIds.has(f.id),
@@ -236,12 +239,6 @@ function DuplicateGroupCard({
             </Text>
           </View>
         </Pressable>
-        {locked && (
-          <View className="flex-row items-center gap-1 bg-primary/10 px-2 py-1 rounded-full">
-            <Icon name="lock-closed" size={11} color={ThemeColors.primary} />
-            <Text className="text-primary text-[10px] font-semibold">PRO</Text>
-          </View>
-        )}
       </View>
 
       {/* Photo grid */}
@@ -252,8 +249,7 @@ function DuplicateGroupCard({
           return (
             <Pressable
               key={f.id}
-              disabled={locked}
-              onPress={() => !isKeep && onToggleFile(f.id)}
+              onPress={() => !isKeep && onToggleFile(f.id, f.sizeBytes)}
               style={{ width: THUMB, height: THUMB }}
               className="relative rounded-lg overflow-hidden"
             >
@@ -295,13 +291,6 @@ function DuplicateGroupCard({
                 </View>
               )}
 
-              {/* Locked overlay */}
-              {locked && (
-                <View className="absolute inset-0 bg-black/40 items-center justify-center">
-                  <Icon name="lock-closed" size={18} color="#fff" />
-                </View>
-              )}
-
               {/* Size label */}
               <View className="absolute bottom-1 right-1 bg-black/50 rounded px-1">
                 <Text className="text-white text-[9px] font-medium">
@@ -324,4 +313,5 @@ function DuplicateGroupCard({
       </View>
     </Card>
   );
-}
+});
+

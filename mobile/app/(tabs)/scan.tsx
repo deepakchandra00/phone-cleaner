@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { useAppStore } from "@/stores/useAppStore";
+import { PreScanSheet, type PreScanOptions } from "@/components/scan/PreScanSheet";
 import { CategoryColors, ThemeColors } from "@/theme/colors";
 import { formatSizeCompact, formatHeadlineSize, bytesToGB, formatCount, formatRelativeTime } from "@/lib/format";
 import { track } from "@/lib/analytics";
@@ -16,20 +18,29 @@ export default function ScanScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { scanResult, storage, startScan, scanPhase } = useAppStore();
+  const [preScanVisible, setPreScanVisible] = useState(false);
 
-  if (scanPhase === "scanning") {
-    return (
-      <View className="flex-1 bg-background items-center justify-center">
-        <Text className="text-muted-foreground">Scanning…</Text>
-      </View>
-    );
-  }
+  const handleStartScan = (options: PreScanOptions) => {
+    setPreScanVisible(false);
+    // Reset scan state to idle so scan-progress.tsx triggers a fresh startScan
+    useAppStore.getState().prepareScan();
+    router.push({
+      pathname: "/scan-progress",
+      params: { includeDuplicates: String(options.includeDuplicates) },
+    });
+  };
+
 
   if (!scanResult) {
     return (
       <View className="flex-1 bg-background">
         <ScreenHeader title="Scan" subtitle="Find what's using your storage" />
-        <EmptyScan onScan={() => router.push("/scan-progress")} />
+        <EmptyScan onScan={() => setPreScanVisible(true)} />
+        <PreScanSheet
+          visible={preScanVisible}
+          onClose={() => setPreScanVisible(false)}
+          onStartScan={handleStartScan}
+        />
       </View>
     );
   }
@@ -79,17 +90,18 @@ export default function ScanScreen() {
   ].filter((h) => h.bytes > 0);
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerStyle={{ paddingBottom: 110 }}
-    >
+    <>
+      <ScrollView
+        className="flex-1 bg-background"
+        contentContainerStyle={{ paddingBottom: 110 }}
+      >
       <ScreenHeader
         title="Scan results"
         subtitle={`${formatRelativeTime(scanResult.completedAt)} · ${formatCount(scanResult.filesScanned)} files scanned`}
         rightIcon="refresh"
         onRightPress={() => {
           track("scan_started", { source: "results_refresh" });
-          router.push("/scan-progress");
+          setPreScanVisible(true);
         }}
       />
 
@@ -111,11 +123,13 @@ export default function ScanScreen() {
             className="mt-5"
             leftIcon={<Icon name="sparkles" size={20} color="#fff" />}
             onPress={() => {
+              const state = useAppStore.getState();
+              state.selectSmartCleanable();
               track("cleanup_review_opened", { source: "scan_results" });
-              router.push("/review");
+              router.push("/quick-clean");
             }}
           >
-            Review & Clean
+            {`Quick Clean (${formatSizeCompact(totalCleanable)})`}
           </Button>
         </Card>
       </Animated.View>
@@ -203,7 +217,13 @@ export default function ScanScreen() {
           Results are cached. Rescan to detect newly added files.
         </Text>
       </View>
-    </ScrollView>
+      </ScrollView>
+      <PreScanSheet
+        visible={preScanVisible}
+        onClose={() => setPreScanVisible(false)}
+        onStartScan={handleStartScan}
+      />
+    </>
   );
 }
 

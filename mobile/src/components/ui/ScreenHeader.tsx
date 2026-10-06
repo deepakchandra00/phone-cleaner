@@ -18,9 +18,9 @@ export function ScreenHeader({ title, subtitle, rightIcon, onRightPress, showBac
   const insets = useSafeAreaInsets();
   return (
     <View
-      className="px-4 pb-3 flex-row items-center"
+      className="px-4 pb-2.5 flex-row items-center"
       style={{
-        paddingTop: Math.max(insets.top, 20) + (showBack ? 8 : 6),
+        paddingTop: insets.top > 0 ? insets.top : 8,
       }}
     >
       {showBack && (

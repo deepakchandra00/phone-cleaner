@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { FileDetailModal } from "@/components/FileDetailModal";
-import { useAppStore, useSelectedBytes } from "@/stores/useAppStore";
+import { useAppStore, useSelectedBytes, registerFileSizes } from "@/stores/useAppStore";
 import { StorageIndexService } from "@/db/StorageIndexService";
 import { DeleteCoordinator } from "@/services/DeleteCoordinator";
 import { CategoryColors, ThemeColors, StatusColors } from "@/theme/colors";
@@ -120,6 +120,7 @@ function LargeFilesSection() {
     });
     setFiles(res.items);
     setTotalBytes(res.totalBytes);
+    registerFileSizes(res.items);
   }, [filter, debouncedSearch]);
 
   useEffect(() => {
@@ -154,7 +155,7 @@ function LargeFilesSection() {
         <FileRow
           file={item}
           selected={selectedFileIds.has(item.id)}
-          onToggle={() => toggleFile(item.id)}
+          onToggle={() => toggleFile(item.id, item.sizeBytes)}
           onPress={() => setModalItem(item)}
         />
       </View>
@@ -305,6 +306,7 @@ function WhatsAppSection() {
     });
     setFiles(res.items);
     setTotalBytes(res.totalBytes);
+    registerFileSizes(res.items);
   }, [selectedSubtype, debouncedSearch]);
 
   useEffect(() => {
@@ -339,7 +341,7 @@ function WhatsAppSection() {
         <FileRow
           file={item}
           selected={selectedFileIds.has(item.id)}
-          onToggle={() => toggleFile(item.id)}
+          onToggle={() => toggleFile(item.id, item.sizeBytes)}
           onPress={() => setModalItem(item)}
         />
       </View>
@@ -584,7 +586,7 @@ function AppsSection() {
 
 /* ─── Shared rows ──────────────────────────────────────────────────────── */
 
-function FileRow({
+const FileRow = React.memo(function FileRow({
   file,
   selected,
   onToggle,
@@ -658,7 +660,7 @@ function FileRow({
       </Pressable>
     </Pressable>
   );
-}
+});
 
 function AppRow({ app, now }: { app: AppItem; now?: number }) {
   const referenceTime = now ?? app.lastUsedAt;

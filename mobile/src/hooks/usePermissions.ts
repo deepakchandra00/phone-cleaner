@@ -62,6 +62,16 @@ export function usePermissions() {
     Linking.openSettings();
   }, []);
 
+  const checkUsageAccess = useCallback((): boolean => {
+    if (Platform.OS !== "android") return true;
+    return AndroidStorage.isUsageAccessGranted();
+  }, []);
+
+  const requestUsageAccess = useCallback(async (): Promise<boolean> => {
+    if (Platform.OS !== "android") return true;
+    return await AndroidStorage.requestUsageAccess();
+  }, []);
+
   return {
     state,
     requestMedia,
@@ -69,5 +79,7 @@ export function usePermissions() {
     openSystemSettings,
     checkStorageManager,
     requestStorageManager,
+    checkUsageAccess,
+    requestUsageAccess,
   };
 }

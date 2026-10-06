@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { View, Text, Pressable, Dimensions } from "react-native";
+import { useRef, useState, useEffect, useCallback } from "react";
+import { View, Text, Pressable, Dimensions, AppState } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PagerView from "react-native-pager-view";
@@ -71,7 +71,31 @@ export default function Onboarding() {
   const [requesting, setRequesting] = useState(false);
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { requestMedia, openSystemSettings } = usePermissions();
+  const {
+    requestMedia,
+    openSystemSettings,
+    checkStorageManager,
+    requestStorageManager,
+    checkUsageAccess,
+    requestUsageAccess,
+  } = usePermissions();
+
+  const [hasAllFiles, setHasAllFiles] = useState(checkStorageManager());
+  const [hasUsage, setHasUsage] = useState(checkUsageAccess());
+
+  const refreshPerms = useCallback(() => {
+    setHasAllFiles(checkStorageManager());
+    setHasUsage(checkUsageAccess());
+  }, [checkStorageManager, checkUsageAccess]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        refreshPerms();
+      }
+    });
+    return () => sub.remove();
+  }, [refreshPerms]);
 
   const finish = () => {
     storage.set(KEYS.onboardingComplete, true);
@@ -84,16 +108,14 @@ export default function Onboarding() {
       pagerRef.current?.setPage(page + 1);
       return;
     }
-    // Last slide — request media permission then finish.
+    // Last slide — finish setup
     setRequesting(true);
-    const status = await requestMedia();
-    setMediaStatus(status);
-    setRequesting(false);
-    if (status === "granted" || status === "denied") {
-      // Even if denied, let them in — they can grant later from the feature.
-      finish();
+    if (mediaStatus !== "granted") {
+      const status = await requestMedia();
+      setMediaStatus(status);
     }
-    // If blocked, show the open-settings CTA.
+    setRequesting(false);
+    finish();
   };
 
   const isLast = page === SLIDES.length - 1;
@@ -136,7 +158,7 @@ export default function Onboarding() {
                 entering={FadeInDown.delay(200).springify()}
                 className="text-foreground text-3xl font-bold text-center leading-tight"
               >
-                {s.title}
+                {i === 2 ? "Give us access\nto clean your phone" : s.title}
               </Animated.Text>
 
               {/* Description */}
@@ -144,21 +166,108 @@ export default function Onboarding() {
                 entering={FadeInDown.delay(300).springify()}
                 className="text-muted-foreground text-base text-center mt-4 leading-6"
               >
-                {s.description}
+                {i === 2
+                  ? "To find and safely delete junk, WhatsApp media, and duplicate photos, grant the permissions below."
+                  : s.description}
               </Animated.Text>
 
-              {/* Bullets */}
-              {s.bullets && (
-                <Animated.View entering={FadeInDown.delay(400).springify()} className="mt-8 gap-3">
-                  {s.bullets.map((b, bi) => (
-                    <View key={bi} className="flex-row items-center gap-3 bg-card border border-border rounded-xl p-3.5">
-                      <View className="w-9 h-9 rounded-lg bg-accent items-center justify-center">
-                        <Icon name={b.icon} size={18} color={ThemeColors.primary} />
+              {/* Bullets or Permission Cards */}
+              {i === 2 ? (
+                <Animated.View entering={FadeInDown.delay(400).springify()} className="mt-6 gap-3">
+                  {/* All Files Access */}
+                  <View className="bg-card border border-border rounded-2xl p-4 flex-row items-center justify-between">
+                    <View className="flex-row items-center gap-3 flex-1 mr-2">
+                      <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
+                        <Icon name="folder-open" size={20} color={ThemeColors.primary} />
                       </View>
-                      <Text className="text-foreground text-sm font-medium flex-1">{b.text}</Text>
+                      <View className="flex-1">
+                        <Text className="text-foreground font-semibold text-sm">All files access</Text>
+                        <Text className="text-muted-foreground text-xs">Clean junk, WhatsApp, APKs</Text>
+                      </View>
                     </View>
-                  ))}
+                    {hasAllFiles ? (
+                      <View className="bg-success/15 px-3 py-1.5 rounded-full flex-row items-center gap-1">
+                        <Icon name="checkmark" size={14} color="#16a34a" />
+                        <Text className="text-success text-xs font-semibold">Allowed</Text>
+                      </View>
+                    ) : (
+                      <Pressable
+                        onPress={() => requestStorageManager()}
+                        className="bg-primary px-3 py-1.5 rounded-full active:opacity-90"
+                      >
+                        <Text className="text-white text-xs font-semibold">Enable</Text>
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {/* Usage Access */}
+                  <View className="bg-card border border-border rounded-2xl p-4 flex-row items-center justify-between">
+                    <View className="flex-row items-center gap-3 flex-1 mr-2">
+                      <View className="w-10 h-10 rounded-xl bg-accent items-center justify-center">
+                        <Icon name="speedometer" size={20} color={ThemeColors.primary} />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-foreground font-semibold text-sm">Usage access</Text>
+                        <Text className="text-muted-foreground text-xs">Clean app caches & boost RAM</Text>
+                      </View>
+                    </View>
+                    {hasUsage ? (
+                      <View className="bg-success/15 px-3 py-1.5 rounded-full flex-row items-center gap-1">
+                        <Icon name="checkmark" size={14} color="#16a34a" />
+                        <Text className="text-success text-xs font-semibold">Allowed</Text>
+                      </View>
+                    ) : (
+                      <Pressable
+                        onPress={() => requestUsageAccess()}
+                        className="bg-primary px-3 py-1.5 rounded-full active:opacity-90"
+                      >
+                        <Text className="text-white text-xs font-semibold">Enable</Text>
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {/* Media Access */}
+                  <View className="bg-card border border-border rounded-2xl p-4 flex-row items-center justify-between">
+                    <View className="flex-row items-center gap-3 flex-1 mr-2">
+                      <View className="w-10 h-10 rounded-xl bg-accent items-center justify-center">
+                        <Icon name="images" size={20} color={ThemeColors.primary} />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-foreground font-semibold text-sm">Photos & Media</Text>
+                        <Text className="text-muted-foreground text-xs">Find duplicate & similar photos</Text>
+                      </View>
+                    </View>
+                    {mediaStatus === "granted" ? (
+                      <View className="bg-success/15 px-3 py-1.5 rounded-full flex-row items-center gap-1">
+                        <Icon name="checkmark" size={14} color="#16a34a" />
+                        <Text className="text-success text-xs font-semibold">Allowed</Text>
+                      </View>
+                    ) : (
+                      <Pressable
+                        onPress={async () => {
+                          const s = await requestMedia();
+                          setMediaStatus(s);
+                        }}
+                        className="bg-primary px-3 py-1.5 rounded-full active:opacity-90"
+                      >
+                        <Text className="text-white text-xs font-semibold">Allow</Text>
+                      </Pressable>
+                    )}
+                  </View>
                 </Animated.View>
+              ) : (
+                s.bullets && (
+                  <Animated.View entering={FadeInDown.delay(400).springify()} className="mt-8 gap-3">
+                    {s.bullets.map((b, bi) => (
+                      <View key={bi} className="flex-row items-center gap-3 bg-card border border-border rounded-xl p-3.5">
+                        <View className="w-9 h-9 rounded-lg bg-accent items-center justify-center">
+                          <Icon name={b.icon} size={18} color={ThemeColors.primary} />
+                        </View>
+                        <Text className="text-foreground text-sm font-medium flex-1">{b.text}</Text>
+                      </View>
+                    ))}
+                  </Animated.View>
+                )
               )}
 
               {/* Permission denied / blocked messaging on last slide */}

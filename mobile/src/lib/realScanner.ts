@@ -145,8 +145,13 @@ export async function getRealStorageSummary(): Promise<StorageSummary> {
 // SCAN ENGINE (INGESTS DIRECTLY INTO SQLITE)
 // ──────────────────────────────────────────────────────────────────────────
 
+export interface RealScanOptions {
+  includeDuplicates?: boolean;
+}
+
 export async function runRealScan(
   onProgress?: (stage: string, progress: number) => void,
+  options?: RealScanOptions,
 ): Promise<ScanResult> {
   const startedAt = Date.now();
 
@@ -661,6 +666,160 @@ export async function runRealScan(
         } catch {}
       }
     }
+    // Empty folders
+    try {
+      const rawEmpty = await AndroidStorage.scanEmptyFolders();
+      for (const ef of rawEmpty) {
+        const file: ScannedFile = {
+          id: ef.id,
+          path: ef.path,
+          uri: `file://${ef.path}`,
+          name: ef.name,
+          category: "junk",
+          sizeBytes: ef.sizeBytes || 4096,
+          mimeType: "inode/directory",
+          modifiedAt: ef.modifiedAt || Date.now(),
+          source: "Empty Folder",
+        };
+        junkFiles.push(file);
+        storageItems.push({
+          id: ef.id,
+          uri: `file://${ef.path}`,
+          path: ef.path,
+          name: ef.name,
+          sizeBytes: file.sizeBytes,
+          category: "other",
+          source: "filesystem",
+          modifiedAt: file.modifiedAt,
+          isLarge: false,
+          isJunk: true,
+          junkType: "empty_folder",
+          junkReason: "Empty folder",
+          canOpen: false,
+          canPreview: false,
+          canDelete: true,
+          requiresPermission: false,
+        });
+      }
+    } catch {}
+
+    // Trashed media (.trashed-* files)
+    try {
+      const rawTrash = await AndroidStorage.scanTrashedFiles();
+      for (const tf of rawTrash) {
+        const file: ScannedFile = {
+          id: tf.id,
+          path: tf.path,
+          uri: `file://${tf.path}`,
+          name: tf.name,
+          category: "junk",
+          sizeBytes: tf.sizeBytes,
+          mimeType: "application/octet-stream",
+          modifiedAt: tf.modifiedAt || Date.now(),
+          source: "System Trash",
+        };
+        junkFiles.push(file);
+        storageItems.push({
+          id: tf.id,
+          uri: `file://${tf.path}`,
+          path: tf.path,
+          name: tf.name,
+          sizeBytes: file.sizeBytes,
+          category: "other",
+          source: "filesystem",
+          modifiedAt: file.modifiedAt,
+          isLarge: tf.sizeBytes >= 10 * MB,
+          isJunk: true,
+          junkType: "trash",
+          junkReason: "System Trash",
+          canOpen: false,
+          canPreview: false,
+          canDelete: true,
+          requiresPermission: false,
+        });
+      }
+    } catch {}
+
+    // Browser cache & temp downloads
+    try {
+      const rawBrowser = await AndroidStorage.scanBrowserCaches();
+      for (const bf of rawBrowser) {
+        const file: ScannedFile = {
+          id: bf.id,
+          path: bf.path,
+          uri: `file://${bf.path}`,
+          name: bf.name,
+          category: "junk",
+          sizeBytes: bf.sizeBytes,
+          mimeType: "application/octet-stream",
+          modifiedAt: bf.modifiedAt || Date.now(),
+          source: "Browser Cache",
+        };
+        junkFiles.push(file);
+        storageItems.push({
+          id: bf.id,
+          uri: `file://${bf.path}`,
+          path: bf.path,
+          name: bf.name,
+          sizeBytes: file.sizeBytes,
+          category: "other",
+          source: "filesystem",
+          modifiedAt: file.modifiedAt,
+          isLarge: false,
+          isJunk: true,
+          junkType: "browser",
+          junkReason: "Browser temporary data",
+          canOpen: false,
+          canPreview: false,
+          canDelete: true,
+          requiresPermission: false,
+        });
+      }
+    } catch {}
+    // Dedicated comprehensive APK scan (detects all installed & obsolete APKs across device)
+    try {
+      const rawApks = await AndroidStorage.scanApkFiles();
+      for (const a of rawApks) {
+        const isInstalled = Boolean(a.isInstalled);
+        const displayName = a.appLabel ? `${a.appLabel} (${a.name})` : a.name;
+        const file: ScannedFile = {
+          id: a.id || a.path,
+          path: a.path,
+          uri: `file://${a.path}`,
+          name: displayName,
+          category: "apks",
+          sizeBytes: a.sizeBytes,
+          mimeType: "application/vnd.android.package-archive",
+          modifiedAt: a.modifiedAt || Date.now(),
+          source: isInstalled ? "Installed APK" : "Obsolete APK",
+        };
+        if (!junkFiles.some((j) => j.path === a.path || j.id === file.id)) {
+          junkFiles.push(file);
+          storageItems.push({
+            id: file.id,
+            uri: file.uri || `file://${a.path}`,
+            path: a.path,
+            name: file.name,
+            sizeBytes: a.sizeBytes,
+            mimeType: file.mimeType,
+            extension: "apk",
+            category: "apks",
+            source: "filesystem",
+            modifiedAt: file.modifiedAt,
+            isLarge: a.sizeBytes >= 10 * MB,
+            isJunk: true,
+            junkType: "apk",
+            junkReason: isInstalled ? "Installed package installation file" : "Obsolete package installation file",
+            canOpen: true,
+            canPreview: false,
+            canDelete: true,
+            requiresPermission: false,
+          });
+        }
+      }
+    } catch (apkErr) {
+      console.warn("[realScanner] APK scan error:", apkErr);
+    }
   } catch (e) {
     console.warn("[realScanner] Junk scan error:", e);
   }
@@ -669,9 +828,8 @@ export async function runRealScan(
   const apps = await getAppsFromNative();
 
   // ── Stage 6: Duplicate Photo Detection ────────────────────────────────
-  onProgress?.("Detecting duplicate photos…", 0.85);
-
-  if (scannedPhotos.length >= 2) {
+  if (options?.includeDuplicates === true && scannedPhotos.length >= 2) {
+    onProgress?.("Detecting duplicate photos…", 0.85);
     try {
       duplicateGroups = await detectDuplicates(scannedPhotos, onProgress);
       // Link duplicate group IDs into storage items
@@ -686,6 +844,8 @@ export async function runRealScan(
     } catch (e) {
       console.warn("[realScanner] Duplicate detection error:", e);
     }
+  } else {
+    onProgress?.("Finalizing safe scan…", 0.88);
   }
 
   // ── Zero-Item Result (Permission Denied / Fresh Device) ────────────────
@@ -737,7 +897,7 @@ export async function runRealScan(
   onProgress?.("Finalizing report…", 0.98);
 
   const obsoleteApks = junkFiles.filter(
-    (j) => j.name.toLowerCase().endsWith(".apk") || j.source === "Obsolete APK",
+    (j) => j.name.toLowerCase().endsWith(".apk") || j.category === "apks" || j.source === "Obsolete APK" || j.source === "Installed APK",
   );
 
   const photosBytes = sum(scannedPhotos);
@@ -763,8 +923,8 @@ export async function runRealScan(
     { key: "apps", label: "Apps", bytes: apps.reduce((s, a) => s + a.sizeBytes, 0), fileCount: apps.length, cleanableBytes: appCacheBytes, cleanableCount: apps.filter((a) => a.cacheBytes > 0).length },
   ];
 
-  // Actionable cleanable bytes includes only directly cleanable files: junk, duplicate photos, obsolete APKs, and WhatsApp sent files
-  const totalCleanableBytes = junkBytes + dupRecoverable + sum(obsoleteApks) + cleanableWaBytes;
+  // Actionable cleanable bytes includes only directly cleanable files: junk (which includes APKs, caches, temp), duplicate photos, and WhatsApp sent files
+  const totalCleanableBytes = junkBytes + dupRecoverable + cleanableWaBytes;
 
   onProgress?.("Done", 1);
 
@@ -812,38 +972,76 @@ async function detectDuplicates(
   const groups: DuplicateGroup[] = [];
   let groupIndex = 0;
 
-  // 1. Group candidates by file size (within 1% tolerance or exact)
-  const bySize = new Map<number, ScannedFile[]>();
+  // 1. PIPELINE A CANDIDATES: Exact Duplicates (Exact byte size + Dimensions OR identical Dimensions + Orientation)
+  const byDim = new Map<string, ScannedFile[]>();
   for (const p of photos) {
-    if (p.sizeBytes < 50 * 1024) continue;
-    const arr = bySize.get(p.sizeBytes) ?? [];
+    if (p.sizeBytes < 10 * 1024) continue;
+    const key = `${p.width ?? 0}x${p.height ?? 0}`;
+    const arr = byDim.get(key) ?? [];
     arr.push(p);
-    bySize.set(p.sizeBytes, arr);
+    byDim.set(key, arr);
   }
 
-  const sizeCandidates: ScannedFile[][] = [];
-  for (const [, files] of bySize) {
-    if (files.length > 1) sizeCandidates.push(files);
+  const exactCandidates: ScannedFile[] = [];
+  for (const [, dimGroup] of byDim) {
+    if (dimGroup.length > 1) {
+      // Group by size if differentiated, otherwise all same-dimension photos are candidates
+      const bySize = new Map<number, ScannedFile[]>();
+      for (const f of dimGroup) {
+        const arr = bySize.get(f.sizeBytes) ?? [];
+        arr.push(f);
+        bySize.set(f.sizeBytes, arr);
+      }
+      for (const [, sizeGroup] of bySize) {
+        if (sizeGroup.length > 1) exactCandidates.push(...sizeGroup);
+      }
+      // If sizes were estimated and equal, include dimGroup
+      if (exactCandidates.length === 0 && dimGroup.length <= 100) {
+        exactCandidates.push(...dimGroup);
+      }
+    }
   }
 
-  // 2. Sub-group by dimensions
-  const candidates: ScannedFile[][] = [];
-  for (const group of sizeCandidates) {
-    const byDim = new Map<string, ScannedFile[]>();
-    for (const f of group) {
-      const key = `${f.width ?? 0}x${f.height ?? 0}`;
-      const arr = byDim.get(key) ?? [];
-      arr.push(f);
-      byDim.set(key, arr);
-    }
-    for (const [, files] of byDim) {
-      if (files.length > 1) candidates.push(files);
+  // 2. PIPELINE B CANDIDATES: Similar Photos (Burst timeframe ±4s OR Aspect Ratio)
+  const sortedByTime = [...photos]
+    .filter((p) => p.sizeBytes >= 10 * 1024)
+    .sort((a, b) => a.modifiedAt - b.modifiedAt);
+  const similarCandidateSet = new Set<ScannedFile>();
+
+  // A. Time Proximity (Burst captures within 4000ms)
+  for (let i = 0; i < sortedByTime.length - 1; i++) {
+    const cur = sortedByTime[i];
+    const next = sortedByTime[i + 1];
+    if (Math.abs(next.modifiedAt - cur.modifiedAt) <= 4000) {
+      similarCandidateSet.add(cur);
+      similarCandidateSet.add(next);
     }
   }
+
+  // B. Aspect ratio grouping (up to 150 photos per aspect ratio)
+  const byRatio = new Map<string, ScannedFile[]>();
+  for (const p of photos) {
+    if (p.width && p.height && p.width > 0 && p.height > 0) {
+      const ratio = (p.width / p.height).toFixed(2);
+      const arr = byRatio.get(ratio) ?? [];
+      arr.push(p);
+      byRatio.set(ratio, arr);
+    }
+  }
+  for (const [, ratioFiles] of byRatio) {
+    if (ratioFiles.length > 1 && ratioFiles.length <= 150) {
+      for (const f of ratioFiles) similarCandidateSet.add(f);
+    }
+  }
+
+  // Combine candidates into a deduplicated candidate list
+  const combinedMap = new Map<string, ScannedFile>();
+  for (const f of exactCandidates) combinedMap.set(f.id, f);
+  for (const f of similarCandidateSet) combinedMap.set(f.id, f);
+  const allCandidateFiles = Array.from(combinedMap.values());
 
   // 3. Incremental Hash Cache & Chunked Batched Verification
   try {
-    const allCandidateFiles = candidates.flat();
     if (allCandidateFiles.length > 0) {
       // Step 3A: Check SQLite incremental cache
       const cacheQueries = allCandidateFiles
@@ -869,8 +1067,8 @@ async function detectDuplicates(
         }
       }
 
-      // Step 3B: Compute hashes for uncached files in memory-safe chunks of 50
-      const CHUNK_SIZE = 50;
+      // Step 3B: Compute hashes for uncached files in memory-safe chunks of 40
+      const CHUNK_SIZE = 40;
       const newlyComputed: Array<{
         pathOrUri: string;
         sizeBytes: number;
@@ -907,11 +1105,11 @@ async function detectDuplicates(
         StorageIndexService.saveCachedHashes(newlyComputed);
       }
 
-      // Group exact duplicates (SHA-256 match)
+      // Group exact duplicates (SHA-256 or MD5 match)
       const exactMap = new Map<string, ScannedFile[]>();
       const processedForExact = new Set<string>();
 
-      for (const file of allCandidateFiles) {
+      for (const file of exactCandidates) {
         const path = file.path || file.uri;
         const hashInfo = path ? resultMap.get(path) : undefined;
         if (hashInfo?.sha256) {
@@ -929,7 +1127,7 @@ async function detectDuplicates(
         }
       }
 
-      // Group similar photos (perceptual dHash with hamming distance <= 8)
+      // Group similar photos (perceptual dHash with hamming distance <= 8 OR burst timeframe fallback)
       const remainingFiles = allCandidateFiles.filter((f) => !processedForExact.has(f.id));
       const similarVisited = new Set<string>();
 
@@ -938,7 +1136,6 @@ async function detectDuplicates(
         if (similarVisited.has(fileA.id)) continue;
         const pathA = fileA.path || fileA.uri;
         const hashA = pathA ? resultMap.get(pathA)?.dhash : null;
-        if (!hashA) continue;
 
         const similarCluster: ScannedFile[] = [fileA];
         for (let j = i + 1; j < remainingFiles.length; j++) {
@@ -946,7 +1143,22 @@ async function detectDuplicates(
           if (similarVisited.has(fileB.id)) continue;
           const pathB = fileB.path || fileB.uri;
           const hashB = pathB ? resultMap.get(pathB)?.dhash : null;
-          if (hashB && hammingDistance(hashA, hashB) <= 8) {
+
+          let isMatch = false;
+          if (hashA && hashB) {
+            isMatch = hammingDistance(hashA, hashB) <= 8;
+          } else {
+            // Burst sequence fallback: same dimensions and captured within 4000ms
+            const isBurst =
+              fileA.width &&
+              fileB.width &&
+              fileA.width === fileB.width &&
+              fileA.height === fileB.height &&
+              Math.abs(fileA.modifiedAt - fileB.modifiedAt) <= 4000;
+            if (isBurst) isMatch = true;
+          }
+
+          if (isMatch) {
             similarCluster.push(fileB);
             similarVisited.add(fileB.id);
           }
@@ -987,7 +1199,14 @@ export async function performRealCleanup(
   selectedFileIds: Set<string>,
   selectedGroupIds: Set<string>,
   scanResult: ScanResult,
-): Promise<{ freedBytes: number; deletedCount: number }> {
+): Promise<{
+  freedBytes: number;
+  deletedCount: number;
+  requestedCount: number;
+  failedCount: number;
+  permissionBlockedCount: number;
+  missingPermission?: "manage_external_storage" | "media_library" | "saf" | null;
+}> {
   const idsToDelete = new Set(selectedFileIds);
 
   // Collect duplicate files (delete all except keepId)
@@ -1007,6 +1226,10 @@ export async function performRealCleanup(
   return {
     freedBytes: res.freedBytes,
     deletedCount: res.deletedCount,
+    requestedCount: res.requestedCount,
+    failedCount: res.failedCount,
+    permissionBlockedCount: res.permissionBlockedCount,
+    missingPermission: res.missingPermission,
   };
 }
 
