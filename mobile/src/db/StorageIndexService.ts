@@ -179,8 +179,12 @@ class StorageIndexServiceImpl {
       const args: any[] = [];
 
       if (params.category) {
-        conditions.push("category = ?");
-        args.push(params.category);
+        if ((params.category as string) === "junk") {
+          conditions.push("is_junk = 1");
+        } else {
+          conditions.push("category = ?");
+          args.push(params.category);
+        }
       }
       if (params.source) {
         conditions.push("source = ?");

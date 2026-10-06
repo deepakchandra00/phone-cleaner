@@ -16,6 +16,23 @@ export interface DeleteResult {
 
 type DeleteListener = (deletedIds: string[]) => void;
 
+// In-memory item index: populated from scan result so DeleteCoordinator can
+// delete items even when SQLite is cleared between scans (which happens at
+// every scan to keep the DB fresh).
+const inMemoryItemIndex = new Map<string, StorageItem>();
+
+/** Register items from the scan result so deletion works even after SQLite clear. */
+export function registerItemsForDeletion(items: StorageItem[]): void {
+  for (const item of items) {
+    inMemoryItemIndex.set(item.id, item);
+  }
+}
+
+/** Clear the in-memory index when starting a fresh scan. */
+export function clearDeletionIndex(): void {
+  inMemoryItemIndex.clear();
+}
+
 class DeleteCoordinatorImpl {
   private listeners = new Set<DeleteListener>();
 
@@ -35,9 +52,28 @@ class DeleteCoordinatorImpl {
   }
 
   /**
-   * Deletes a single storage item from the real Android storage,
-   * then purges it from the SQLite index upon confirmation.
+   * Resolves StorageItem records for a list of IDs.
+   * First queries SQLite; fills missing entries from the in-memory index
+   * (populated from the last scan result). This ensures deletion works
+   * even when SQLite was cleared at the start of the scan.
    */
+  private resolveItems(ids: string[]): StorageItem[] {
+    const sqliteItems = StorageIndexService.getItemsByIds(ids);
+    if (sqliteItems.length === ids.length) return sqliteItems;
+
+    const found = new Map<string, StorageItem>();
+    for (const item of sqliteItems) found.set(item.id, item);
+
+    for (const id of ids) {
+      if (!found.has(id)) {
+        const memItem = inMemoryItemIndex.get(id);
+        if (memItem) found.set(id, memItem);
+      }
+    }
+
+    return Array.from(found.values());
+  }
+
   public async deleteItem(item: StorageItem): Promise<boolean> {
     const res = await this.deleteMany([item.id]);
     return res.deletedCount > 0;
@@ -46,34 +82,41 @@ class DeleteCoordinatorImpl {
   /**
    * Batch deletes multiple items by IDs.
    *
-   * Key design change: trusts the native layer's own deletion result
-   * (deletedPaths / failedPaths returned by deleteNativeFiles) instead of
-   * calling StorageVerifier immediately after deletion. The verifier was
-   * always returning "still exists" because Android's MediaStore and the
-   * filesystem both take a moment to flush after a delete — causing 0 freed
-   * bytes every time even when files were actually removed.
+   * Routing logic:
+   *  - MANAGE_EXTERNAL_STORAGE + real path → deleteNativeFiles (fastest, most reliable)
+   *  - media_store source / content:// URI → MediaLibrary.deleteAssetsAsync (system consent)
+   *  - SAF source → SAFBridge.deleteDocument
+   *  - internal/filesystem → deleteNativeFiles
+   *
+   * Trusts native return value (deletedPaths/failedPaths) rather than re-checking
+   * file.exists() which fails due to Android async FS/MediaStore flush.
    */
   public async deleteMany(ids: string[]): Promise<DeleteResult> {
     if (ids.length === 0) {
       return { requestedCount: 0, deletedCount: 0, freedBytes: 0, failedCount: 0, permissionBlockedCount: 0 };
     }
 
-    const items = StorageIndexService.getItemsByIds(ids);
+    const items = this.resolveItems(ids);
+
     if (items.length === 0) {
-      // Records already removed from DB — treat as already deleted
-      StorageIndexService.deleteItemsByIds(ids);
-      this.notify(ids);
-      return { requestedCount: ids.length, deletedCount: ids.length, freedBytes: 0, failedCount: 0, permissionBlockedCount: 0 };
+      console.warn("[DeleteCoordinator] No items found in SQLite or memory index for IDs:", ids.slice(0, 5));
+      return {
+        requestedCount: ids.length,
+        deletedCount: 0,
+        freedBytes: 0,
+        failedCount: ids.length,
+        permissionBlockedCount: 0,
+        missingPermission: null,
+      };
     }
 
     const hasManagerAccess = AndroidStorage.isExternalStorageManager();
 
-    // Bins for routing each item to its best deletion strategy
-    const nativePaths: string[] = [];       // deleteNativeFiles (own cache + MANAGE_EXTERNAL paths)
+    const nativePaths: string[] = [];
     const nativeItems: StorageItem[] = [];
-    const mediaStoreIds: string[] = [];     // MediaLibrary.deleteAssetsAsync (media with consent dialog)
+    const mediaStoreIds: string[] = [];
     const mediaStoreItems: StorageItem[] = [];
-    const safItems: StorageItem[] = [];     // SAFBridge.deleteDocument
+    const safItems: StorageItem[] = [];
     const unsupportedItems: StorageItem[] = [];
 
     for (const item of items) {
@@ -82,7 +125,7 @@ class DeleteCoordinatorImpl {
       );
       const hasPath = Boolean(item.path);
 
-      // With MANAGE_EXTERNAL_STORAGE + a real path → direct native delete (fastest)
+      // With full storage manager access and a real path, use native delete (fastest)
       if (hasManagerAccess && hasPath && isExternalPath && item.source !== "saf") {
         nativePaths.push(item.path!);
         nativeItems.push(item);
@@ -98,7 +141,7 @@ class DeleteCoordinatorImpl {
           : item.source === "saf"
           ? "document_uri"
           : isExternalPath
-          ? "media_store" // external without manager access → MediaStore consent dialog
+          ? "media_store"
           : "filesystem");
 
       switch (strategy) {
@@ -132,13 +175,10 @@ class DeleteCoordinatorImpl {
 
     let missingPermission: "manage_external_storage" | "media_library" | "saf" | null = null;
     let permissionBlockedCount = unsupportedItems.length;
-
     const confirmedDeletedIds = new Set<string>();
     const confirmedDeletedBytes = new Map<string, number>();
 
-    // ── 1. Native filesystem delete ─────────────────────────────────────────
-    // deleteNativeFiles: tries file.delete() → ContentResolver fallback → returns
-    // { deletedPaths, failedPaths, deletedCount, freedBytes }
+    // ── 1. Native filesystem delete ───────────────────────────────────────
     if (nativePaths.length > 0) {
       try {
         const nativeResult = await AndroidStorage.deleteNativeFiles(nativePaths) as {
@@ -159,8 +199,7 @@ class DeleteCoordinatorImpl {
             ? deletedPathSet.has(itemPath) ||
               deletedPathSet.has(normalizedPath) ||
               deletedPathSet.has(`file://${normalizedPath}`)
-            : // Older native API didn't return deletedPaths — trust deletedCount > 0
-              nativeResult.deletedCount > 0 &&
+            : nativeResult.deletedCount > 0 &&
               !(nativeResult.failedPaths?.includes(itemPath) || nativeResult.failedPaths?.includes(normalizedPath));
 
           if (wasDeleted) {
@@ -172,8 +211,8 @@ class DeleteCoordinatorImpl {
           }
         }
       } catch (err) {
-        console.warn("[DeleteCoordinator] Native filesystem delete error:", err);
-        // Fallback: FileSystem.deleteAsync for each item individually
+        console.warn("[DeleteCoordinator] Native delete error:", err);
+        // Per-item FileSystem.deleteAsync fallback
         for (const item of nativeItems) {
           try {
             const target = item.path || item.uri;
@@ -189,9 +228,7 @@ class DeleteCoordinatorImpl {
       }
     }
 
-    // ── 2. MediaStore batch delete ──────────────────────────────────────────
-    // Shows Android's system delete consent dialog for media gallery items.
-    // This is the correct path for photos/videos without MANAGE_EXTERNAL_STORAGE.
+    // ── 2. MediaStore batch delete (system consent dialog) ────────────────
     if (mediaStoreIds.length > 0) {
       try {
         const ok = await MediaLibrary.deleteAssetsAsync(mediaStoreIds);
@@ -211,7 +248,7 @@ class DeleteCoordinatorImpl {
       }
     }
 
-    // ── 3. Storage Access Framework ─────────────────────────────────────────
+    // ── 3. Storage Access Framework ───────────────────────────────────────
     for (const item of safItems) {
       try {
         const ok = await SAFBridge.deleteDocument(item.uri);
@@ -228,7 +265,7 @@ class DeleteCoordinatorImpl {
       }
     }
 
-    // ── 4. Finalize ─────────────────────────────────────────────────────────
+    // ── 4. Finalize ───────────────────────────────────────────────────────
     let freedBytes = 0;
     for (const id of confirmedDeletedIds) {
       freedBytes += confirmedDeletedBytes.get(id) ?? 0;
@@ -239,6 +276,7 @@ class DeleteCoordinatorImpl {
 
     if (confirmedArr.length > 0) {
       StorageIndexService.deleteItemsByIds(confirmedArr);
+      for (const id of confirmedArr) inMemoryItemIndex.delete(id);
       this.notify(confirmedArr);
     }
 

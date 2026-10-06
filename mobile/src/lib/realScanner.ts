@@ -2,7 +2,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library/legacy";
 import { AndroidStorage, HashWorker } from "android-storage";
 import { StorageIndexService } from "@/db/StorageIndexService";
-import { DeleteCoordinator } from "@/services/DeleteCoordinator";
+import { DeleteCoordinator, registerItemsForDeletion, clearDeletionIndex } from "@/services/DeleteCoordinator";
 import type { StorageItem, StorageCategory } from "@/db/schema";
 import type {
   AppItem,
@@ -154,6 +154,8 @@ export async function runRealScan(
   options?: RealScanOptions,
 ): Promise<ScanResult> {
   const startedAt = Date.now();
+  // Clear previous deletion index so stale items from old scans don't accumulate
+  clearDeletionIndex();
 
   // ── Stage 1: Permissions ─────────────────────────────────────────────
   onProgress?.("Checking device permissions…", 0.05);
@@ -890,6 +892,9 @@ export async function runRealScan(
   try {
     StorageIndexService.clearAll();
     StorageIndexService.upsertItemsBatch(storageItems);
+    // Register all scanned items in-memory so DeleteCoordinator can delete them
+    // even if SQLite was cleared before the user taps Clean
+    registerItemsForDeletion(storageItems);
   } catch (dbErr) {
     console.warn("[realScanner] SQLite index error:", dbErr);
   }
@@ -909,22 +914,22 @@ export async function runRealScan(
   const dupRecoverable = duplicateGroups.reduce((s, g) => s + g.recoverableBytes, 0);
   const appCacheBytes = apps.reduce((s, a) => s + (a.cacheBytes || 0), 0);
 
-  const whatsappSentFiles = storageItems.filter((s) => s.source === "whatsapp" && s.isSent);
-  const waSentBytes = whatsappSentFiles.reduce((s, f) => s + f.sizeBytes, 0);
-  const cleanableWaBytes = waSentBytes;
+  // Large videos (>=100MB) are cleanable suggestions
+  const largeVideoFiles = scannedVideos.filter(v => v.sizeBytes >= 100 * MB);
+  const largeVideoBytes = largeVideoFiles.reduce((s, v) => s + v.sizeBytes, 0);
 
-  const categories: CategorySummary[] = [
+  const categories: CategorySummary[] = ([
     { key: "photos", label: "Photos", bytes: photosBytes, fileCount: scannedPhotos.length, cleanableBytes: dupRecoverable, cleanableCount: duplicateGroups.length },
-    { key: "videos", label: "Videos", bytes: videosBytes, fileCount: scannedVideos.length, cleanableBytes: 0, cleanableCount: 0 },
-    { key: "downloads", label: "Downloads & Files", bytes: downloadsBytes, fileCount: scannedDownloads.length, cleanableBytes: sum(obsoleteApks), cleanableCount: obsoleteApks.length },
+    { key: "videos", label: "Videos", bytes: videosBytes, fileCount: scannedVideos.length, cleanableBytes: largeVideoBytes, cleanableCount: largeVideoFiles.length },
+    { key: "downloads", label: "Downloads & Files", bytes: downloadsBytes, fileCount: scannedDownloads.length, cleanableBytes: downloadsBytes, cleanableCount: scannedDownloads.length },
     { key: "junk", label: "Junk & Cache", bytes: junkBytes, fileCount: junkFiles.length, cleanableBytes: junkBytes, cleanableCount: junkFiles.length },
-    { key: "whatsapp", label: "WhatsApp Media", bytes: waBytes, fileCount: whatsappFiles.length, cleanableBytes: cleanableWaBytes, cleanableCount: whatsappSentFiles.length },
+    { key: "whatsapp", label: "WhatsApp Media", bytes: waBytes, fileCount: whatsappFiles.length, cleanableBytes: waBytes, cleanableCount: whatsappFiles.length },
     { key: "audio", label: "Audio", bytes: audioBytes, fileCount: scannedAudio.length, cleanableBytes: 0, cleanableCount: 0 },
     { key: "apps", label: "Apps", bytes: apps.reduce((s, a) => s + a.sizeBytes, 0), fileCount: apps.length, cleanableBytes: appCacheBytes, cleanableCount: apps.filter((a) => a.cacheBytes > 0).length },
-  ];
+  ] as CategorySummary[]).filter(c => c.bytes > 0 || c.fileCount > 0);
 
-  // Actionable cleanable bytes includes only directly cleanable files: junk (which includes APKs, caches, temp), duplicate photos, and WhatsApp sent files
-  const totalCleanableBytes = junkBytes + dupRecoverable + cleanableWaBytes;
+  // Total cleanable = junk + duplicates + all WhatsApp + downloads
+  const totalCleanableBytes = junkBytes + dupRecoverable + waBytes + downloadsBytes;
 
   onProgress?.("Done", 1);
 

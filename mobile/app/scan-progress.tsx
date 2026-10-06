@@ -59,13 +59,10 @@ export default function ScanProgress() {
       startScan({ includeDuplicates });
     }
     if (scanPhase === "done") {
-      // Navigate to scan results tab first, then reset — resetting before navigation
-      // would set phase back to "idle" and re-trigger startScan immediately.
+      // Wait briefly so the user sees 100% then go to scan results
       const t = setTimeout(() => {
         router.replace("/(tabs)/scan");
-        // Small delay to let navigation commit before resetting state
-        setTimeout(() => useAppStore.getState().resetScan(), 200);
-      }, 600);
+      }, 800);
       return () => clearTimeout(t);
     }
   }, [scanPhase, startScan, router, includeDuplicates]);

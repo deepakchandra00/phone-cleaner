@@ -425,6 +425,68 @@ class AndroidStorageModule : Module() {
                         }
                     }
                 }
+
+                // 4. Visible app cache in Android/data/*/cache/ — the primary source of
+                // "visible cache" shown in Android Settings > Storage. Only accessible
+                // with MANAGE_EXTERNAL_STORAGE (Android 11+).
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()) {
+                    val androidDataDir = java.io.File(Environment.getExternalStorageDirectory(), "Android/data")
+                    if (androidDataDir.exists() && androidDataDir.isDirectory) {
+                        try {
+                            androidDataDir.listFiles()?.forEach { pkgDir ->
+                                if (pkgDir.isDirectory) {
+                                    val cacheDir = java.io.File(pkgDir, "cache")
+                                    if (cacheDir.exists() && cacheDir.isDirectory) {
+                                        try {
+                                            cacheDir.walkTopDown().maxDepth(4).forEach { file ->
+                                                if (file.isFile && file.length() > 0) {
+                                                    junkList.add(
+                                                        mapOf(
+                                                            "id" to ("cache_" + file.absolutePath.hashCode()),
+                                                            "path" to file.absolutePath,
+                                                            "name" to file.name,
+                                                            "sizeBytes" to file.length(),
+                                                            "category" to "junk",
+                                                            "subType" to "cache",
+                                                            "modifiedAt" to file.lastModified(),
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        } catch (_: Exception) {}
+                                    }
+                                }
+                            }
+                        } catch (_: Exception) {}
+                    }
+                }
+
+                // 5. WhatsApp .nomedia and temp files in common media dirs
+                try {
+                    val waTempDirs = listOf(
+                        java.io.File(Environment.getExternalStorageDirectory(), "Android/media/com.whatsapp/WhatsApp/Media/.Statuses"),
+                        java.io.File(Environment.getExternalStorageDirectory(), "WhatsApp/Media/.Statuses"),
+                    )
+                    for (tDir in waTempDirs) {
+                        if (tDir.exists() && tDir.isDirectory) {
+                            tDir.walkTopDown().maxDepth(2).forEach { file ->
+                                if (file.isFile && file.length() > 0 && !file.name.startsWith(".")) {
+                                    junkList.add(
+                                        mapOf(
+                                            "id" to ("wa_status_" + file.absolutePath.hashCode()),
+                                            "path" to file.absolutePath,
+                                            "name" to file.name,
+                                            "sizeBytes" to file.length(),
+                                            "category" to "junk",
+                                            "subType" to "temp",
+                                            "modifiedAt" to file.lastModified(),
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
             } catch (_: Exception) {}
 
             junkList
@@ -504,6 +566,8 @@ class AndroidStorageModule : Module() {
 
         AsyncFunction("scanEmptyFolders") {
             val emptyList = mutableListOf<Map<String, Any>>()
+            val hasManagerAccess = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()
+
             try {
                 val root = Environment.getExternalStorageDirectory()
                 if (root != null && root.exists() && root.isDirectory) {
@@ -511,7 +575,8 @@ class AndroidStorageModule : Module() {
                         if (depth > 5) return
                         if (dir.name.startsWith(".") && dir.name != ".thumbnails") return
                         val path = dir.absolutePath
-                        if (path.contains("/Android/data") || path.contains("/Android/obb")) return
+                        // Skip Android/data & Android/obb unless we have full storage manager access
+                        if (!hasManagerAccess && (path.contains("/Android/data") || path.contains("/Android/obb"))) return
 
                         val children = dir.listFiles() ?: return
                         if (children.isEmpty()) {
@@ -1011,6 +1076,18 @@ class AndroidStorageModule : Module() {
                         if (ctx != null) {
                             try {
                                 val uri = Uri.parse(p)
+                                // Capture file size BEFORE deletion (file won't exist after)
+                                try {
+                                    ctx.contentResolver.query(
+                                        uri,
+                                        arrayOf(MediaStore.MediaColumns.SIZE),
+                                        null, null, null
+                                    )?.use { cursor ->
+                                        if (cursor.moveToFirst()) {
+                                            len = cursor.getLong(0)
+                                        }
+                                    }
+                                } catch (_: Exception) {}
                                 val rows = ctx.contentResolver.delete(uri, null, null)
                                 deleted = rows > 0
                             } catch (_: Exception) {

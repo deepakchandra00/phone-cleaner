@@ -101,6 +101,7 @@ function LargeFilesSection() {
   const [modalItem, setModalItem] = useState<StorageItem | null>(null);
   const [files, setFiles] = useState<StorageItem[]>([]);
   const [totalBytes, setTotalBytes] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -110,17 +111,22 @@ function LargeFilesSection() {
   }, [searchQuery]);
 
   const loadData = useCallback(() => {
-    const min = SIZE_FILTERS.find((f) => f.key === filter)?.min ?? 10 * 1024 ** 2;
-    const res = StorageIndexService.getItems({
-      isLarge: true,
-      minSizeBytes: min,
-      search: debouncedSearch.trim() || undefined,
-      sortBy: "size_desc",
-      limit: 100,
-    });
-    setFiles(res.items);
-    setTotalBytes(res.totalBytes);
-    registerFileSizes(res.items);
+    setLoading(true);
+    try {
+      const min = SIZE_FILTERS.find((f) => f.key === filter)?.min ?? 10 * 1024 ** 2;
+      const res = StorageIndexService.getItems({
+        isLarge: true,
+        minSizeBytes: min,
+        search: debouncedSearch.trim() || undefined,
+        sortBy: "size_desc",
+        limit: 100,
+      });
+      setFiles(res.items);
+      setTotalBytes(res.totalBytes);
+      registerFileSizes(res.items);
+    } finally {
+      setLoading(false);
+    }
   }, [filter, debouncedSearch]);
 
   useEffect(() => {
@@ -245,11 +251,17 @@ function LargeFilesSection() {
           </View>
         }
         ListEmptyComponent={
-          <View className="py-12 items-center justify-center">
-            <Icon name="checkmark-circle" size={44} color={StatusColors.success} />
-            <Text className="text-foreground font-semibold text-base mt-2">No large files found</Text>
-            <Text className="text-muted-foreground text-xs mt-1">Try selecting a different filter above</Text>
-          </View>
+          loading ? (
+            <View className="py-12 items-center justify-center">
+              <Text className="text-muted-foreground text-sm">Scanning files…</Text>
+            </View>
+          ) : (
+            <View className="py-12 items-center justify-center">
+              <Icon name="checkmark-circle" size={44} color={StatusColors.success} />
+              <Text className="text-foreground font-semibold text-base mt-2">No large files found</Text>
+              <Text className="text-muted-foreground text-xs mt-1">Try selecting a different filter above</Text>
+            </View>
+          )
         }
       />
 
@@ -288,6 +300,7 @@ function WhatsAppSection() {
   const [modalItem, setModalItem] = useState<StorageItem | null>(null);
   const [files, setFiles] = useState<StorageItem[]>([]);
   const [totalBytes, setTotalBytes] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -297,16 +310,21 @@ function WhatsAppSection() {
   }, [searchQuery]);
 
   const loadData = useCallback(() => {
-    const res = StorageIndexService.getItems({
-      source: "whatsapp",
-      whatsappType: selectedSubtype !== "all" ? (selectedSubtype as any) : undefined,
-      search: debouncedSearch.trim() || undefined,
-      sortBy: "size_desc",
-      limit: 100,
-    });
-    setFiles(res.items);
-    setTotalBytes(res.totalBytes);
-    registerFileSizes(res.items);
+    setLoading(true);
+    try {
+      const res = StorageIndexService.getItems({
+        source: "whatsapp",
+        whatsappType: selectedSubtype !== "all" ? (selectedSubtype as any) : undefined,
+        search: debouncedSearch.trim() || undefined,
+        sortBy: "size_desc",
+        limit: 100,
+      });
+      setFiles(res.items);
+      setTotalBytes(res.totalBytes);
+      registerFileSizes(res.items);
+    } finally {
+      setLoading(false);
+    }
   }, [selectedSubtype, debouncedSearch]);
 
   useEffect(() => {
@@ -444,13 +462,19 @@ function WhatsAppSection() {
           </View>
         }
         ListEmptyComponent={
-          <View className="py-12 items-center justify-center">
-            <Icon name="logo-whatsapp" size={44} color={CategoryColors.whatsapp} />
-            <Text className="text-foreground font-semibold text-base mt-2">No WhatsApp files found</Text>
-            <Text className="text-muted-foreground text-xs mt-1">
-              WhatsApp images, voice notes and videos will appear here
-            </Text>
-          </View>
+          loading ? (
+            <View className="py-12 items-center justify-center">
+              <Text className="text-muted-foreground text-sm">Scanning files…</Text>
+            </View>
+          ) : (
+            <View className="py-12 items-center justify-center">
+              <Icon name="logo-whatsapp" size={44} color={CategoryColors.whatsapp} />
+              <Text className="text-foreground font-semibold text-base mt-2">No WhatsApp files found</Text>
+              <Text className="text-muted-foreground text-xs mt-1">
+                WhatsApp images, voice notes and videos will appear here
+              </Text>
+            </View>
+          )
         }
       />
 
