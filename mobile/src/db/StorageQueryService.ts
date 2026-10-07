@@ -1,5 +1,10 @@
-import { StorageIndexService, type StorageQueryParams, type StorageQueryResult } from "./StorageIndexService";
-import type { StorageItem, StorageCategory, WhatsAppType } from "./schema";
+import { isSafeToCleanAutomatically } from "@/lib/safety";
+import {
+  StorageIndexService,
+  type StorageQueryParams,
+  type StorageQueryResult,
+} from "./StorageIndexService";
+import type { StorageItem, WhatsAppType } from "./schema";
 
 /**
  * Canonical Query Service exposing domain queries over the SQLite Storage Index.
@@ -22,7 +27,12 @@ export class StorageQueryService {
     offset = 0,
     sortBy: StorageQueryParams["sortBy"] = "size_desc",
   ): StorageQueryResult {
-    return StorageIndexService.getItems({ category: "photos", limit, offset, sortBy });
+    return StorageIndexService.getItems({
+      category: "photos",
+      limit,
+      offset,
+      sortBy,
+    });
   }
 
   public static getVideos(
@@ -30,7 +40,12 @@ export class StorageQueryService {
     offset = 0,
     sortBy: StorageQueryParams["sortBy"] = "size_desc",
   ): StorageQueryResult {
-    return StorageIndexService.getItems({ category: "videos", limit, offset, sortBy });
+    return StorageIndexService.getItems({
+      category: "videos",
+      limit,
+      offset,
+      sortBy,
+    });
   }
 
   public static getLargeFiles(
@@ -38,7 +53,12 @@ export class StorageQueryService {
     offset = 0,
     sortBy: StorageQueryParams["sortBy"] = "size_desc",
   ): StorageQueryResult {
-    return StorageIndexService.getItems({ isLarge: true, limit, offset, sortBy });
+    return StorageIndexService.getItems({
+      isLarge: true,
+      limit,
+      offset,
+      sortBy,
+    });
   }
 
   public static getDownloads(
@@ -46,7 +66,12 @@ export class StorageQueryService {
     offset = 0,
     sortBy: StorageQueryParams["sortBy"] = "date_desc",
   ): StorageQueryResult {
-    return StorageIndexService.getItems({ category: "downloads", limit, offset, sortBy });
+    return StorageIndexService.getItems({
+      category: "downloads",
+      limit,
+      offset,
+      sortBy,
+    });
   }
 
   public static getWhatsAppFiles(
@@ -69,7 +94,12 @@ export class StorageQueryService {
     offset = 0,
     sortBy: StorageQueryParams["sortBy"] = "size_desc",
   ): StorageQueryResult {
-    return StorageIndexService.getItems({ isJunk: true, limit, offset, sortBy });
+    return StorageIndexService.getItems({
+      isJunk: true,
+      limit,
+      offset,
+      sortBy,
+    });
   }
 
   /**
@@ -85,7 +115,7 @@ export class StorageQueryService {
     const candidates: StorageItem[] = [];
 
     for (const item of [...junk.items, ...waSent.items, ...apks.items]) {
-      if (!seen.has(item.id) && item.canDelete) {
+      if (!seen.has(item.id) && isSafeToCleanAutomatically(item)) {
         seen.add(item.id);
         candidates.push(item);
       }

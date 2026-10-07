@@ -1,8 +1,8 @@
-import { View, Text, Pressable } from "react-native";
+import { cn } from "@/lib/utils";
 import { useRouter } from "expo-router";
+import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "./Icon";
-import { cn } from "@/lib/utils";
 
 interface ScreenHeaderProps {
   title: string;
@@ -13,7 +13,14 @@ interface ScreenHeaderProps {
   centered?: boolean;
 }
 
-export function ScreenHeader({ title, subtitle, rightIcon, onRightPress, showBack, centered }: ScreenHeaderProps) {
+export function ScreenHeader({
+  title,
+  subtitle,
+  rightIcon,
+  onRightPress,
+  showBack,
+  centered,
+}: ScreenHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   return (
@@ -34,7 +41,11 @@ export function ScreenHeader({ title, subtitle, rightIcon, onRightPress, showBac
       )}
       <View className={cn("flex-1", centered && "items-center")}>
         <Text className="text-2xl font-bold text-foreground">{title}</Text>
-        {subtitle && <Text className="text-sm text-muted-foreground mt-0.5">{subtitle}</Text>}
+        {subtitle && (
+          <Text className="text-sm text-muted-foreground mt-0.5">
+            {subtitle}
+          </Text>
+        )}
       </View>
       {rightIcon && (
         <Pressable

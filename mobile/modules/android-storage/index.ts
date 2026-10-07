@@ -13,6 +13,7 @@ export interface NativeAppInfo {
   sizeBytes: number;
   cacheBytes: number;
   lastUsedAt: number;
+  installedAt?: number;
   isSystem: boolean;
   iconUri: string | null;
 }
@@ -57,13 +58,6 @@ export interface NativeMemoryInfo {
   lowMemory: boolean;
 }
 
-export interface NativeBoostResult {
-  freedBytes: number;
-  killedCount: number;
-  availMemBytes: number;
-  totalMemBytes: number;
-}
-
 export const AndroidStorage = {
   getStorageStats(): NativeStorageStats | null {
     try {
@@ -78,7 +72,7 @@ export const AndroidStorage = {
       const module = requireNativeModule("AndroidStorage");
       return Boolean(module.isExternalStorageManager());
     } catch {
-      return true;
+      return false;
     }
   },
   async requestManageAllFilesAccess(): Promise<boolean> {
@@ -89,10 +83,10 @@ export const AndroidStorage = {
       return false;
     }
   },
-  getInstalledApps(): NativeAppInfo[] {
+  async getInstalledApps(): Promise<NativeAppInfo[]> {
     try {
       const module = requireNativeModule("AndroidStorage");
-      return module.getInstalledApps();
+      return await module.getInstalledApps();
     } catch {
       return [];
     }
@@ -145,6 +139,17 @@ export const AndroidStorage = {
       return false;
     }
   },
+  async getMediaMetadata(
+    uris: string[],
+  ): Promise<
+    Array<{ uri: string; path?: string; sizeBytes: number; mimeType?: string }>
+  > {
+    try {
+      return await requireNativeModule("AndroidStorage").getMediaMetadata(uris);
+    } catch {
+      return [];
+    }
+  },
   async locateFile(uriOrPath: string): Promise<boolean> {
     try {
       const module = requireNativeModule("AndroidStorage");
@@ -164,7 +169,12 @@ export const AndroidStorage = {
         failedPaths: res.failedPaths ?? [],
       };
     } catch {
-      return { deletedCount: 0, freedBytes: 0, deletedPaths: [], failedPaths: paths };
+      return {
+        deletedCount: 0,
+        freedBytes: 0,
+        deletedPaths: [],
+        failedPaths: paths,
+      };
     }
   },
   copyToClipboard(text: string): boolean {
@@ -183,12 +193,115 @@ export const AndroidStorage = {
       return false;
     }
   },
+  getUsageAccessStatus(): {
+    granted: boolean;
+    nativeAvailable: boolean;
+    declared: boolean | null;
+    packageName: string | null;
+  } {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      if (typeof module.getUsageAccessStatus === "function") {
+        const status = module.getUsageAccessStatus();
+        return {
+          granted: Boolean(status.granted),
+          nativeAvailable: true,
+          declared: Boolean(status.declared),
+          packageName: status.packageName || null,
+        };
+      }
+      return {
+        granted: Boolean(module.isUsageAccessGranted?.()),
+        nativeAvailable: true,
+        declared: null,
+        packageName: null,
+      };
+    } catch {
+      return {
+        granted: false,
+        nativeAvailable: false,
+        declared: null,
+        packageName: null,
+      };
+    }
+  },
+  async openAppSettings(packageName: string): Promise<boolean> {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      return (
+        typeof module.openAppSettings === "function" &&
+        Boolean(await module.openAppSettings(packageName))
+      );
+    } catch {
+      return false;
+    }
+  },
   async requestUsageAccess(): Promise<boolean> {
     try {
       const module = requireNativeModule("AndroidStorage");
       return await module.requestUsageAccess();
     } catch {
       return false;
+    }
+  },
+  getNotificationCleanupStatus(): {
+    nativeAvailable: boolean;
+    enabled: boolean;
+    connected: boolean;
+    clearableCount: number;
+  } {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      if (typeof module.getNotificationCleanupStatus !== "function")
+        throw new Error("App update required");
+      return {
+        nativeAvailable: true,
+        ...module.getNotificationCleanupStatus(),
+      };
+    } catch {
+      return {
+        nativeAvailable: false,
+        enabled: false,
+        connected: false,
+        clearableCount: 0,
+      };
+    }
+  },
+  async requestNotificationCleanupAccess(): Promise<boolean> {
+    try {
+      return Boolean(
+        await requireNativeModule(
+          "AndroidStorage",
+        ).requestNotificationCleanupAccess(),
+      );
+    } catch {
+      return false;
+    }
+  },
+  async dismissClearableNotifications(): Promise<{
+    available: boolean;
+    requestedCount: number;
+  }> {
+    try {
+      return await requireNativeModule(
+        "AndroidStorage",
+      ).dismissClearableNotifications();
+    } catch {
+      return { available: false, requestedCount: 0 };
+    }
+  },
+  getAppMemoryDiagnostics(): {
+    javaHeapUsedBytes: number;
+    javaHeapMaxBytes: number;
+    nativeHeapAllocatedBytes: number;
+  } | null {
+    try {
+      const module = requireNativeModule("AndroidStorage");
+      return typeof module.getAppMemoryDiagnostics === "function"
+        ? module.getAppMemoryDiagnostics()
+        : null;
+    } catch {
+      return null;
     }
   },
   getMemoryInfo(): NativeMemoryInfo {
@@ -211,14 +324,6 @@ export const AndroidStorage = {
         usedPercent: 0,
         lowMemory: false,
       };
-    }
-  },
-  async boostRam(): Promise<NativeBoostResult> {
-    try {
-      const module = requireNativeModule("AndroidStorage");
-      return await module.boostRam();
-    } catch {
-      return { freedBytes: 0, killedCount: 0, availMemBytes: 0, totalMemBytes: 0 };
     }
   },
   async scanEmptyFolders(): Promise<NativeScannedFile[]> {
@@ -253,7 +358,16 @@ export const AndroidStorage = {
       return [];
     }
   },
-  async scanApkFiles(): Promise<Array<NativeScannedFile & { appLabel?: string; packageName?: string; versionName?: string; isInstalled?: boolean }>> {
+  async scanApkFiles(): Promise<
+    Array<
+      NativeScannedFile & {
+        appLabel?: string;
+        packageName?: string;
+        versionName?: string;
+        isInstalled?: boolean;
+      }
+    >
+  > {
     try {
       const module = requireNativeModule("AndroidStorage");
       return await module.scanApkFiles();
@@ -261,7 +375,9 @@ export const AndroidStorage = {
       return [];
     }
   },
-  async verifyFilesExistence(targets: string[]): Promise<Record<string, boolean>> {
+  async verifyFilesExistence(
+    targets: string[],
+  ): Promise<Record<string, boolean>> {
     try {
       const module = requireNativeModule("AndroidStorage");
       return await module.verifyFilesExistence(targets);
@@ -293,6 +409,16 @@ export const SAFBridge = {
 };
 
 export const HashWorker = {
+  getPhotoHashVersion(): number {
+    for (const name of ["AndroidStorage", "HashWorker"]) {
+      try {
+        const module = requireNativeModule(name);
+        if (typeof module.getPhotoHashVersion === "function")
+          return module.getPhotoHashVersion();
+      } catch {}
+    }
+    return 1;
+  },
   async hashFile(path: string): Promise<string | null> {
     try {
       const storageModule = requireNativeModule("AndroidStorage");
@@ -313,7 +439,9 @@ export const HashWorker = {
       }
     }
   },
-  async hashFiles(paths: string[]): Promise<Array<{ path: string; hash: string | null }>> {
+  async hashFiles(
+    paths: string[],
+  ): Promise<Array<{ path: string; hash: string | null }>> {
     try {
       const storageModule = requireNativeModule("AndroidStorage");
       if (typeof storageModule.hashFiles === "function") {
@@ -329,7 +457,10 @@ export const HashWorker = {
       for (const p of paths) {
         try {
           const info = await FileSystem.getInfoAsync(p, { md5: true });
-          out.push({ path: p, hash: info.exists && (info as any).md5 ? (info as any).md5 : null });
+          out.push({
+            path: p,
+            hash: info.exists && (info as any).md5 ? (info as any).md5 : null,
+          });
         } catch {
           out.push({ path: p, hash: null });
         }
@@ -354,44 +485,177 @@ export const HashWorker = {
   },
   async hashPhotos(
     paths: string[],
-  ): Promise<Array<{ path: string; sha256: string | null; dhash: string | null }>> {
-    // 1. Primary: AndroidStorage native module
-    try {
-      const storageModule = requireNativeModule("AndroidStorage");
-      if (typeof storageModule.hashPhotos === "function") {
-        const res = await storageModule.hashPhotos(paths);
-        if (res && res.length > 0 && res.some((r: any) => r.sha256 || r.dhash)) {
-          return res;
-        }
-      }
-    } catch {}
-
-    // 2. Secondary: HashWorker native module
-    try {
-      const module = requireNativeModule("HashWorker");
-      if (typeof module.hashPhotos === "function") {
-        const res = await module.hashPhotos(paths);
-        if (res && res.length > 0 && res.some((r: any) => r.sha256 || r.dhash)) {
-          return res;
-        }
-      }
-    } catch {}
-
-    // 3. Resilient Fallback: Built-in FileSystem MD5 calculation
-    const fallbackResults: Array<{ path: string; sha256: string | null; dhash: string | null }> = [];
-    for (const p of paths) {
+  ): Promise<
+    Array<{ path: string; sha256: string | null; dhash: string | null }>
+  > {
+    const results = new Map(
+      paths.map((path) => [
+        path,
+        { path, sha256: null as string | null, dhash: null as string | null },
+      ]),
+    );
+    // Recover each incomplete row, rather than accepting a whole partial batch.
+    for (const name of ["AndroidStorage", "HashWorker"]) {
+      const pending = paths.filter(
+        (path) => !results.get(path)!.sha256 || !results.get(path)!.dhash,
+      );
+      if (!pending.length) break;
       try {
-        const info = await FileSystem.getInfoAsync(p, { md5: true });
-        fallbackResults.push({
-          path: p,
-          sha256: info.exists && (info as any).md5 ? (info as any).md5 : null,
-          dhash: null,
-        });
-      } catch {
-        fallbackResults.push({ path: p, sha256: null, dhash: null });
-      }
+        const module = requireNativeModule(name);
+        if (typeof module.hashPhotos !== "function") continue;
+        const rows = await module.hashPhotos(pending);
+        for (const row of rows ?? []) {
+          const previous = results.get(row.path);
+          if (previous)
+            results.set(row.path, {
+              path: row.path,
+              sha256: row.sha256 || previous.sha256,
+              dhash: row.dhash || previous.dhash,
+            });
+        }
+      } catch {}
     }
-    return fallbackResults;
+    for (const path of paths) {
+      const previous = results.get(path)!;
+      if (previous.sha256) continue;
+      try {
+        const uri = path.startsWith("/") ? `file://${path}` : path;
+        const info = await FileSystem.getInfoAsync(uri, { md5: true });
+        if (info.exists && "md5" in info && info.md5) {
+          results.set(path, { ...previous, sha256: `md5:${info.md5}` });
+        }
+      } catch {}
+    }
+    return [...results.values()];
   },
 };
 
+export interface BatteryStatus {
+  available: boolean;
+  levelPercent?: number | null;
+  charging?: boolean;
+  temperatureC?: number | null;
+  voltageMv?: number | null;
+  currentMa?: number | null;
+  healthStatus?: string;
+}
+export interface WifiStatus {
+  connected: boolean;
+  security: string;
+  warning?: string;
+  linkSpeedMbps?: number | null;
+}
+export interface DataUsageRow {
+  uid: number;
+  label: string;
+  packages: string[];
+  mobileBytes: number;
+  wifiBytes: number;
+  totalBytes: number;
+  sharedUid: boolean;
+}
+export interface DataUsageReport {
+  apps: DataUsageRow[];
+  unavailable: string[];
+  start: number;
+  end: number;
+}
+export interface CompressedPhoto {
+  uri: string | null;
+  originalBytes: number;
+  sizeBytes: number;
+  width: number;
+  height: number;
+}
+export interface NotificationPackage {
+  packageName: string;
+  label: string;
+  count: number;
+}
+export const DeviceTools = {
+  async discardDraft(uri: string): Promise<boolean> {
+    try {
+      return Boolean(
+        await requireNativeModule("AndroidStorage").discardCompressedPhoto(uri),
+      );
+    } catch {
+      return false;
+    }
+  },
+  available(): boolean {
+    try {
+      return requireNativeModule("AndroidStorage").getDeviceToolsVersion() >= 1;
+    } catch {
+      return false;
+    }
+  },
+  battery(): BatteryStatus {
+    try {
+      return requireNativeModule("AndroidStorage").getBatteryStatus();
+    } catch {
+      return { available: false };
+    }
+  },
+  async wifi(): Promise<WifiStatus> {
+    return requireNativeModule("AndroidStorage").getWifiStatus();
+  },
+  async dataUsage(start: number, end: number): Promise<DataUsageReport> {
+    return requireNativeModule("AndroidStorage").getAppDataUsage(start, end);
+  },
+  async compress(
+    uri: string,
+    quality: number,
+    maxSide: number,
+  ): Promise<CompressedPhoto> {
+    return requireNativeModule("AndroidStorage").compressPhoto(
+      uri,
+      quality,
+      maxSide,
+    );
+  },
+  notificationPackages(): NotificationPackage[] {
+    try {
+      return requireNativeModule("AndroidStorage").getNotificationPackages();
+    } catch {
+      return [];
+    }
+  },
+  async dismissNotifications(
+    packages: string[],
+  ): Promise<{ available: boolean; requestedCount: number }> {
+    return requireNativeModule("AndroidStorage").dismissSelectedNotifications(
+      packages,
+    );
+  },
+};
+
+export interface SpeedTestResult {
+  latencyMs: number;
+  downloadMbps: number;
+  uploadMbps: number;
+  transferredBytes: number;
+  provider: string;
+  method: string;
+}
+export const InternetSpeed = {
+  async run(id: string): Promise<SpeedTestResult> {
+    return requireNativeModule("AndroidStorage").runSpeedTest(id);
+  },
+  cancel(id: string): void {
+    try {
+      requireNativeModule("AndroidStorage").cancelSpeedTest(id);
+    } catch {}
+  },
+  listen(
+    callback: (event: { id: string; stage: string; percent: number }) => void,
+  ): { remove: () => void } {
+    try {
+      return requireNativeModule("AndroidStorage").addListener(
+        "speedTestProgress",
+        callback,
+      );
+    } catch {
+      return { remove: () => {} };
+    }
+  },
+};

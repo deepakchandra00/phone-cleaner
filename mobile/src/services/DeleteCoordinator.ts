@@ -1,8 +1,10 @@
-import * as MediaLibrary from "expo-media-library/legacy";
-import * as FileSystem from "expo-file-system/legacy";
-import { AndroidStorage, SAFBridge } from "android-storage";
+import { fileIdentity, uniqueFiles } from "@/lib/fileIdentity.ts";
+import { withStorageOperation } from "@/lib/storageOperation";
 import { StorageIndexService } from "@/db/StorageIndexService";
-import type { StorageItem, DeleteStrategy } from "@/db/schema";
+import type { DeleteStrategy, StorageItem } from "@/db/schema";
+import { AndroidStorage, SAFBridge } from "android-storage";
+import * as FileSystem from "expo-file-system/legacy";
+import * as MediaLibrary from "expo-media-library/legacy";
 
 export interface DeleteResult {
   requestedCount: number;
@@ -11,29 +13,21 @@ export interface DeleteResult {
   failedCount: number;
   permissionBlockedCount: number;
   failedItems?: StorageItem[];
-  missingPermission?: "manage_external_storage" | "media_library" | "saf" | null;
+  missingPermission?:
+    "manage_external_storage" | "media_library" | "saf" | null;
 }
 
-type DeleteListener = (deletedIds: string[]) => void;
+const uniqueIds = (items: StorageItem[]) => [
+  ...new Map(items.map((item) => [item.id, item])).values(),
+];
 
-// In-memory item index: populated from scan result so DeleteCoordinator can
-// delete items even when SQLite is cleared between scans (which happens at
-// every scan to keep the DB fresh).
-const inMemoryItemIndex = new Map<string, StorageItem>();
-
-/** Register items from the scan result so deletion works even after SQLite clear. */
-export function registerItemsForDeletion(items: StorageItem[]): void {
-  for (const item of items) {
-    inMemoryItemIndex.set(item.id, item);
-  }
-}
-
-/** Clear the in-memory index when starting a fresh scan. */
-export function clearDeletionIndex(): void {
-  inMemoryItemIndex.clear();
-}
+type DeleteListener = (
+  deletedIds: string[],
+  deletedItems: StorageItem[],
+) => void;
 
 class DeleteCoordinatorImpl {
+  private deleting = false;
   private listeners = new Set<DeleteListener>();
 
   public addListener(listener: DeleteListener): () => void {
@@ -41,37 +35,20 @@ class DeleteCoordinatorImpl {
     return () => this.listeners.delete(listener);
   }
 
-  private notify(deletedIds: string[]): void {
+  private notify(deletedIds: string[], deletedItems: StorageItem[]): void {
     for (const listener of this.listeners) {
       try {
-        listener(deletedIds);
+        listener(deletedIds, deletedItems);
       } catch (err) {
         console.warn("[DeleteCoordinator] Listener error:", err);
       }
     }
   }
 
-  /**
-   * Resolves StorageItem records for a list of IDs.
-   * First queries SQLite; fills missing entries from the in-memory index
-   * (populated from the last scan result). This ensures deletion works
-   * even when SQLite was cleared at the start of the scan.
-   */
+  // The atomically committed SQLite index is the sole source of deletion targets.
+  // Scan/cleanup locking prevents replacing it during a deletion.
   private resolveItems(ids: string[]): StorageItem[] {
-    const sqliteItems = StorageIndexService.getItemsByIds(ids);
-    if (sqliteItems.length === ids.length) return sqliteItems;
-
-    const found = new Map<string, StorageItem>();
-    for (const item of sqliteItems) found.set(item.id, item);
-
-    for (const id of ids) {
-      if (!found.has(id)) {
-        const memItem = inMemoryItemIndex.get(id);
-        if (memItem) found.set(id, memItem);
-      }
-    }
-
-    return Array.from(found.values());
+    return StorageIndexService.getItemsByIds(ids);
   }
 
   public async deleteItem(item: StorageItem): Promise<boolean> {
@@ -92,14 +69,38 @@ class DeleteCoordinatorImpl {
    * file.exists() which fails due to Android async FS/MediaStore flush.
    */
   public async deleteMany(ids: string[]): Promise<DeleteResult> {
+    if (this.deleting) throw new Error("Cleanup is already in progress.");
+    this.deleting = true;
+    try {
+      return await withStorageOperation("cleanup", () =>
+        this.performDelete(ids),
+      );
+    } finally {
+      this.deleting = false;
+    }
+  }
+
+  private async performDelete(ids: string[]): Promise<DeleteResult> {
     if (ids.length === 0) {
-      return { requestedCount: 0, deletedCount: 0, freedBytes: 0, failedCount: 0, permissionBlockedCount: 0 };
+      return {
+        requestedCount: 0,
+        deletedCount: 0,
+        freedBytes: 0,
+        failedCount: 0,
+        permissionBlockedCount: 0,
+      };
     }
 
-    const items = this.resolveItems(ids);
+    ids = [...new Set(ids)];
+    const resolvedItems = this.resolveItems(ids);
+    const items = uniqueFiles(resolvedItems);
+    const unresolvedCount = ids.length - resolvedItems.length;
 
     if (items.length === 0) {
-      console.warn("[DeleteCoordinator] No items found in SQLite or memory index for IDs:", ids.slice(0, 5));
+      console.warn(
+        "[DeleteCoordinator] No items found in SQLite or memory index for IDs:",
+        ids.slice(0, 5),
+      );
       return {
         requestedCount: ids.length,
         deletedCount: 0,
@@ -120,13 +121,23 @@ class DeleteCoordinatorImpl {
     const unsupportedItems: StorageItem[] = [];
 
     for (const item of items) {
+      if (!item.canDelete) {
+        unsupportedItems.push(item);
+        continue;
+      }
       const isExternalPath = Boolean(
-        item.path && (item.path.startsWith("/storage/") || item.path.startsWith("/sdcard/"))
+        item.path &&
+        (item.path.startsWith("/storage/") || item.path.startsWith("/sdcard/")),
       );
       const hasPath = Boolean(item.path);
 
       // With full storage manager access and a real path, use native delete (fastest)
-      if (hasManagerAccess && hasPath && isExternalPath && item.source !== "saf") {
+      if (
+        hasManagerAccess &&
+        hasPath &&
+        isExternalPath &&
+        item.source !== "saf"
+      ) {
         nativePaths.push(item.path!);
         nativeItems.push(item);
         continue;
@@ -137,12 +148,12 @@ class DeleteCoordinatorImpl {
         (item.junkType === "empty_folder"
           ? "manage_external_storage"
           : item.source === "media_store"
-          ? "media_store"
-          : item.source === "saf"
-          ? "document_uri"
-          : isExternalPath
-          ? "media_store"
-          : "filesystem");
+            ? "media_store"
+            : item.source === "saf"
+              ? "document_uri"
+              : isExternalPath
+                ? "media_store"
+                : "filesystem");
 
       switch (strategy) {
         case "media_store": {
@@ -173,7 +184,8 @@ class DeleteCoordinatorImpl {
       }
     }
 
-    let missingPermission: "manage_external_storage" | "media_library" | "saf" | null = null;
+    let missingPermission:
+      "manage_external_storage" | "media_library" | "saf" | null = null;
     let permissionBlockedCount = unsupportedItems.length;
     const confirmedDeletedIds = new Set<string>();
     const confirmedDeletedBytes = new Map<string, number>();
@@ -181,7 +193,9 @@ class DeleteCoordinatorImpl {
     // ── 1. Native filesystem delete ───────────────────────────────────────
     if (nativePaths.length > 0) {
       try {
-        const nativeResult = await AndroidStorage.deleteNativeFiles(nativePaths) as {
+        const nativeResult = (await AndroidStorage.deleteNativeFiles(
+          nativePaths,
+        )) as {
           deletedPaths?: string[];
           failedPaths?: string[];
           deletedCount: number;
@@ -199,15 +213,15 @@ class DeleteCoordinatorImpl {
             ? deletedPathSet.has(itemPath) ||
               deletedPathSet.has(normalizedPath) ||
               deletedPathSet.has(`file://${normalizedPath}`)
-            : nativeResult.deletedCount > 0 &&
-              !(nativeResult.failedPaths?.includes(itemPath) || nativeResult.failedPaths?.includes(normalizedPath));
+            : false;
 
           if (wasDeleted) {
             confirmedDeletedIds.add(item.id);
             confirmedDeletedBytes.set(item.id, item.sizeBytes);
           } else {
             permissionBlockedCount++;
-            if (!hasManagerAccess) missingPermission = "manage_external_storage";
+            if (!hasManagerAccess)
+              missingPermission = "manage_external_storage";
           }
         }
       } catch (err) {
@@ -216,13 +230,21 @@ class DeleteCoordinatorImpl {
         for (const item of nativeItems) {
           try {
             const target = item.path || item.uri;
-            const fileUri = target.startsWith("/") ? `file://${target}` : target;
-            await FileSystem.deleteAsync(fileUri, { idempotent: true });
-            confirmedDeletedIds.add(item.id);
-            confirmedDeletedBytes.set(item.id, item.sizeBytes);
+            const fileUri = target.startsWith("/")
+              ? `file://${target}`
+              : target;
+            const before = await FileSystem.getInfoAsync(fileUri);
+            if (!before.exists) continue;
+            await FileSystem.deleteAsync(fileUri, { idempotent: false });
+            const after = await FileSystem.getInfoAsync(fileUri);
+            if (!after.exists) {
+              confirmedDeletedIds.add(item.id);
+              confirmedDeletedBytes.set(item.id, item.sizeBytes);
+            }
           } catch {
             permissionBlockedCount++;
-            if (!hasManagerAccess) missingPermission = "manage_external_storage";
+            if (!hasManagerAccess)
+              missingPermission = "manage_external_storage";
           }
         }
       }
@@ -272,23 +294,47 @@ class DeleteCoordinatorImpl {
     }
 
     const confirmedArr = Array.from(confirmedDeletedIds);
-    const failedCount = items.length - confirmedDeletedIds.size;
+    const failedCount =
+      items.length + unresolvedCount - confirmedDeletedIds.size;
 
     if (confirmedArr.length > 0) {
-      StorageIndexService.deleteItemsByIds(confirmedArr);
-      for (const id of confirmedArr) inMemoryItemIndex.delete(id);
-      this.notify(confirmedArr);
+      const identities = new Set(
+        items
+          .filter((item) => confirmedDeletedIds.has(item.id))
+          .map(fileIdentity),
+      );
+      const aliases = StorageIndexService.getItemsByTargets([...identities]);
+      const deletedRecords = uniqueIds([
+        ...items.filter((item) => confirmedDeletedIds.has(item.id)),
+        ...aliases,
+      ]);
+      const allDeletedIds = deletedRecords.map((item) => item.id);
+      try {
+        await StorageIndexService.deleteItemsByIds(allDeletedIds);
+      } catch (error) {
+        // Files were already confirmed deleted: retain that truth if the index fails.
+        console.warn(
+          "[DeleteCoordinator] Deleted files could not be reconciled in the index; rescan required",
+          error,
+        );
+      }
+      this.notify(allDeletedIds, deletedRecords);
     }
 
     const effectiveMissingPermission =
-      failedCount > 0 && !hasManagerAccess ? "manage_external_storage" : missingPermission;
+      failedCount > 0 && !hasManagerAccess
+        ? "manage_external_storage"
+        : missingPermission;
 
     return {
-      requestedCount: items.length,
+      requestedCount: items.length + unresolvedCount,
       deletedCount: confirmedArr.length,
       freedBytes,
       failedCount,
-      permissionBlockedCount: failedCount > 0 && !hasManagerAccess ? failedCount : permissionBlockedCount,
+      permissionBlockedCount:
+        failedCount > 0 && !hasManagerAccess
+          ? failedCount
+          : permissionBlockedCount,
       failedItems: items.filter((i) => !confirmedDeletedIds.has(i.id)),
       missingPermission: effectiveMissingPermission,
     };

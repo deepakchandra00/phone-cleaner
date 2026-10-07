@@ -1,0 +1,15 @@
+SmartCare hilft dir, zugängliche Dateien zu prüfen und Speicherplatz freizugeben.
+
+Sortiere Videos, Downloads und andere Dateien nach Größe. Prüfe den indexierten Ordner und entscheide, was bleiben soll. Berechtigungen können Ergebnisse einschränken.
+
+Vergleiche identische Kopien und vorgeschlagene ähnliche Fotos. Behalte das empfohlene Original und prüfe deine Auswahl. Erstelle kleinere JPEG-Kopien mit Qualitäts- und Größenoptionen. Vergleiche das Ergebnis vor dem Speichern. Originale werden nicht automatisch gelöscht. Komprimierung kann die Qualität reduzieren; neue Kopien enthalten keine EXIF/GPS-Metadaten.
+
+Prüfe unterstützte Cache-Dateien vor dem Löschen. Android erlaubt nicht, den privaten Cache aller Apps oder Systemdaten zu löschen. Über die App-Verwaltung kannst du die Android-Einstellungen zur manuellen Cache-Prüfung öffnen.
+
+Prüfe sichtbare Apps, aufgezeichnete Nutzung, verfügbare Mobilfunk-/WLAN-Datennutzung und Akkuwerte. Nutzungszugriff erfordert deine Erlaubnis. WLAN-Verschlüsselung ist keine Garantie für ein vertrauenswürdiges Netzwerk.
+
+Wähle, welche aktuellen Benachrichtigungen entfernt werden sollen. Dauerhafte Benachrichtigungen bleiben; neue sind weiterhin erlaubt. Der optionale Geschwindigkeitstest sendet Testdaten an Cloudflare und kann mobiles Datenvolumen verbrauchen.
+
+Ein Scan löscht keine Dateien. Das Löschen erfordert Prüfung und Bestätigung. Duplikatanalyse und Komprimierung laufen lokal. Werbung, Zahlungen und Geschwindigkeitstests verwenden Dienste mit eigenen Datenschutzpraktiken.
+
+Android-Version, Berechtigungen und Formate können Funktionen einschränken. Keine versprochene RAM-Beschleunigung, Akku-Reparatur, VPN-Sicherheit oder Sperre anderer Apps.

@@ -1,15 +1,15 @@
-import { useRef, useState, useEffect, useCallback } from "react";
-import { View, Text, Pressable, Dimensions, AppState } from "react-native";
-import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import PagerView from "react-native-pager-view";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
-import { storage, KEYS } from "@/lib/storage";
-import { track } from "@/lib/analytics";
-import { usePermissions, type PermissionStatus } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { usePermissions, type PermissionStatus } from "@/hooks/usePermissions";
+import { track } from "@/lib/analytics";
+import { KEYS, storage } from "@/lib/storage";
 import { CategoryColors, ThemeColors } from "@/theme/colors";
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AppState, Dimensions, Pressable, Text, View } from "react-native";
+import PagerView from "react-native-pager-view";
+import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
@@ -27,11 +27,11 @@ const SLIDES: Slide[] = [
     icon: "sparkles",
     iconBg: `${CategoryColors.photos}20`,
     iconColor: CategoryColors.photos,
-    title: "Free up space\nin seconds",
+    title: "Make room for\nwhat matters",
     description:
-      "Phone Cleaner finds what's eating your storage — large files, duplicates, junk — so you can free up gigabytes with one tap.",
+      "Review large files, duplicate photos and supported cache, then choose what to clean.",
     bullets: [
-      { icon: "flash", text: "Scan in seconds, not minutes" },
+      { icon: "flash", text: "See live scan progress" },
       { icon: "cube", text: "See exactly what's using space" },
       { icon: "checkmark-done", text: "Review before anything is deleted" },
     ],
@@ -55,7 +55,7 @@ const SLIDES: Slide[] = [
     iconColor: CategoryColors.duplicates,
     title: "Photos access",
     description:
-      "To find duplicate photos, similar selfies, and large videos, we need read access to your media. We only read metadata — your photos stay on your device.",
+      "To find duplicate photos, similar selfies, and large videos, we need read access to your media. Photos are read locally to compare copies — your photos stay on your device.",
     bullets: [
       { icon: "copy", text: "Find exact & similar duplicates" },
       { icon: "videocam", text: "Surface the biggest videos" },
@@ -67,7 +67,8 @@ const SLIDES: Slide[] = [
 export default function Onboarding() {
   const pagerRef = useRef<PagerView>(null);
   const [page, setPage] = useState(0);
-  const [mediaStatus, setMediaStatus] = useState<PermissionStatus>("undetermined");
+  const [mediaStatus, setMediaStatus] =
+    useState<PermissionStatus>("undetermined");
   const [requesting, setRequesting] = useState(false);
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -119,7 +120,6 @@ export default function Onboarding() {
   };
 
   const isLast = page === SLIDES.length - 1;
-  const slide = SLIDES[page];
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -130,7 +130,9 @@ export default function Onboarding() {
           className="absolute top-3 right-4 z-10 px-3 py-1.5"
           hitSlop={12}
         >
-          <Text className="text-muted-foreground text-sm font-medium">Skip</Text>
+          <Text className="text-muted-foreground text-sm font-medium">
+            Skip
+          </Text>
         </Pressable>
       )}
 
@@ -173,29 +175,44 @@ export default function Onboarding() {
 
               {/* Bullets or Permission Cards */}
               {i === 2 ? (
-                <Animated.View entering={FadeInDown.delay(400).springify()} className="mt-6 gap-3">
+                <Animated.View
+                  entering={FadeInDown.delay(400).springify()}
+                  className="mt-6 gap-3"
+                >
                   {/* All Files Access */}
                   <View className="bg-card border border-border rounded-2xl p-4 flex-row items-center justify-between">
                     <View className="flex-row items-center gap-3 flex-1 mr-2">
                       <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
-                        <Icon name="folder-open" size={20} color={ThemeColors.primary} />
+                        <Icon
+                          name="folder-open"
+                          size={20}
+                          color={ThemeColors.primary}
+                        />
                       </View>
                       <View className="flex-1">
-                        <Text className="text-foreground font-semibold text-sm">All files access</Text>
-                        <Text className="text-muted-foreground text-xs">Clean junk, WhatsApp, APKs</Text>
+                        <Text className="text-foreground font-semibold text-sm">
+                          All files access
+                        </Text>
+                        <Text className="text-muted-foreground text-xs">
+                          Clean junk, WhatsApp, APKs
+                        </Text>
                       </View>
                     </View>
                     {hasAllFiles ? (
                       <View className="bg-success/15 px-3 py-1.5 rounded-full flex-row items-center gap-1">
                         <Icon name="checkmark" size={14} color="#16a34a" />
-                        <Text className="text-success text-xs font-semibold">Allowed</Text>
+                        <Text className="text-success text-xs font-semibold">
+                          Allowed
+                        </Text>
                       </View>
                     ) : (
                       <Pressable
                         onPress={() => requestStorageManager()}
                         className="bg-primary px-3 py-1.5 rounded-full active:opacity-90"
                       >
-                        <Text className="text-white text-xs font-semibold">Enable</Text>
+                        <Text className="text-white text-xs font-semibold">
+                          Enable
+                        </Text>
                       </Pressable>
                     )}
                   </View>
@@ -204,24 +221,36 @@ export default function Onboarding() {
                   <View className="bg-card border border-border rounded-2xl p-4 flex-row items-center justify-between">
                     <View className="flex-row items-center gap-3 flex-1 mr-2">
                       <View className="w-10 h-10 rounded-xl bg-accent items-center justify-center">
-                        <Icon name="speedometer" size={20} color={ThemeColors.primary} />
+                        <Icon
+                          name="speedometer"
+                          size={20}
+                          color={ThemeColors.primary}
+                        />
                       </View>
                       <View className="flex-1">
-                        <Text className="text-foreground font-semibold text-sm">Usage access</Text>
-                        <Text className="text-muted-foreground text-xs">Clean app caches & boost RAM</Text>
+                        <Text className="text-foreground font-semibold text-sm">
+                          Usage access
+                        </Text>
+                        <Text className="text-muted-foreground text-xs">
+                          See installed app storage sizes
+                        </Text>
                       </View>
                     </View>
                     {hasUsage ? (
                       <View className="bg-success/15 px-3 py-1.5 rounded-full flex-row items-center gap-1">
                         <Icon name="checkmark" size={14} color="#16a34a" />
-                        <Text className="text-success text-xs font-semibold">Allowed</Text>
+                        <Text className="text-success text-xs font-semibold">
+                          Allowed
+                        </Text>
                       </View>
                     ) : (
                       <Pressable
                         onPress={() => requestUsageAccess()}
                         className="bg-primary px-3 py-1.5 rounded-full active:opacity-90"
                       >
-                        <Text className="text-white text-xs font-semibold">Enable</Text>
+                        <Text className="text-white text-xs font-semibold">
+                          Enable
+                        </Text>
                       </Pressable>
                     )}
                   </View>
@@ -230,17 +259,27 @@ export default function Onboarding() {
                   <View className="bg-card border border-border rounded-2xl p-4 flex-row items-center justify-between">
                     <View className="flex-row items-center gap-3 flex-1 mr-2">
                       <View className="w-10 h-10 rounded-xl bg-accent items-center justify-center">
-                        <Icon name="images" size={20} color={ThemeColors.primary} />
+                        <Icon
+                          name="images"
+                          size={20}
+                          color={ThemeColors.primary}
+                        />
                       </View>
                       <View className="flex-1">
-                        <Text className="text-foreground font-semibold text-sm">Photos & Media</Text>
-                        <Text className="text-muted-foreground text-xs">Find duplicate & similar photos</Text>
+                        <Text className="text-foreground font-semibold text-sm">
+                          Photos & Media
+                        </Text>
+                        <Text className="text-muted-foreground text-xs">
+                          Find duplicate & similar photos
+                        </Text>
                       </View>
                     </View>
                     {mediaStatus === "granted" ? (
                       <View className="bg-success/15 px-3 py-1.5 rounded-full flex-row items-center gap-1">
                         <Icon name="checkmark" size={14} color="#16a34a" />
-                        <Text className="text-success text-xs font-semibold">Allowed</Text>
+                        <Text className="text-success text-xs font-semibold">
+                          Allowed
+                        </Text>
                       </View>
                     ) : (
                       <Pressable
@@ -250,20 +289,34 @@ export default function Onboarding() {
                         }}
                         className="bg-primary px-3 py-1.5 rounded-full active:opacity-90"
                       >
-                        <Text className="text-white text-xs font-semibold">Allow</Text>
+                        <Text className="text-white text-xs font-semibold">
+                          Allow
+                        </Text>
                       </Pressable>
                     )}
                   </View>
                 </Animated.View>
               ) : (
                 s.bullets && (
-                  <Animated.View entering={FadeInDown.delay(400).springify()} className="mt-8 gap-3">
+                  <Animated.View
+                    entering={FadeInDown.delay(400).springify()}
+                    className="mt-8 gap-3"
+                  >
                     {s.bullets.map((b, bi) => (
-                      <View key={bi} className="flex-row items-center gap-3 bg-card border border-border rounded-xl p-3.5">
+                      <View
+                        key={bi}
+                        className="flex-row items-center gap-3 bg-card border border-border rounded-xl p-3.5"
+                      >
                         <View className="w-9 h-9 rounded-lg bg-accent items-center justify-center">
-                          <Icon name={b.icon} size={18} color={ThemeColors.primary} />
+                          <Icon
+                            name={b.icon}
+                            size={18}
+                            color={ThemeColors.primary}
+                          />
                         </View>
-                        <Text className="text-foreground text-sm font-medium flex-1">{b.text}</Text>
+                        <Text className="text-foreground text-sm font-medium flex-1">
+                          {b.text}
+                        </Text>
                       </View>
                     ))}
                   </Animated.View>
@@ -277,11 +330,21 @@ export default function Onboarding() {
                     Photos access was blocked
                   </Text>
                   <Text className="text-muted-foreground text-xs mt-1">
-                    You can still use the app, but photo features won't work until you enable access in Settings.
+                    You can still use the app, but photo features won't work
+                    until you enable access in Settings.
                   </Text>
-                  <Pressable onPress={openSystemSettings} className="mt-3 flex-row items-center gap-1">
-                    <Icon name="open-outline" size={14} color={ThemeColors.primary} />
-                    <Text className="text-primary text-sm font-semibold">Open Settings</Text>
+                  <Pressable
+                    onPress={openSystemSettings}
+                    className="mt-3 flex-row items-center gap-1"
+                  >
+                    <Icon
+                      name="open-outline"
+                      size={14}
+                      color={ThemeColors.primary}
+                    />
+                    <Text className="text-primary text-sm font-semibold">
+                      Open Settings
+                    </Text>
                   </Pressable>
                 </View>
               )}
@@ -291,7 +354,10 @@ export default function Onboarding() {
       </PagerView>
 
       {/* Bottom controls */}
-      <View style={{ paddingBottom: Math.max(insets.bottom, 24) }} className="px-6 pt-4">
+      <View
+        style={{ paddingBottom: Math.max(insets.bottom, 24) }}
+        className="px-6 pt-4"
+      >
         {/* Page indicators */}
         <View className="flex-row justify-center gap-2 mb-6">
           {SLIDES.map((_, i) => (
@@ -300,7 +366,8 @@ export default function Onboarding() {
               className="h-2 rounded-full transition-all"
               style={{
                 width: i === page ? 24 : 8,
-                backgroundColor: i === page ? ThemeColors.primary : ThemeColors.muted,
+                backgroundColor:
+                  i === page ? ThemeColors.primary : ThemeColors.muted,
               }}
             />
           ))}
@@ -312,7 +379,13 @@ export default function Onboarding() {
           fullWidth
           loading={requesting}
           onPress={handlePrimary}
-          rightIcon={<Icon name={isLast ? "checkmark" : "arrow-forward"} size={20} color="#fff" />}
+          rightIcon={
+            <Icon
+              name={isLast ? "checkmark" : "arrow-forward"}
+              size={20}
+              color="#fff"
+            />
+          }
         >
           {isLast
             ? mediaStatus === "blocked"

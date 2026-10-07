@@ -18,6 +18,8 @@ android {
     targetCompatibility JavaVersion.VERSION_17
   }
 
+  testOptions { unitTests.includeAndroidResources = true }
+
   kotlinOptions {
     jvmTarget = "17"
   }
@@ -27,4 +29,7 @@ dependencies {
   implementation project(':expo-modules-core')
   implementation "org.jetbrains.kotlin:kotlin-stdlib"
   implementation "androidx.documentfile:documentfile:1.0.1"
+  implementation "androidx.exifinterface:exifinterface:1.4.1"
+  testImplementation "junit:junit:4.13.2"
+  testImplementation "org.robolectric:robolectric:4.16.1"
 }

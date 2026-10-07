@@ -1,5 +1,5 @@
+import { KEYS, getJSON, setJSON, storage } from "@/lib/storage";
 import { create } from "zustand";
-import { storage, KEYS, getJSON, setJSON } from "@/lib/storage";
 
 /**
  * Premium entitlement store.
@@ -25,8 +25,6 @@ const DEFAULT_ENTITLEMENT: Entitlement = {
   expiresAt: Date.now() + EIGHTEEN_MONTHS_MS,
 };
 
-const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
-
 interface PremiumState {
   entitlement: Entitlement;
   isPro: boolean;
@@ -41,7 +39,10 @@ interface PremiumState {
 }
 
 export const usePremiumStore = create<PremiumState>((set) => ({
-  entitlement: getJSON<Entitlement>(KEYS.premiumEntitlement, DEFAULT_ENTITLEMENT),
+  entitlement: getJSON<Entitlement>(
+    KEYS.premiumEntitlement,
+    DEFAULT_ENTITLEMENT,
+  ),
   isPro: true,
   isLoading: false,
   paywallVisible: false,
@@ -57,7 +58,7 @@ export const usePremiumStore = create<PremiumState>((set) => ({
       isActive: true,
       plan: (e.plan as any) ?? "pro_yearly",
       purchasedAt: e.purchasedAt ?? Date.now(),
-      expiresAt: e.expiresAt ?? (Date.now() + EIGHTEEN_MONTHS_MS),
+      expiresAt: e.expiresAt ?? Date.now() + EIGHTEEN_MONTHS_MS,
     };
     setJSON(KEYS.premiumEntitlement, entitlement);
     storage.set(KEYS.premiumCacheTs, Date.now());
@@ -66,7 +67,10 @@ export const usePremiumStore = create<PremiumState>((set) => ({
 
   loadCached: async () => {
     await storage.waitForHydration();
-    const cached = getJSON<Entitlement>(KEYS.premiumEntitlement, DEFAULT_ENTITLEMENT);
+    const cached = getJSON<Entitlement>(
+      KEYS.premiumEntitlement,
+      DEFAULT_ENTITLEMENT,
+    );
     set({ entitlement: cached, isPro: true });
   },
 

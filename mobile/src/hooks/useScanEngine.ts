@@ -1,8 +1,8 @@
-import { useCallback } from "react";
-import { useRouter } from "expo-router";
-import { useAppStore } from "@/stores/useAppStore";
-import { track } from "@/lib/analytics";
 import { maybeShowInterstitial } from "@/lib/ads";
+import { track } from "@/lib/analytics";
+import { useAppStore } from "@/stores/useAppStore";
+import { useRouter } from "expo-router";
+import { useCallback } from "react";
 
 /**
  * Centralised scan trigger. Components call `runScan()` and the user is
@@ -11,7 +11,6 @@ import { maybeShowInterstitial } from "@/lib/ads";
  */
 export function useScanEngine() {
   const router = useRouter();
-  const startScan = useAppStore((s) => s.startScan);
   const scanPhase = useAppStore((s) => s.scanPhase);
 
   const runScan = useCallback(() => {

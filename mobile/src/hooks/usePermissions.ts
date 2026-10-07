@@ -1,15 +1,8 @@
-import { useState, useCallback } from "react";
-import { Platform, Linking } from "react-native";
+import { track } from "@/lib/analytics";
 import * as MediaLibrary from "expo-media-library/legacy";
 import * as Notifications from "expo-notifications";
-import { track } from "@/lib/analytics";
-
-export type PermissionStatus = "undetermined" | "granted" | "denied" | "blocked";
-
-export interface PermissionState {
-  media: PermissionStatus;
-  notifications: PermissionStatus;
-}
+import { useCallback, useState } from "react";
+import { Alert, Linking, Platform } from "react-native";
 
 /**
  * Just-in-time permission helper.
@@ -21,6 +14,14 @@ export interface PermissionState {
  * needed for the first scan: media library access.
  */
 import { AndroidStorage } from "android-storage";
+
+export type PermissionStatus =
+  "undetermined" | "granted" | "denied" | "blocked";
+
+export interface PermissionState {
+  media: PermissionStatus;
+  notifications: PermissionStatus;
+}
 
 export function usePermissions() {
   const [state, setState] = useState<PermissionState>({
@@ -40,7 +41,8 @@ export function usePermissions() {
 
   const requestMedia = useCallback(async (): Promise<PermissionStatus> => {
     track("permission_request", { permission: "media_library" });
-    const { status, canAskAgain } = await MediaLibrary.requestPermissionsAsync();
+    const { status, canAskAgain } =
+      await MediaLibrary.requestPermissionsAsync();
     const mapped: PermissionStatus =
       status === "granted" ? "granted" : canAskAgain ? "denied" : "blocked";
     setState((s) => ({ ...s, media: mapped }));
@@ -48,15 +50,20 @@ export function usePermissions() {
     return mapped;
   }, []);
 
-  const requestNotifications = useCallback(async (): Promise<PermissionStatus> => {
-    track("permission_request", { permission: "notifications" });
-    const { status, canAskAgain } = await Notifications.requestPermissionsAsync();
-    const mapped: PermissionStatus =
-      status === "granted" ? "granted" : canAskAgain ? "denied" : "blocked";
-    setState((s) => ({ ...s, notifications: mapped }));
-    track("permission_result", { permission: "notifications", result: mapped });
-    return mapped;
-  }, []);
+  const requestNotifications =
+    useCallback(async (): Promise<PermissionStatus> => {
+      track("permission_request", { permission: "notifications" });
+      const { status, canAskAgain } =
+        await Notifications.requestPermissionsAsync();
+      const mapped: PermissionStatus =
+        status === "granted" ? "granted" : canAskAgain ? "denied" : "blocked";
+      setState((s) => ({ ...s, notifications: mapped }));
+      track("permission_result", {
+        permission: "notifications",
+        result: mapped,
+      });
+      return mapped;
+    }, []);
 
   const openSystemSettings = useCallback(() => {
     Linking.openSettings();
@@ -69,7 +76,34 @@ export function usePermissions() {
 
   const requestUsageAccess = useCallback(async (): Promise<boolean> => {
     if (Platform.OS !== "android") return true;
-    return await AndroidStorage.requestUsageAccess();
+    const status = AndroidStorage.getUsageAccessStatus();
+    if (status.granted) return true;
+    if (!status.nativeAvailable || status.declared === false) {
+      Alert.alert(
+        "App statistics unavailable",
+        status.declared === false
+          ? "This installed version does not declare usage access. Install the updated Android app when it is available. File and photo cleanup still work without usage access."
+          : "App statistics require the installed Android version of Phone Cleaner. File and photo cleanup are still available.",
+      );
+      return false;
+    }
+    const opened = await AndroidStorage.requestUsageAccess();
+    if (!opened) {
+      Alert.alert(
+        "Usage settings unavailable",
+        "Open Android Settings, search for Usage access, select Phone Cleaner, and enable Allow usage access. Your device or administrator may restrict this permission.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Open settings",
+            onPress: () => {
+              void Linking.openSettings();
+            },
+          },
+        ],
+      );
+    }
+    return opened;
   }, []);
 
   return {

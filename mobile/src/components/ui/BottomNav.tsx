@@ -1,9 +1,9 @@
-import { View, Text, Pressable } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Icon, type IconName } from "./Icon";
 import { cn } from "@/lib/utils";
 import { ThemeColors } from "@/theme/colors";
+import { useRouter } from "expo-router";
+import { Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Icon, type IconName } from "./Icon";
 
 interface TabItem {
   key: string;
@@ -14,11 +14,41 @@ interface TabItem {
 }
 
 const TABS: TabItem[] = [
-  { key: "home", label: "Home", icon: "home-outline", activeIcon: "home", route: "/(tabs)/home" },
-  { key: "photos", label: "Photos", icon: "images-outline", activeIcon: "images", route: "/(tabs)/photos" },
-  { key: "scan", label: "Scan", icon: "scan-outline", activeIcon: "scan", route: "/(tabs)/scan" },
-  { key: "files", label: "Files", icon: "folder-open-outline", activeIcon: "folder-open", route: "/(tabs)/files" },
-  { key: "settings", label: "Settings", icon: "settings-outline", activeIcon: "settings", route: "/(tabs)/settings" },
+  {
+    key: "home",
+    label: "Home",
+    icon: "home-outline",
+    activeIcon: "home",
+    route: "/(tabs)/home",
+  },
+  {
+    key: "photos",
+    label: "Photos",
+    icon: "images-outline",
+    activeIcon: "images",
+    route: "/(tabs)/photos",
+  },
+  {
+    key: "scan",
+    label: "Scan",
+    icon: "scan-outline",
+    activeIcon: "scan",
+    route: "/(tabs)/scan",
+  },
+  {
+    key: "files",
+    label: "Files",
+    icon: "folder-open-outline",
+    activeIcon: "folder-open",
+    route: "/(tabs)/files",
+  },
+  {
+    key: "settings",
+    label: "Settings",
+    icon: "settings-outline",
+    activeIcon: "settings",
+    route: "/(tabs)/settings",
+  },
 ];
 
 interface BottomNavProps {
@@ -41,7 +71,12 @@ export function BottomNav({ activeKey }: BottomNavProps) {
           return (
             <Pressable
               key={tab.key}
-              onPress={() => router.push(tab.route as any)}
+              accessibilityRole="tab"
+              accessibilityLabel={tab.label}
+              accessibilityState={{ selected: isActive }}
+              onPress={() => {
+                if (!isActive) router.replace(tab.route as any);
+              }}
               className="flex-1 items-center justify-center py-1.5"
               style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
             >
@@ -53,13 +88,19 @@ export function BottomNav({ activeKey }: BottomNavProps) {
                   )}
                   style={{ elevation: 6 }}
                 >
-                  <Icon name={isActive ? tab.activeIcon : tab.icon} size={26} color="#fff" />
+                  <Icon
+                    name={isActive ? tab.activeIcon : tab.icon}
+                    size={26}
+                    color="#fff"
+                  />
                 </View>
               ) : (
                 <Icon
                   name={isActive ? tab.activeIcon : tab.icon}
                   size={24}
-                  color={isActive ? ThemeColors.primary : ThemeColors.mutedForeground}
+                  color={
+                    isActive ? ThemeColors.primary : ThemeColors.mutedForeground
+                  }
                 />
               )}
               <Text

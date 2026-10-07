@@ -2,6 +2,7 @@ package com.phonecleaner.app.androidstorage
 
 import android.app.ActivityManager
 import android.app.AppOpsManager
+import android.app.usage.UsageStatsManager
 import android.app.usage.StorageStatsManager
 import android.content.ClipboardManager
 import android.content.ClipData
@@ -10,9 +11,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Debug
 import android.os.Build
 import android.os.Environment
 import android.os.Process
@@ -23,8 +23,11 @@ import android.provider.Settings
 import android.media.MediaScannerConnection
 import android.util.Base64
 import androidx.core.content.FileProvider
+import androidx.core.app.NotificationManagerCompat
 import expo.modules.kotlin.modules.Module
+import expo.modules.kotlin.functions.Queues
 import expo.modules.kotlin.modules.ModuleDefinition
+import com.phonecleaner.app.hashworker.PhotoHasher
 import java.io.InputStream
 import java.security.MessageDigest
 
@@ -34,6 +37,33 @@ import java.security.MessageDigest
 class AndroidStorageModule : Module() {
     override fun definition() = ModuleDefinition {
         Name("AndroidStorage")
+
+        Events("speedTestProgress")
+        AsyncFunction("runSpeedTest") { id: String ->
+            SpeedTester.run(id) { stage, percent -> sendEvent("speedTestProgress", mapOf("id" to id, "stage" to stage, "percent" to percent)) }
+        }
+        Function("cancelSpeedTest") { id: String -> SpeedTester.cancel(id) }
+        Function("getDeviceToolsVersion") { 1 }
+        Function("getBatteryStatus") { DeviceTools.battery(appContext.reactContext ?: error("App unavailable")) }
+        AsyncFunction("getWifiStatus") { DeviceTools.wifi(appContext.reactContext ?: error("App unavailable")) }
+        AsyncFunction("getAppDataUsage") { start: Double, end: Double ->
+            val ctx = appContext.reactContext ?: error("App unavailable")
+            check(hasUsageAccess(ctx)) { "Enable Usage access before viewing other apps' data usage." }
+            DeviceTools.dataUsage(ctx, start.toLong(), end.toLong())
+        }
+        AsyncFunction("discardCompressedPhoto") { uri: String -> DeviceTools.discardDraft(appContext.reactContext ?: error("App unavailable"), uri) }
+        AsyncFunction("compressPhoto") { uri: String, quality: Int, maxSide: Int ->
+            DeviceTools.compress(appContext.reactContext ?: error("App unavailable"), uri, quality, maxSide)
+        }
+        Function("getNotificationPackages") {
+            try { CleanerNotificationListener.connected?.packages() ?: emptyList<Map<String, Any>>() }
+            catch (_: Exception) { emptyList<Map<String, Any>>() }
+        }
+        AsyncFunction("dismissSelectedNotifications") { packages: List<String> ->
+            val listener = CleanerNotificationListener.connected
+            try { mapOf("available" to (listener != null), "requestedCount" to (listener?.dismissSelected(packages.toSet()) ?: 0)) }
+            catch (_: Exception) { mapOf("available" to false, "requestedCount" to 0) }
+        }
 
         Function("getStorageStats") {
             val ctx = appContext.reactContext
@@ -141,25 +171,20 @@ class AndroidStorageModule : Module() {
         }
 
         Function("isUsageAccessGranted") {
-            val ctx = appContext.reactContext ?: return@Function false
-            try {
-                val appOps = ctx.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-                val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    appOps.unsafeCheckOpNoThrow(
-                        AppOpsManager.OPSTR_GET_USAGE_STATS,
-                        Process.myUid(),
-                        ctx.packageName
-                    )
-                } else {
-                    appOps.checkOpNoThrow(
-                        AppOpsManager.OPSTR_GET_USAGE_STATS,
-                        Process.myUid(),
-                        ctx.packageName
-                    )
-                }
-                mode == AppOpsManager.MODE_ALLOWED
-            } catch (_: Exception) {
-                false
+            val ctx = appContext.reactContext
+            ctx != null && hasUsageAccess(ctx)
+        }
+
+        Function("getUsageAccessStatus") {
+            val ctx = appContext.reactContext
+            if (ctx == null) {
+                mapOf("granted" to false, "declared" to false, "packageName" to "")
+            } else {
+                val declared = try {
+                    ctx.packageManager.getPackageInfo(ctx.packageName, PackageManager.GET_PERMISSIONS)
+                        .requestedPermissions?.contains("android.permission.PACKAGE_USAGE_STATS") == true
+                } catch (_: Exception) { false }
+                mapOf("granted" to hasUsageAccess(ctx), "declared" to declared, "packageName" to ctx.packageName)
             }
         }
 
@@ -167,30 +192,61 @@ class AndroidStorageModule : Module() {
             val ctx = appContext.reactContext ?: return@AsyncFunction false
             val activity = appContext.currentActivity
             try {
-                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
-                    data = Uri.parse("package:${ctx.packageName}")
-                }
-                if (activity != null) {
-                    activity.startActivity(intent)
-                } else {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    ctx.startActivity(intent)
-                }
+                // The documented settings action accepts no data URI; OEMs may not
+                // resolve the action when an undocumented package URI is attached.
+                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                if (activity != null) activity.startActivity(intent)
+                else { intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); ctx.startActivity(intent) }
                 true
-            } catch (_: Exception) {
-                try {
-                    val fallback = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-                    if (activity != null) {
-                        activity.startActivity(fallback)
-                    } else {
-                        fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        ctx.startActivity(fallback)
-                    }
-                    true
-                } catch (_: Exception) {
-                    false
-                }
-            }
+            } catch (_: Exception) { false }
+        }.runOnQueue(Queues.MAIN)
+
+        AsyncFunction("openAppSettings") { packageName: String ->
+            val ctx = appContext.reactContext ?: return@AsyncFunction false
+            val activity = appContext.currentActivity
+            try {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+                if (activity != null) activity.startActivity(intent)
+                else { intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); ctx.startActivity(intent) }
+                true
+            } catch (_: Exception) { false }
+        }.runOnQueue(Queues.MAIN)
+
+        Function("getNotificationCleanupStatus") {
+            val ctx = appContext.reactContext
+            val listener = CleanerNotificationListener.connected
+            mapOf(
+                "enabled" to (ctx != null && NotificationManagerCompat.getEnabledListenerPackages(ctx).contains(ctx.packageName)),
+                "connected" to (listener != null),
+                "clearableCount" to try { listener?.clearableCount() ?: 0 } catch (_: Exception) { 0 }
+            )
+        }
+
+        AsyncFunction("requestNotificationCleanupAccess") {
+            val ctx = appContext.reactContext ?: return@AsyncFunction false
+            try {
+                val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                val activity = appContext.currentActivity
+                if (activity != null) activity.startActivity(intent)
+                else { intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); ctx.startActivity(intent) }
+                true
+            } catch (_: Exception) { false }
+        }.runOnQueue(Queues.MAIN)
+
+        AsyncFunction("dismissClearableNotifications") {
+            val listener = CleanerNotificationListener.connected
+            try {
+                mapOf("available" to (listener != null), "requestedCount" to (listener?.dismissClearable() ?: 0))
+            } catch (_: Exception) { mapOf("available" to false, "requestedCount" to 0) }
+        }
+
+        Function("getAppMemoryDiagnostics") {
+            val runtime = Runtime.getRuntime()
+            mapOf(
+                "javaHeapUsedBytes" to (runtime.totalMemory() - runtime.freeMemory()),
+                "javaHeapMaxBytes" to runtime.maxMemory(),
+                "nativeHeapAllocatedBytes" to Debug.getNativeHeapAllocatedSize()
+            )
         }
 
         Function("getMemoryInfo") {
@@ -230,47 +286,10 @@ class AndroidStorageModule : Module() {
             }
         }
 
-        AsyncFunction("boostRam") {
-            val ctx = appContext.reactContext ?: return@AsyncFunction mapOf("freedBytes" to 0L, "killedCount" to 0, "availMemBytes" to 0L, "totalMemBytes" to 0L)
-            try {
-                val actManager = ctx.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-                val memBefore = ActivityManager.MemoryInfo()
-                actManager.getMemoryInfo(memBefore)
-
-                val pm = ctx.packageManager
-                val runningApps = pm.getInstalledApplications(0)
-                var killedCount = 0
-                for (app in runningApps) {
-                    if (app.packageName != ctx.packageName && (app.flags and ApplicationInfo.FLAG_SYSTEM) == 0) {
-                        try {
-                            actManager.killBackgroundProcesses(app.packageName)
-                            killedCount++
-                        } catch (_: Exception) {}
-                    }
-                }
-
-                System.gc()
-
-                val memAfter = ActivityManager.MemoryInfo()
-                actManager.getMemoryInfo(memAfter)
-                val freed = Math.max(0L, memAfter.availMem - memBefore.availMem)
-                val finalFreed = if (freed > 0) freed else (killedCount * 18L * 1024L * 1024L)
-
-                mapOf(
-                    "freedBytes" to finalFreed,
-                    "killedCount" to killedCount,
-                    "availMemBytes" to memAfter.availMem,
-                    "totalMemBytes" to memAfter.totalMem
-                )
-            } catch (_: Exception) {
-                mapOf("freedBytes" to 0L, "killedCount" to 0, "availMemBytes" to 0L, "totalMemBytes" to 0L)
-            }
-        }
-
-        Function("getInstalledApps") {
+        AsyncFunction("getInstalledApps") {
             val ctx = appContext.reactContext
             if (ctx == null) {
-                return@Function emptyList<Map<String, Any>>()
+                return@AsyncFunction emptyList<Map<String, Any>>()
             }
 
             try {
@@ -282,6 +301,18 @@ class AndroidStorageModule : Module() {
                     try {
                         storageStatsManager = ctx.getSystemService(Context.STORAGE_STATS_SERVICE) as? StorageStatsManager
                     } catch (_: Exception) {}
+                }
+
+                val lastUsedByPackage = mutableMapOf<String, Long>()
+                if (hasUsageAccess(ctx)) {
+                    try {
+                        val now = System.currentTimeMillis()
+                        val manager = ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+                        manager.queryUsageStats(UsageStatsManager.INTERVAL_YEARLY, now - 365L * 24 * 60 * 60 * 1000, now)?.forEach { usage ->
+                            val previous = lastUsedByPackage[usage.packageName] ?: 0L
+                            if (usage.lastTimeUsed > previous) lastUsedByPackage[usage.packageName] = usage.lastTimeUsed
+                        }
+                    } catch (_: Exception) { /* usage remains unknown */ }
                 }
 
                 apps
@@ -311,7 +342,8 @@ class AndroidStorageModule : Module() {
                             "label" to (pm.getApplicationLabel(info).toString()),
                             "sizeBytes" to appBytes,
                             "cacheBytes" to cacheBytes,
-                            "lastUsedAt" to 0.0,
+                            "lastUsedAt" to (lastUsedByPackage[info.packageName] ?: 0L),
+                            "installedAt" to try { pm.getPackageInfo(info.packageName, 0).firstInstallTime } catch (_: Exception) { 0L },
                             "isSystem" to isSystem,
                             "iconUri" to null,
                         )
@@ -996,64 +1028,55 @@ class AndroidStorageModule : Module() {
             videoList
         }
 
+        AsyncFunction("getMediaMetadata") { uris: List<String> ->
+            val ctx = appContext.reactContext ?: return@AsyncFunction emptyList<Map<String, Any?>>()
+            uris.mapNotNull { value ->
+                try {
+                    val uri = Uri.parse(value)
+                    if (uri.scheme == "content") {
+                        ctx.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.DATA, MediaStore.MediaColumns.SIZE, MediaStore.MediaColumns.MIME_TYPE), null, null, null)?.use { cursor ->
+                            if (cursor.moveToFirst()) mapOf("uri" to value, "path" to cursor.getString(0), "sizeBytes" to cursor.getLong(1), "mimeType" to cursor.getString(2)) else null
+                        }
+                    } else {
+                        val file = java.io.File(if (uri.scheme == "file") uri.path ?: value else value)
+                        if (file.exists()) mapOf("uri" to value, "path" to file.absolutePath, "sizeBytes" to file.length(), "mimeType" to null) else null
+                    }
+                } catch (_: Exception) { null }
+            }
+        }
+
         AsyncFunction("locateFile") { uriOrPath: String ->
             val ctx = appContext.reactContext ?: return@AsyncFunction false
             try {
-                val cleanPath = if (uriOrPath.startsWith("file://")) uriOrPath.removePrefix("file://") else uriOrPath
-                val file = java.io.File(cleanPath)
-                val targetFile = if (file.exists()) file else null
-                val parentDir = targetFile?.parentFile ?: if (cleanPath.startsWith("/")) java.io.File(cleanPath).parentFile else null
-
-                // Strategy 1: Open file manager pointing to folder
-                if (parentDir != null && parentDir.exists()) {
-                    val folderUri = try {
-                        FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", parentDir)
-                    } catch (_: Exception) {
-                        Uri.fromFile(parentDir)
-                    }
-
-                    val folderIntent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(folderUri, "resource/folder")
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    if (folderIntent.resolveActivity(ctx.packageManager) != null) {
-                        ctx.startActivity(folderIntent)
-                        return@AsyncFunction true
-                    }
-
-                    val dirIntent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(folderUri, "vnd.android.document/directory")
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    if (dirIntent.resolveActivity(ctx.packageManager) != null) {
-                        ctx.startActivity(dirIntent)
-                        return@AsyncFunction true
+                var path: String? = if (uriOrPath.startsWith("content://")) null
+                    else if (uriOrPath.startsWith("file://")) Uri.parse(uriOrPath).path else uriOrPath
+                if (path == null && uriOrPath.startsWith("content://")) {
+                    ctx.contentResolver.query(Uri.parse(uriOrPath), arrayOf(MediaStore.MediaColumns.DATA), null, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) path = cursor.getString(0)
                     }
                 }
-
-                // Strategy 2: If content:// uri or couldn't open folder directly, open via ACTION_VIEW
-                val fileUri = if (uriOrPath.startsWith("content://")) {
-                    Uri.parse(uriOrPath)
-                } else if (targetFile != null) {
-                    try {
-                        FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", targetFile)
-                    } catch (_: Exception) {
-                        Uri.fromFile(targetFile)
+                val parent = path?.let { java.io.File(it).parentFile } ?: return@AsyncFunction false
+                val parentPath = parent.absolutePath
+                val primaryRoot = Environment.getExternalStorageDirectory().absolutePath
+                val documentId = when {
+                    parentPath == primaryRoot -> "primary:"
+                    parentPath.startsWith("$primaryRoot/") -> "primary:" + parentPath.removePrefix("$primaryRoot/")
+                    parentPath.startsWith("/storage/") -> {
+                        val parts = parentPath.removePrefix("/storage/").split("/", limit = 2)
+                        parts[0] + ":" + (parts.getOrNull(1) ?: "")
                     }
-                } else {
-                    Uri.parse(uriOrPath)
+                    else -> return@AsyncFunction false
                 }
-
-                val viewIntent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(fileUri, "*/*")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                val folderUri = android.provider.DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", documentId)
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    type = "*/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI, folderUri)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
-                ctx.startActivity(viewIntent)
+                ctx.startActivity(intent)
                 true
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 false
             }
         }
@@ -1101,7 +1124,8 @@ class AndroidStorageModule : Module() {
                                 len = file.length()
                                 deleted = file.delete()
                             } else if (file.isDirectory) {
-                                deleted = file.deleteRecursively()
+                                // Only empty folders may be removed; never recursively delete new contents.
+                                deleted = file.listFiles()?.isEmpty() == true && file.delete()
                             }
                         }
 
@@ -1244,6 +1268,8 @@ class AndroidStorageModule : Module() {
             computeDHash(path)
         }
 
+        Function("getPhotoHashVersion") { PhotoHasher.VERSION }
+
         AsyncFunction("hashPhotos") { paths: List<String> ->
             paths.map { path ->
                 mapOf(
@@ -1255,13 +1281,25 @@ class AndroidStorageModule : Module() {
         }
     }
 
+    private fun hasUsageAccess(ctx: Context): Boolean {
+        return try {
+            val appOps = ctx.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), ctx.packageName)
+            } else {
+                appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), ctx.packageName)
+            }
+            mode == AppOpsManager.MODE_ALLOWED
+        } catch (_: Exception) { false }
+    }
+
     private fun getInputStream(path: String): InputStream? {
         return try {
             if (path.startsWith("content://")) {
                 val ctx = appContext.reactContext ?: return null
                 ctx.contentResolver.openInputStream(Uri.parse(path))
             } else {
-                val cleanPath = if (path.startsWith("file://")) path.removePrefix("file://") else path
+                val cleanPath = if (path.startsWith("file://")) Uri.parse(path).path ?: return null else path
                 val file = java.io.File(cleanPath)
                 if (file.exists() && file.isFile) file.inputStream() else null
             }
@@ -1288,63 +1326,5 @@ class AndroidStorageModule : Module() {
         }
     }
 
-    private fun computeDHash(path: String): String? {
-        return try {
-            val boundsOptions = BitmapFactory.Options().apply {
-                inJustDecodeBounds = true
-            }
-            getInputStream(path)?.use { input ->
-                BitmapFactory.decodeStream(input, null, boundsOptions)
-            } ?: return null
-
-            val origWidth = boundsOptions.outWidth
-            val origHeight = boundsOptions.outHeight
-            if (origWidth <= 0 || origHeight <= 0) return null
-
-            var sampleSize = 1
-            val targetSize = 64
-            while ((origWidth / (sampleSize * 2)) >= targetSize && (origHeight / (sampleSize * 2)) >= targetSize) {
-                sampleSize *= 2
-            }
-
-            val decodeOptions = BitmapFactory.Options().apply {
-                inSampleSize = sampleSize
-                inPreferredConfig = Bitmap.Config.RGB_565
-            }
-            val downsampled = getInputStream(path)?.use { input ->
-                BitmapFactory.decodeStream(input, null, decodeOptions)
-            } ?: return null
-
-            val scaledBitmap = Bitmap.createScaledBitmap(downsampled, 9, 8, true)
-            if (scaledBitmap != downsampled) {
-                downsampled.recycle()
-            }
-
-            var hash = 0L
-            for (y in 0 until 8) {
-                for (x in 0 until 8) {
-                    val leftPixel = scaledBitmap.getPixel(x, y)
-                    val rightPixel = scaledBitmap.getPixel(x + 1, y)
-
-                    val leftLum = (0.299 * ((leftPixel shr 16) and 0xFF) +
-                            0.587 * ((leftPixel shr 8) and 0xFF) +
-                            0.114 * (leftPixel and 0xFF)).toInt()
-
-                    val rightLum = (0.299 * ((rightPixel shr 16) and 0xFF) +
-                            0.587 * ((rightPixel shr 8) and 0xFF) +
-                            0.114 * (rightPixel and 0xFF)).toInt()
-
-                    hash = (hash shl 1) or (if (leftLum > rightLum) 1L else 0L)
-                }
-            }
-            scaledBitmap.recycle()
-
-            String.format("%016x", hash)
-        } catch (_: OutOfMemoryError) {
-            System.gc()
-            null
-        } catch (_: Exception) {
-            null
-        }
-    }
+    private fun computeDHash(path: String): String? = PhotoHasher.dHash { getInputStream(path) }
 }

@@ -1,5 +1,7 @@
-import { View } from "react-native";
 import { cn } from "@/lib/utils";
+import { View } from "react-native";
+
+import { ThemeColors } from "@/theme/colors";
 
 interface ProgressProps {
   value: number; // 0..1
@@ -9,8 +11,6 @@ interface ProgressProps {
   color?: string;
   trackColor?: string;
 }
-
-import { ThemeColors } from "@/theme/colors";
 
 export function Progress({
   value,

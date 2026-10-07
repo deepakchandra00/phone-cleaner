@@ -74,6 +74,7 @@ export interface AppItem {
   sizeBytes: number;
   cacheBytes: number;
   lastUsedAt: number;
+  installedAt?: number;
   isSystem: boolean;
   iconUri?: string;
 }
@@ -92,6 +93,11 @@ export interface ScanResult {
   obsoleteApks: ScannedFile[];
   largeFiles: ScannedFile[];
   duplicateGroups: DuplicateGroup[];
+  duplicateCoverage?: {
+    total: number;
+    exactChecked: number;
+    visualChecked: number;
+  };
   apps: AppItem[];
   junkFiles: ScannedFile[];
   whatsappFiles: ScannedFile[];

@@ -1,0 +1,1 @@
+Revisa duplicados, comprime fotos y encuentra archivos grandes con control.

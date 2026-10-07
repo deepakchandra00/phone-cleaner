@@ -1,5 +1,14 @@
+import { fileIdentity, uniqueFiles } from "@/lib/fileIdentity.ts";
+import { useShallow } from "zustand/react/shallow";
 import { useMemo, useState, useRef, useEffect, useCallback } from "react";
-import { View, Text, ScrollView, Pressable, Alert, AppState } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Alert,
+  AppState,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
@@ -9,7 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
 import { useAppStore, useSelectedBytes } from "@/stores/useAppStore";
 import { CategoryColors, ThemeColors } from "@/theme/colors";
-import { formatSizeCompact, formatHeadlineSize, bytesToGB } from "@/lib/format";
+import { formatSizeCompact, formatHeadlineSize } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import type { CategoryKey, ScannedFile } from "@/lib/types";
 import { AndroidStorage } from "android-storage";
@@ -29,23 +38,55 @@ interface ReviewGroup {
 export default function Review() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { scanResult, selectedFileIds, selectedGroupIds, toggleFile, toggleGroup, executeCleanup } =
-    useAppStore();
+  const { scanResult, selectedFileIds, executeCleanup } = useAppStore(
+    useShallow((s) => ({
+      scanResult: s.scanResult,
+      selectedFileIds: s.selectedFileIds,
+      executeCleanup: s.executeCleanup,
+    })),
+  );
   const selectedBytes = useSelectedBytes();
   const [cleaning, setCleaning] = useState(false);
+  const cleaningRef = useRef(false);
+  const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>(
+    {},
+  );
 
   const groups: ReviewGroup[] = useMemo(() => {
     const out: ReviewGroup[] = [];
     const byCat = new Map<CategoryKey, ScannedFile[]>();
 
     // Fetch exact selected items from SQLite
-    const selectedItems = StorageIndexService.getItemsByIds(Array.from(selectedFileIds));
-    for (const f of selectedItems) {
+    const selectedItems = StorageIndexService.getItemsByIds(
+      Array.from(selectedFileIds),
+    );
+    // Scanned originals remain available if an index entry is temporarily missing.
+    const indexedIds = new Set(selectedItems.map((f) => f.id));
+    const scanned = scanResult
+      ? [
+          ...scanResult.allPhotos,
+          ...scanResult.allVideos,
+          ...scanResult.allAudio,
+          ...scanResult.allDownloads,
+          ...scanResult.junkFiles,
+          ...scanResult.whatsappFiles,
+          ...scanResult.obsoleteApks,
+          ...scanResult.duplicateGroups.flatMap((g) => g.files),
+        ]
+      : [];
+    const fallback = [
+      ...new Map(
+        scanned
+          .filter((f) => selectedFileIds.has(f.id) && !indexedIds.has(f.id))
+          .map((f) => [f.id, f]),
+      ).values(),
+    ];
+    for (const f of uniqueFiles([...selectedItems, ...fallback])) {
       const cat = f.category as CategoryKey;
       const arr = byCat.get(cat) ?? [];
       arr.push({
         id: f.id,
-        path: f.path || f.uri,
+        path: f.path || f.uri || "",
         uri: f.uri,
         name: f.name,
         category: cat,
@@ -69,40 +110,25 @@ export default function Review() {
       });
     }
 
-    // Add selected duplicate groups as a single pseudo-category
-    const selGroups = scanResult?.duplicateGroups.filter((g) => selectedGroupIds.has(g.id)) ?? [];
-    if (selGroups.length > 0) {
-      // Only show the non-keep duplicate copies that will actually be removed
-      const nonKeepDupFiles = selGroups.flatMap((g) => g.files.filter((f) => f.id !== g.keepId));
-      out.push({
-        key: "duplicates",
-        label: "Duplicate photos",
-        icon: "copy",
-        color: CategoryColors.duplicates,
-        files: nonKeepDupFiles,
-        bytes: selGroups.reduce((s, g) => s + g.recoverableBytes, 0),
-        groupIds: selGroups.map((g) => g.id),
-        groupBytes: selGroups.reduce((s, g) => s + g.recoverableBytes, 0),
-      });
-    }
-
     return out.sort((a, b) => b.bytes - a.bytes);
-  }, [scanResult, selectedFileIds, selectedGroupIds]);
+  }, [scanResult, selectedFileIds]);
 
-  const totalFiles =
-    groups.reduce((s, g) => s + g.files.length, 0) + groups.reduce((s, g) => s + g.groupIds.length, 0);
+  const totalFiles = groups.reduce((s, g) => s + g.files.length, 0);
 
   const pendingCleanRef = useRef(false);
 
   const performCleanAction = useCallback(async () => {
+    if (cleaningRef.current) return;
+    cleaningRef.current = true;
     setCleaning(true);
     track("cleanup_started", { bytes: selectedBytes, count: totalFiles });
-    let cleanupResult = { freedBytes: 0, fileCount: 0 };
+    let cleanupResult = { freedBytes: 0, fileCount: 0, failedCount: 0 };
     try {
       cleanupResult = await executeCleanup();
     } catch (err) {
       console.warn("[review] cleanup error:", err);
     } finally {
+      cleaningRef.current = false;
       setCleaning(false);
     }
 
@@ -132,8 +158,20 @@ export default function Review() {
       return;
     }
 
-    track("cleanup_completed", { bytes: cleanupResult.freedBytes, count: cleanupResult.fileCount });
-    router.replace("/success");
+    track("cleanup_completed", {
+      bytes: cleanupResult.freedBytes,
+      count: cleanupResult.fileCount,
+    });
+    if (cleanupResult.failedCount > 0) {
+      Alert.alert(
+        "Some files remain",
+        `${cleanupResult.fileCount} files deleted (${formatSizeCompact(cleanupResult.freedBytes)}). ${cleanupResult.failedCount} files could not be deleted and remain selected.`,
+        [
+          { text: "Review remaining files" },
+          { text: "View result", onPress: () => router.replace("/success") },
+        ],
+      );
+    } else router.replace("/success");
   }, [selectedBytes, totalFiles, executeCleanup, router]);
 
   useEffect(() => {
@@ -141,8 +179,10 @@ export default function Review() {
       if (state === "active" && pendingCleanRef.current) {
         if (AndroidStorage.isExternalStorageManager()) {
           pendingCleanRef.current = false;
-          // Auto-resume cleanup now that permission is granted
-          performCleanAction();
+          Alert.alert(
+            "Permission enabled",
+            "Review your selected files again, then tap Delete selected to confirm cleanup.",
+          );
         }
       }
     });
@@ -150,8 +190,13 @@ export default function Review() {
   }, [performCleanAction]);
 
   const handleClean = () => {
+    if (cleaningRef.current || totalFiles === 0) return;
     const hasFilesystemFiles = groups.some(
-      (g) => g.key === "whatsapp" || g.key === "downloads" || g.key === "apks" || g.key === "junk",
+      (g) =>
+        g.key === "whatsapp" ||
+        g.key === "downloads" ||
+        g.key === "apks" ||
+        g.key === "junk",
     );
 
     if (hasFilesystemFiles && !AndroidStorage.isExternalStorageManager()) {
@@ -178,7 +223,7 @@ export default function Review() {
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Clean",
+          text: "Delete selected",
           style: "destructive",
           onPress: performCleanAction,
         },
@@ -192,13 +237,24 @@ export default function Review() {
         <ScreenHeader title="Review cleanup" showBack />
         <View className="flex-1 items-center justify-center px-8">
           <View className="w-20 h-20 rounded-full bg-accent items-center justify-center mb-4">
-            <Icon name="checkmark-circle" size={40} color={ThemeColors.primary} />
+            <Icon
+              name="checkmark-circle"
+              size={40}
+              color={ThemeColors.primary}
+            />
           </View>
-          <Text className="text-foreground font-semibold text-lg">Nothing selected</Text>
+          <Text className="text-foreground font-semibold text-lg">
+            Nothing selected
+          </Text>
           <Text className="text-muted-foreground text-sm text-center mt-1">
             Select files from any category to review them for cleanup here.
           </Text>
-          <Button variant="secondary" size="md" className="mt-5" onPress={() => router.replace("/(tabs)/scan")}>
+          <Button
+            variant="secondary"
+            size="md"
+            className="mt-5"
+            onPress={() => router.replace("/(tabs)/scan")}
+          >
             Browse scan results
           </Button>
         </View>
@@ -208,16 +264,27 @@ export default function Review() {
 
   return (
     <View className="flex-1 bg-background">
-      <ScreenHeader title="Review cleanup" subtitle="Confirm before we delete" showBack />
+      <ScreenHeader
+        title="Review cleanup"
+        subtitle="Confirm before we delete"
+        showBack
+      />
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 140 }}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 140 }}
+      >
         {/* Hero: total */}
         <Animated.View entering={FadeIn.springify()} className="px-4">
           <Card className="items-center py-6">
-            <Text className="text-muted-foreground text-sm">You will free up</Text>
+            <Text className="text-muted-foreground text-sm">
+              Selected for deletion
+            </Text>
             <Text className="text-primary text-5xl font-bold mt-1">
               {formatHeadlineSize(selectedBytes).value}{" "}
-              <Text className="text-3xl font-semibold">{formatHeadlineSize(selectedBytes).unit}</Text>
+              <Text className="text-3xl font-semibold">
+                {formatHeadlineSize(selectedBytes).unit}
+              </Text>
             </Text>
             <Text className="text-muted-foreground text-xs mt-2">
               {totalFiles} item{totalFiles === 1 ? "" : "s"} selected
@@ -226,17 +293,24 @@ export default function Review() {
         </Animated.View>
 
         {/* Warning */}
-        <Animated.View entering={FadeInDown.delay(60).springify()} className="px-4 mt-3">
+        <Animated.View
+          entering={FadeInDown.delay(60).springify()}
+          className="px-4 mt-3"
+        >
           <View className="flex-row items-start gap-2 bg-warning/10 border border-warning/30 rounded-xl p-3">
             <Icon name="warning" size={16} color={ThemeColors.warning} />
             <Text className="text-warning-foreground text-xs flex-1 leading-5">
-              Files will be permanently deleted. We never delete anything without your confirmation.
+              Files will be permanently deleted. We never delete anything
+              without your confirmation.
             </Text>
           </View>
         </Animated.View>
 
         {/* Groups */}
-        <Animated.View entering={FadeInDown.delay(120).springify()} className="px-4 mt-4 gap-3">
+        <Animated.View
+          entering={FadeInDown.delay(120).springify()}
+          className="px-4 mt-4 gap-3"
+        >
           {groups.map((g) => (
             <Card key={g.key} className="p-0 overflow-hidden">
               <View className="flex-row items-center gap-3 p-4">
@@ -247,46 +321,79 @@ export default function Review() {
                   <Icon name={g.icon} size={18} color={g.color} />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-foreground font-semibold">{g.label}</Text>
+                  <Text className="text-foreground font-semibold">
+                    {g.label}
+                  </Text>
                   <Text className="text-muted-foreground text-xs">
-                    {g.files.length + g.groupIds.length} item{(g.files.length + g.groupIds.length) === 1 ? "" : "s"}
+                    {g.files.length} item{g.files.length === 1 ? "" : "s"}
                   </Text>
                 </View>
                 <Text className="font-bold" style={{ color: g.color }}>
-                  {formatSizeCompact(g.bytes + g.groupBytes)}
+                  {formatSizeCompact(g.bytes)}
                 </Text>
               </View>
               {/* File list preview (first 3) */}
-              {g.files.slice(0, 3).map((f) => (
+              {g.files.slice(0, visibleCounts[g.key] ?? 20).map((f) => (
                 <Pressable
                   key={f.id}
-                  onPress={() => toggleFile(f.id, f.sizeBytes)}
+                  onPress={() => {
+                    const aliases = StorageIndexService.getItemsByIds([
+                      ...selectedFileIds,
+                    ])
+                      .filter((item) => fileIdentity(item) === fileIdentity(f))
+                      .map((item) => item.id);
+                    useAppStore
+                      .getState()
+                      .deselectAllFiles(aliases.length ? aliases : [f.id]);
+                  }}
                   className="flex-row items-center gap-2 px-4 py-2 border-t border-border"
                 >
-                  <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: g.color }} />
-                  <Text className="text-foreground text-xs flex-1" numberOfLines={1}>
+                  <View
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ backgroundColor: g.color }}
+                  />
+                  <Text
+                    className="text-foreground text-xs flex-1"
+                    numberOfLines={1}
+                  >
                     {f.name}
                   </Text>
-                  <Text className="text-muted-foreground text-xs">{formatSizeCompact(f.sizeBytes)}</Text>
-                  <Icon name="close-circle" size={16} color={ThemeColors.mutedForeground} />
+                  <Text className="text-muted-foreground text-xs">
+                    {formatSizeCompact(f.sizeBytes)}
+                  </Text>
+                  <Icon
+                    name="close-circle"
+                    size={16}
+                    color={ThemeColors.mutedForeground}
+                  />
                 </Pressable>
               ))}
-              {g.files.length > 3 && (
-                <View className="px-4 py-2 border-t border-border">
-                  <Text className="text-muted-foreground text-xs">
-                    +{g.files.length - 3} more…
-                  </Text>
-                </View>
+              {g.files.length > (visibleCounts[g.key] ?? 20) && (
+                <Button
+                  variant="secondary"
+                  onPress={() =>
+                    setVisibleCounts((v) => ({
+                      ...v,
+                      [g.key]: (v[g.key] ?? 20) + 20,
+                    }))
+                  }
+                >
+                  Show more files (
+                  {g.files.length - (visibleCounts[g.key] ?? 20)} remaining)
+                </Button>
               )}
               {/* Remove entire group */}
               <Pressable
                 onPress={() => {
-                  g.files.forEach((f) => selectedFileIds.has(f.id) && toggleFile(f.id, f.sizeBytes));
-                  g.groupIds.forEach((id) => selectedGroupIds.has(id) && toggleGroup(id));
+                  useAppStore
+                    .getState()
+                    .deselectAllFiles(g.files.map((f) => f.id));
                 }}
                 className="px-4 py-3 border-t border-border active:bg-muted"
               >
-                <Text className="text-destructive text-xs font-medium">Remove from cleanup</Text>
+                <Text className="text-destructive text-xs font-medium">
+                  Remove from cleanup
+                </Text>
               </Pressable>
             </Card>
           ))}
@@ -306,7 +413,9 @@ export default function Review() {
           leftIcon={<Icon name="trash" size={20} color="#fff" />}
           onPress={handleClean}
         >
-          {cleaning ? "Cleaning…" : `Clean ${formatSizeCompact(selectedBytes)}`}
+          {cleaning
+            ? "Cleaning…"
+            : `Delete selected · ${formatSizeCompact(selectedBytes)}`}
         </Button>
       </View>
     </View>

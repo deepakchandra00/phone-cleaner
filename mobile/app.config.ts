@@ -5,7 +5,11 @@ import { version } from "./package.json";
 const IS_DEV = process.env.APP_VARIANT === "development";
 const IS_PREVIEW = process.env.APP_VARIANT === "preview";
 
-const appBaseName = IS_DEV ? "Phone Cleaner (Dev)" : IS_PREVIEW ? "Phone Cleaner (Beta)" : "Phone Cleaner";
+const appBaseName = IS_DEV
+  ? "SmartCare (Dev)"
+  : IS_PREVIEW
+    ? "SmartCare (Beta)"
+    : "SmartCare: Phone Cleaner";
 const bundleSuffix = IS_DEV ? ".dev" : IS_PREVIEW ? ".beta" : "";
 
 /**
@@ -29,10 +33,13 @@ function withAndroidQueries(config: ExpoConfig): ExpoConfig {
       query.intent?.some(
         (intent: any) =>
           intent.action?.some(
-            (action: any) => action.$?.["android:name"] === "android.intent.action.MAIN",
+            (action: any) =>
+              action.$?.["android:name"] === "android.intent.action.MAIN",
           ) &&
           intent.category?.some(
-            (category: any) => category.$?.["android:name"] === "android.intent.category.LAUNCHER",
+            (category: any) =>
+              category.$?.["android:name"] ===
+              "android.intent.category.LAUNCHER",
           ),
       ),
     );
@@ -74,7 +81,8 @@ function withFileProvider(config: ExpoConfig): ExpoConfig {
     if (app) {
       if (!app.provider) app.provider = [];
       const hasFileProvider = app.provider.some(
-        (p: any) => p.$?.["android:name"] === "androidx.core.content.FileProvider",
+        (p: any) =>
+          p.$?.["android:name"] === "androidx.core.content.FileProvider",
       );
       if (!hasFileProvider) {
         app.provider.push({
@@ -109,7 +117,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     icon: "./src/assets/icon.png",
     scheme: "phonecleaner",
     userInterfaceStyle: "automatic",
-    runtimeVersion: "1.0.0",
+    runtimeVersion: { policy: "fingerprint" },
     assetBundlePatterns: ["**/*"],
     ios: {
       supportsTablet: false,
@@ -125,6 +133,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.MANAGE_EXTERNAL_STORAGE",
+        "android.permission.PACKAGE_USAGE_STATS",
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_MEDIA_VIDEO",
         "android.permission.READ_MEDIA_AUDIO",
@@ -132,6 +141,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
       ],
     },
     web: {
@@ -149,8 +159,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         "expo-media-library",
         {
-          photosPermission: "Allow Phone Cleaner to access your photos and videos to detect duplicates and large files.",
-          savePhotosPermission: "Allow Phone Cleaner to save photos.",
+          photosPermission:
+            "Allow SmartCare to access your photos and videos to detect duplicates and large files.",
+          savePhotosPermission: "Allow SmartCare to save photos.",
           isAccessMediaLocationEnabled: true,
         },
       ],
@@ -168,8 +179,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         "react-native-google-mobile-ads",
         {
-          androidAppId: process.env.ADMOB_APP_ID || "ca-app-pub-3940256099942544~3347511713",
-          iosAppId: process.env.ADMOB_IOS_APP_ID || "ca-app-pub-3940256099942544~1458002511",
+          androidAppId:
+            process.env.ADMOB_APP_ID ||
+            "ca-app-pub-3940256099942544~3347511713",
+          iosAppId:
+            process.env.ADMOB_IOS_APP_ID ||
+            "ca-app-pub-3940256099942544~1458002511",
           userTrackingUsageDescription:
             "This identifier will be used to deliver personalized ads to support this free cleaner.",
         },
@@ -193,14 +208,25 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ],
     extra: {
       ...config.extra,
+      privacyPolicyUrl:
+        process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL ||
+        config.extra?.privacyPolicyUrl ||
+        "",
+      termsUrl:
+        process.env.EXPO_PUBLIC_TERMS_URL || config.extra?.termsUrl || "",
       ...(process.env.EAS_PROJECT_ID || config.extra?.eas?.projectId
         ? {
             eas: {
-              projectId: process.env.EAS_PROJECT_ID || config.extra?.eas?.projectId,
+              projectId:
+                process.env.EAS_PROJECT_ID || config.extra?.eas?.projectId,
             },
           }
         : {}),
-      revenueCatAndroidApiKey: "goog_xxxxxxxxxxxxxxxxxxxxx",
+      admobProductionConfigured: Boolean(
+        process.env.ADMOB_APP_ID &&
+        !process.env.ADMOB_APP_ID.startsWith("ca-app-pub-3940256099942544"),
+      ),
+      revenueCatAndroidApiKey: process.env.REVENUECAT_ANDROID_KEY || "",
       posthogKey: "",
       sentryDsn: "",
     },

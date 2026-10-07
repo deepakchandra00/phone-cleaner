@@ -1,8 +1,10 @@
 import { Platform } from "react-native";
 import Purchases, { type CustomerInfo } from "react-native-purchases";
 // eslint-disable-next-line import/no-unresolved
-import { REVENUECAT_ANDROID_KEY } from "@env";
 import type { Entitlement } from "@/stores/usePremiumStore";
+import Constants from "expo-constants";
+const REVENUECAT_ANDROID_KEY = Constants.expoConfig?.extra
+  ?.revenueCatAndroidApiKey as string | undefined;
 
 const ENTITLEMENT_PRODUCT = {
   yearly: {
@@ -51,18 +53,25 @@ export async function fetchOfferings() {
         return offerings.current;
       }
     } catch (e) {
-      console.warn("[revenuecat] Failed to get live offerings, using fallback:", e);
+      console.warn(
+        "[revenuecat] Failed to get live offerings, using fallback:",
+        e,
+      );
     }
   }
   return ENTITLEMENT_PRODUCT;
 }
 
-export async function purchase(plan: "yearly" | "monthly"): Promise<Entitlement> {
+export async function purchase(
+  plan: "yearly" | "monthly",
+): Promise<Entitlement> {
   trackPurchase("premium_purchase", plan);
 
   if (!isRevenueCatConfigured()) {
     if (!__DEV__) {
-      throw new Error("In-app purchases are temporarily unavailable. Please try again later.");
+      throw new Error(
+        "In-app purchases are temporarily unavailable. Please try again later.",
+      );
     }
     // Dev/sandbox simulation (only when developing locally)
     await new Promise((r) => setTimeout(r, 800));
@@ -70,7 +79,10 @@ export async function purchase(plan: "yearly" | "monthly"): Promise<Entitlement>
       isActive: true,
       plan: plan === "yearly" ? "pro_yearly" : "pro_monthly",
       purchasedAt: Date.now(),
-      expiresAt: plan === "yearly" ? Date.now() + 365 * 86400000 : Date.now() + 30 * 86400000,
+      expiresAt:
+        plan === "yearly"
+          ? Date.now() + 365 * 86400000
+          : Date.now() + 30 * 86400000,
     };
   }
 
@@ -130,10 +142,34 @@ function trackPurchase(event: string, plan?: string) {
 }
 
 export const PRO_FEATURES = [
-  { icon: "copy" as const, title: "Similar photos", desc: "Detect near-duplicates with perceptual hashing" },
-  { icon: "calendar" as const, title: "Scheduled scans", desc: "Auto-scan every week, stay on top of storage" },
-  { icon: "notifications" as const, title: "Storage alerts", desc: "Get notified when storage crosses 90%" },
-  { icon: "logo-whatsapp" as const, title: "Advanced WhatsApp", desc: "Bulk rules for received vs sent media" },
-  { icon: "sparkles" as const, title: "Smart cleanup rules", desc: "Auto-select blurry, dark, and meme photos" },
-  { icon: "ban" as const, title: "No ads", desc: "Enjoy a completely ad-free experience" },
+  {
+    icon: "copy" as const,
+    title: "Similar photos",
+    desc: "Detect near-duplicates with perceptual hashing",
+  },
+  {
+    icon: "calendar" as const,
+    title: "Scheduled scans",
+    desc: "Auto-scan every week, stay on top of storage",
+  },
+  {
+    icon: "notifications" as const,
+    title: "Storage alerts",
+    desc: "Get notified when storage crosses 90%",
+  },
+  {
+    icon: "logo-whatsapp" as const,
+    title: "Advanced WhatsApp",
+    desc: "Bulk rules for received vs sent media",
+  },
+  {
+    icon: "sparkles" as const,
+    title: "Smart cleanup rules",
+    desc: "Auto-select blurry, dark, and meme photos",
+  },
+  {
+    icon: "ban" as const,
+    title: "No ads",
+    desc: "Enjoy a completely ad-free experience",
+  },
 ] as const;

@@ -6,7 +6,12 @@ import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { Button } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { usePremiumStore } from "@/stores/usePremiumStore";
-import { PLANS, PRO_FEATURES, purchase, restorePurchases } from "@/lib/revenuecat";
+import {
+  PLANS,
+  PRO_FEATURES,
+  purchase,
+  restorePurchases,
+} from "@/lib/revenuecat";
 import { track } from "@/lib/analytics";
 import { ThemeColors } from "@/theme/colors";
 
@@ -70,58 +75,101 @@ export default function Premium() {
         <Icon name="close" size={20} color={ThemeColors.foreground} />
       </Pressable>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingTop: insets.top + 24,
+          paddingBottom: insets.bottom + 24,
+        }}
+      >
         {/* Hero */}
-        <Animated.View entering={FadeIn.springify()} className="items-center px-6 mb-6">
-          <View className="w-20 h-20 rounded-3xl items-center justify-center mb-4" style={{ backgroundColor: "rgba(5,150,105,0.12)" }}>
+        <Animated.View
+          entering={FadeIn.springify()}
+          className="items-center px-6 mb-6"
+        >
+          <View
+            className="w-20 h-20 rounded-3xl items-center justify-center mb-4"
+            style={{ backgroundColor: "rgba(5,150,105,0.12)" }}
+          >
             <Icon name="diamond" size={40} color={ThemeColors.primary} />
           </View>
-          <Text className="text-foreground text-3xl font-bold text-center">Phone Cleaner Pro</Text>
+          <Text className="text-foreground text-3xl font-bold text-center">
+            SmartCare Pro
+          </Text>
           <Text className="text-muted-foreground text-sm text-center mt-2">
-            Unlock the full power of the cleaner. One subscription, every feature.
+            Unlock the full power of the cleaner. One subscription, every
+            feature.
           </Text>
         </Animated.View>
 
         {/* Feature list */}
-        <Animated.View entering={FadeInDown.delay(100).springify()} className="px-6 mb-6">
+        <Animated.View
+          entering={FadeInDown.delay(100).springify()}
+          className="px-6 mb-6"
+        >
           {PRO_FEATURES.map((f, i) => (
             <View
               key={f.title}
               className={`flex-row items-center gap-3 py-3 ${i > 0 ? "border-t border-border" : ""}`}
             >
               <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
-                <Icon name={f.icon as IconName} size={18} color={ThemeColors.primary} />
+                <Icon
+                  name={f.icon as IconName}
+                  size={18}
+                  color={ThemeColors.primary}
+                />
               </View>
               <View className="flex-1">
-                <Text className="text-foreground font-semibold text-sm">{f.title}</Text>
-                <Text className="text-muted-foreground text-xs mt-0.5">{f.desc}</Text>
+                <Text className="text-foreground font-semibold text-sm">
+                  {f.title}
+                </Text>
+                <Text className="text-muted-foreground text-xs mt-0.5">
+                  {f.desc}
+                </Text>
               </View>
-              <Icon name="checkmark-circle" size={18} color={ThemeColors.primary} />
+              <Icon
+                name="checkmark-circle"
+                size={18}
+                color={ThemeColors.primary}
+              />
             </View>
           ))}
         </Animated.View>
 
         {/* Plan selector */}
-        <Animated.View entering={FadeInDown.delay(200).springify()} className="px-6 mb-4 gap-3">
+        <Animated.View
+          entering={FadeInDown.delay(200).springify()}
+          className="px-6 mb-4 gap-3"
+        >
           {/* Yearly */}
           <Pressable
             onPress={() => setSelected("yearly")}
             className={`relative rounded-2xl p-4 border-2 ${selected === "yearly" ? "border-primary bg-primary/5" : "border-border bg-card"}`}
           >
             <View className="absolute -top-2.5 left-4 bg-primary px-2 py-0.5 rounded-full">
-              <Text className="text-primary-foreground text-[10px] font-bold">BEST VALUE · SAVE 58%</Text>
+              <Text className="text-primary-foreground text-[10px] font-bold">
+                BEST VALUE · SAVE 58%
+              </Text>
             </View>
             <View className="flex-row items-center justify-between mt-1">
               <View>
-                <Text className="text-foreground font-bold text-base">Yearly</Text>
-                <Text className="text-muted-foreground text-xs">{PLANS.yearly.pricePerMonth}/mo · billed annually</Text>
+                <Text className="text-foreground font-bold text-base">
+                  Yearly
+                </Text>
+                <Text className="text-muted-foreground text-xs">
+                  {PLANS.yearly.pricePerMonth}/mo · billed annually
+                </Text>
               </View>
               <View className="flex-row items-center gap-3">
-                <Text className="text-foreground text-xl font-bold">{PLANS.yearly.price}</Text>
+                <Text className="text-foreground text-xl font-bold">
+                  {PLANS.yearly.price}
+                </Text>
                 <View
                   className={`w-6 h-6 rounded-full border-2 items-center justify-center ${selected === "yearly" ? "bg-primary border-primary" : "border-muted-foreground/30"}`}
                 >
-                  {selected === "yearly" && <Icon name="checkmark" size={14} color="#fff" />}
+                  {selected === "yearly" && (
+                    <Icon name="checkmark" size={14} color="#fff" />
+                  )}
                 </View>
               </View>
             </View>
@@ -134,15 +182,23 @@ export default function Premium() {
           >
             <View className="flex-row items-center justify-between">
               <View>
-                <Text className="text-foreground font-bold text-base">Monthly</Text>
-                <Text className="text-muted-foreground text-xs">Cancel anytime</Text>
+                <Text className="text-foreground font-bold text-base">
+                  Monthly
+                </Text>
+                <Text className="text-muted-foreground text-xs">
+                  Cancel anytime
+                </Text>
               </View>
               <View className="flex-row items-center gap-3">
-                <Text className="text-foreground text-xl font-bold">{PLANS.monthly.price}</Text>
+                <Text className="text-foreground text-xl font-bold">
+                  {PLANS.monthly.price}
+                </Text>
                 <View
                   className={`w-6 h-6 rounded-full border-2 items-center justify-center ${selected === "monthly" ? "bg-primary border-primary" : "border-muted-foreground/30"}`}
                 >
-                  {selected === "monthly" && <Icon name="checkmark" size={14} color="#fff" />}
+                  {selected === "monthly" && (
+                    <Icon name="checkmark" size={14} color="#fff" />
+                  )}
                 </View>
               </View>
             </View>
@@ -183,13 +239,21 @@ export default function Premium() {
         {/* Legal */}
         <View className="px-6 mt-5">
           <Text className="text-muted-foreground text-[11px] text-center leading-4">
-            Payment is charged to your Google Play account. Subscription auto-renews unless cancelled at least 24 hours before the end of the current period. Manage in Play Store settings.
+            Payment is charged to your Google Play account. Subscription
+            auto-renews unless cancelled at least 24 hours before the end of the
+            current period. Manage in Play Store settings.
           </Text>
           <View className="flex-row justify-center gap-4 mt-3">
-            <Pressable onPress={() => Linking.openURL("https://phonecleaner.app/terms")}>
+            <Pressable
+              onPress={() => Linking.openURL("https://phonecleaner.app/terms")}
+            >
               <Text className="text-primary text-xs">Terms of Service</Text>
             </Pressable>
-            <Pressable onPress={() => Linking.openURL("https://phonecleaner.app/privacy")}>
+            <Pressable
+              onPress={() =>
+                Linking.openURL("https://phonecleaner.app/privacy")
+              }
+            >
               <Text className="text-primary text-xs">Privacy Policy</Text>
             </Pressable>
           </View>

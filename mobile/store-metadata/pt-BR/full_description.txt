@@ -1,0 +1,15 @@
+SmartCare ajuda você a revisar o armazenamento acessível antes de excluir arquivos.
+
+Organize vídeos, downloads e outros arquivos por tamanho. Confira a pasta indexada e escolha o que manter. As permissões podem limitar os resultados.
+
+Compare cópias idênticas e sugestões de fotos semelhantes. Preserve o original recomendado e revise a seleção. Crie cópias JPEG menores, compare os resultados e salve separadamente. Os originais nunca são excluídos automaticamente. A compressão pode reduzir a qualidade e remove metadados EXIF/GPS das novas cópias.
+
+Revise os arquivos de cache compatíveis e confirme a limpeza. O Android não permite limpar o cache privado de todos os aplicativos nem dados do sistema. Abra as configurações de cada aplicativo para revisar o cache manualmente.
+
+Confira aplicativos visíveis, uso registrado, consumo disponível de dados móveis e Wi-Fi e leituras da bateria. O acesso ao uso depende da sua autorização. A informação de criptografia Wi-Fi não garante que uma rede seja confiável.
+
+Escolha quais notificações atuais dispensar. Notificações permanentes ficam e futuras notificações continuam permitidas. O teste opcional de velocidade envia tráfego para a Cloudflare e pode consumir dados móveis.
+
+A análise não exclui arquivos. A limpeza exige revisão e confirmação. A análise de duplicatas e a compressão são locais. Anúncios, pagamentos e testes de velocidade usam serviços com práticas de privacidade próprias.
+
+Android, permissões e formatos podem limitar os recursos. Não prometemos acelerar a RAM, reparar a bateria, proteção VPN ou bloqueio de outros aplicativos.

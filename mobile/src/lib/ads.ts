@@ -1,106 +1,182 @@
-import { Platform } from "react-native";
+import Constants from "expo-constants";
+import { AppState, Platform } from "react-native";
 import mobileAds, {
   InterstitialAd,
   AdEventType,
+  AdsConsent,
+  AdsConsentPrivacyOptionsRequirementStatus,
   TestIds,
   MaxAdContentRating,
 } from "react-native-google-mobile-ads";
 import { usePremiumStore } from "@/stores/usePremiumStore";
-
 type AdUnit = "banner" | "native" | "interstitial" | "rewarded";
-
-const PLACEMENT_CAPS: Record<AdUnit, { minIntervalMs: number }> = {
-  banner: { minIntervalMs: 0 },
-  native: { minIntervalMs: 0 },
-  interstitial: { minIntervalMs: 5 * 60 * 1000 }, // 1 per 5 min
-  rewarded: { minIntervalMs: 0 },
-};
-
 const lastShown: Record<AdUnit, number> = {
   banner: 0,
   native: 0,
   interstitial: 0,
   rewarded: 0,
 };
-
-let adsInitialised = false;
-let interstitialAd: InterstitialAd | null = null;
-
-export async function initAds(): Promise<void> {
-  if (adsInitialised || Platform.OS !== "android") return;
-  try {
-    await mobileAds().setRequestConfiguration({
-      maxAdContentRating: MaxAdContentRating.PG,
-      tagForChildDirectedTreatment: false,
-    });
-    await mobileAds().initialize();
-    adsInitialised = true;
-
-    // Pre-load interstitial
-    preloadInterstitial();
-  } catch (err) {
-    console.warn("[ads] Failed to initialize mobileAds:", err);
-  }
+let initialized = false;
+let initializing: Promise<void> | null = null;
+let consentAllowsAds = false;
+let interstitial: InterstitialAd | null = null;
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+let failures = 0;
+let showing = false;
+let opportunity: { expires: number; active: boolean } | null = null;
+function dispose() {
+  interstitial?.removeAllListeners();
+  interstitial = null;
 }
-
-function getInterstitialAdUnitId(): string | null {
-  if (process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID) {
-    return process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID;
-  }
-  if (__DEV__) {
-    return TestIds.INTERSTITIAL;
-  }
-  console.warn("[ads] EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID is not configured for production build. Ads disabled.");
-  return null;
-}
-
-function preloadInterstitial() {
-  if (usePremiumStore.getState().isPro) return;
-  const adUnitId = getInterstitialAdUnitId();
-  if (!adUnitId) return;
-
-  try {
-    interstitialAd = InterstitialAd.createForAdRequest(adUnitId, {
-      requestNonPersonalizedAdsOnly: true,
-    });
-    interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
-      // Interstitial is ready
-    });
-    interstitialAd.addAdEventListener(AdEventType.CLOSED, () => {
-      preloadInterstitial();
-    });
-    interstitialAd.load();
-  } catch (e) {
-    console.warn("[ads] Error loading interstitial:", e);
-  }
-}
-
 export function canShowAd(unit: AdUnit): boolean {
-  const isPro = usePremiumStore.getState().isPro;
-  if (isPro) return false;
-  const cap = PLACEMENT_CAPS[unit];
-  if (cap.minIntervalMs === 0) return true;
-  return Date.now() - lastShown[unit] >= cap.minIntervalMs;
+  return (
+    !usePremiumStore.getState().isPro &&
+    (unit !== "interstitial" || Date.now() - lastShown.interstitial >= 300000)
+  );
 }
-
 export function recordAdShown(unit: AdUnit) {
   lastShown[unit] = Date.now();
 }
-
-/**
- * Show an interstitial after cleanup, respecting the 5-minute cap.
- * Called from the success screen.
- */
-export function maybeShowInterstitial(): void {
-  if (!canShowAd("interstitial")) return;
-  try {
-    if (interstitialAd && interstitialAd.loaded) {
-      interstitialAd.show();
-      recordAdShown("interstitial");
-    } else {
-      preloadInterstitial();
-    }
-  } catch (err) {
-    console.warn("[ads] Failed to show interstitial:", err);
+function showIfReady() {
+  if (
+    AppState.currentState !== "active" ||
+    !opportunity?.active ||
+    Date.now() > opportunity.expires ||
+    !canShowAd("interstitial") ||
+    !consentAllowsAds ||
+    !interstitial?.loaded ||
+    showing
+  )
+    return;
+  opportunity.active = false;
+  showing = true;
+  void interstitial.show().catch((error) => {
+    showing = false;
+    dispose();
+    console.warn("[ads] Show failed", error);
+  });
+}
+function preload() {
+  if (
+    !initialized ||
+    !consentAllowsAds ||
+    !canShowAd("banner") ||
+    interstitial ||
+    retryTimer
+  )
+    return;
+  if (!__DEV__ && !Constants.expoConfig?.extra?.admobProductionConfigured) {
+    console.warn(
+      "[ads] Production AdMob app ID missing or still a test ID; ads disabled.",
+    );
+    return;
   }
+  const id = __DEV__
+    ? TestIds.INTERSTITIAL
+    : process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID;
+  if (!id) {
+    console.warn("[ads] Production interstitial ID missing; ads disabled.");
+    return;
+  }
+  try {
+    const ad = InterstitialAd.createForAdRequest(id, {
+      requestNonPersonalizedAdsOnly: true,
+    });
+    interstitial = ad;
+    ad.addAdEventListener(AdEventType.LOADED, () => {
+      failures = 0;
+      showIfReady();
+    });
+    ad.addAdEventListener(AdEventType.OPENED, () =>
+      recordAdShown("interstitial"),
+    );
+    ad.addAdEventListener(AdEventType.CLOSED, () => {
+      showing = false;
+      dispose();
+      preload();
+    });
+    ad.addAdEventListener(AdEventType.ERROR, (error) => {
+      console.warn("[ads] Load failed", error.message);
+      showing = false;
+      dispose();
+      if (++failures <= 3)
+        retryTimer = setTimeout(() => {
+          retryTimer = null;
+          preload();
+        }, failures * 10000);
+    });
+    ad.load();
+  } catch (error) {
+    dispose();
+    console.warn("[ads] Preload failed", error);
+  }
+}
+export async function initAds(): Promise<void> {
+  if (initialized || Platform.OS !== "android") return;
+  if (initializing) return initializing;
+  initializing = (async () => {
+    try {
+      try {
+        await AdsConsent.gatherConsent();
+      } catch (error) {
+        console.warn("[ads] Consent update unavailable", error);
+      }
+      consentAllowsAds = (await AdsConsent.getConsentInfo()).canRequestAds;
+      if (!consentAllowsAds) {
+        console.debug("[ads] Waiting for consent before requesting ads.");
+        return;
+      }
+      await mobileAds().setRequestConfiguration({
+        maxAdContentRating: MaxAdContentRating.PG,
+        tagForChildDirectedTreatment: false,
+      });
+      await mobileAds().initialize();
+      initialized = true;
+      preload();
+    } catch (error) {
+      console.warn("[ads] Initialization failed", error);
+    }
+  })().finally(() => {
+    initializing = null;
+  });
+  return initializing;
+}
+/** A short, cancellable success-screen opportunity; never displays later on another screen. */
+export function maybeShowInterstitial(): () => void {
+  if (!canShowAd("interstitial")) return () => {};
+  const current = { active: true, expires: Date.now() + 5000 };
+  opportunity = current;
+  void initAds().then(() => {
+    preload();
+    showIfReady();
+  });
+  showIfReady();
+  const timer = setTimeout(() => {
+    current.active = false;
+  }, 5000);
+  return () => {
+    current.active = false;
+    clearTimeout(timer);
+  };
+}
+export async function openAdPrivacyChoices(): Promise<boolean> {
+  if (Platform.OS !== "android") return false;
+  const info = await AdsConsent.getConsentInfo();
+  if (
+    info.privacyOptionsRequirementStatus !==
+    AdsConsentPrivacyOptionsRequirementStatus.REQUIRED
+  )
+    return false;
+  await AdsConsent.showPrivacyOptionsForm();
+  consentAllowsAds = (await AdsConsent.getConsentInfo()).canRequestAds;
+  dispose();
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
+  }
+  if (consentAllowsAds) {
+    if (!initialized) await initAds();
+    else preload();
+  }
+  return true;
 }

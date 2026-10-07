@@ -1,22 +1,35 @@
-import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { View, Text, Pressable, TextInput, ActivityIndicator } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FileDetailModal } from "@/components/FileDetailModal";
+import { Button } from "@/components/ui/Button";
+import { CategoryIcons, Icon, type IconName } from "@/components/ui/Icon";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
+import type { StorageCategory, StorageItem } from "@/db/schema";
+import {
+  StorageIndexService,
+  type StorageQueryParams,
+} from "@/db/StorageIndexService";
+import { formatRelativeTime, formatSizeCompact } from "@/lib/format";
+import type { CategoryKey } from "@/lib/types";
+import { DeleteCoordinator } from "@/services/DeleteCoordinator";
+import {
+  registerFileSizes,
+  useAppStore,
+  useSelectedBytes,
+} from "@/stores/useAppStore";
+import { CategoryColors, StatusColors, ThemeColors } from "@/theme/colors";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import * as MediaLibrary from "expo-media-library/legacy";
-import { ScreenHeader } from "@/components/ui/ScreenHeader";
-import { Button } from "@/components/ui/Button";
-import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
-import { FileDetailModal } from "@/components/FileDetailModal";
-import { useAppStore, useSelectedBytes, registerFileSizes } from "@/stores/useAppStore";
-import { StorageIndexService, type StorageQueryParams } from "@/db/StorageIndexService";
-import { DeleteCoordinator } from "@/services/DeleteCoordinator";
-import { CategoryColors, ThemeColors, StatusColors } from "@/theme/colors";
-import { formatSizeCompact, formatRelativeTime } from "@/lib/format";
-import { track } from "@/lib/analytics";
-import type { StorageItem, StorageCategory } from "@/db/schema";
-import type { CategoryKey } from "@/lib/types";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useShallow } from "zustand/react/shallow";
 
 const CATEGORY_LABELS: Record<string, string> = {
   photos: "Photos",
@@ -25,11 +38,11 @@ const CATEGORY_LABELS: Record<string, string> = {
   audio: "Audio",
   documents: "Documents",
   downloads: "Downloads & Files",
-  junk: "Junk & Cache",
-  duplicates: "Duplicate photos",
+  junk: "System Data & Cache",
+  duplicates: "Duplicate Photo Compressor",
   whatsapp: "WhatsApp media",
   apks: "Installation packages",
-  other: "Large Files",
+  other: "Space Hogs",
 };
 
 const SIZE_FILTERS = [
@@ -63,7 +76,9 @@ const FileRow = React.memo(function FileRow({
     item.canPreview ||
     item.mimeType?.startsWith("image/") ||
     item.mimeType?.startsWith("video/") ||
-    /\.(jpe?g|png|webp|gif|bmp|heic|mp4|mov|mkv|3gp)$/i.test(item.name || item.uri);
+    /\.(jpe?g|png|webp|gif|bmp|heic|mp4|mov|mkv|3gp)$/i.test(
+      item.name || item.uri,
+    );
 
   const locationText = item.path
     ? item.path.replace(/^\/storage\/emulated\/0\/?/, "")
@@ -104,11 +119,18 @@ const FileRow = React.memo(function FileRow({
 
       {/* Details */}
       <View className="flex-1 min-w-0">
-        <Text className="text-foreground text-sm font-semibold" numberOfLines={1}>
+        <Text
+          className="text-foreground text-sm font-semibold"
+          numberOfLines={1}
+        >
           {item.name}
         </Text>
-        <Text className="text-muted-foreground text-xs mt-0.5" numberOfLines={1}>
-          {formatSizeCompact(item.sizeBytes)} · {formatRelativeTime(item.modifiedAt)}
+        <Text
+          className="text-muted-foreground text-xs mt-0.5"
+          numberOfLines={1}
+        >
+          {formatSizeCompact(item.sizeBytes)} ·{" "}
+          {formatRelativeTime(item.modifiedAt)}
           {locationText ? ` · ${locationText}` : ""}
         </Text>
       </View>
@@ -121,7 +143,9 @@ const FileRow = React.memo(function FileRow({
         }}
         hitSlop={10}
         className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
-          isSelected ? "bg-primary border-primary" : "border-muted-foreground/40"
+          isSelected
+            ? "bg-primary border-primary"
+            : "border-muted-foreground/40"
         }`}
       >
         {isSelected && <Icon name="checkmark" size={14} color="#fff" />}
@@ -134,7 +158,15 @@ export default function CategoryDetail() {
   const { key } = useLocalSearchParams<{ key: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { selectedFileIds, toggleFile, selectAllFiles, deselectAllFiles, scanPhase } = useAppStore();
+  const { selectedFileIds, toggleFile, selectAllFiles, deselectAllFiles } =
+    useAppStore(
+      useShallow((s) => ({
+        selectedFileIds: s.selectedFileIds,
+        toggleFile: s.toggleFile,
+        selectAllFiles: s.selectAllFiles,
+        deselectAllFiles: s.deselectAllFiles,
+      })),
+    );
   const selectedBytes = useSelectedBytes();
 
   const categoryKey = (key ?? "other") as CategoryKey;
@@ -148,7 +180,8 @@ export default function CategoryDetail() {
   const [subTypeFilter, setSubTypeFilter] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("size_desc");
   const [permissionDenied, setPermissionDenied] = useState(false);
-  const [selectedModalItem, setSelectedModalItem] = useState<StorageItem | null>(null);
+  const [selectedModalItem, setSelectedModalItem] =
+    useState<StorageItem | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -159,13 +192,17 @@ export default function CategoryDetail() {
 
   // SQLite data state
   const [items, setItems] = useState<StorageItem[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0);
+  const [, setTotalCount] = useState<number>(0);
   const [totalBytes, setTotalBytes] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   // Check permissions for media categories
   const checkPermissions = useCallback(async () => {
-    if (categoryKey === "photos" || categoryKey === "videos" || categoryKey === "audio") {
+    if (
+      categoryKey === "photos" ||
+      categoryKey === "videos" ||
+      categoryKey === "audio"
+    ) {
       const { status } = await MediaLibrary.getPermissionsAsync();
       setPermissionDenied(status !== "granted");
     } else {
@@ -203,7 +240,9 @@ export default function CategoryDetail() {
     } else if (categoryKey === "duplicates") {
       // Query items with duplicateGroupId
     } else if (
-      ["photos", "videos", "audio", "documents", "downloads", "apks"].includes(categoryKey)
+      ["photos", "videos", "audio", "documents", "downloads", "apks"].includes(
+        categoryKey,
+      )
     ) {
       queryParams.category = categoryKey as StorageCategory;
     }
@@ -274,7 +313,8 @@ export default function CategoryDetail() {
   }, [categoryKey]);
 
   // Bulk actions
-  const allCurrentSelected = items.length > 0 && items.every((f) => selectedFileIds.has(f.id));
+  const allCurrentSelected =
+    items.length > 0 && items.every((f) => selectedFileIds.has(f.id));
   const selectedCount = items.filter((f) => selectedFileIds.has(f.id)).length;
 
   const toggleSelectAll = () => {
@@ -289,7 +329,7 @@ export default function CategoryDetail() {
     (id: string, sizeBytes: number) => {
       toggleFile(id, sizeBytes);
     },
-    [toggleFile]
+    [toggleFile],
   );
 
   const handlePress = useCallback((item: StorageItem) => {
@@ -307,7 +347,7 @@ export default function CategoryDetail() {
         onPress={handlePress}
       />
     ),
-    [selectedFileIds, color, iconName, handleToggle, handlePress]
+    [selectedFileIds, color, iconName, handleToggle, handlePress],
   );
 
   return (
@@ -335,7 +375,11 @@ export default function CategoryDetail() {
           />
           {searchQuery.length > 0 && (
             <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
-              <Icon name="close-circle" size={16} color={ThemeColors.mutedForeground} />
+              <Icon
+                name="close-circle"
+                size={16}
+                color={ThemeColors.mutedForeground}
+              />
             </Pressable>
           )}
         </View>
@@ -350,12 +394,16 @@ export default function CategoryDetail() {
                   key={f.key}
                   onPress={() => setSizeFilter(f.key)}
                   className={`px-3 py-1.5 rounded-full border ${
-                    active ? "bg-primary border-primary" : "bg-card border-border"
+                    active
+                      ? "bg-primary border-primary"
+                      : "bg-card border-border"
                   }`}
                 >
                   <Text
                     className={`text-xs font-medium ${
-                      active ? "text-primary-foreground" : "text-muted-foreground"
+                      active
+                        ? "text-primary-foreground"
+                        : "text-muted-foreground"
                     }`}
                   >
                     {f.label}
@@ -376,12 +424,16 @@ export default function CategoryDetail() {
                   key={item.key}
                   onPress={() => setSubTypeFilter(item.key)}
                   className={`px-3 py-1.5 rounded-full border ${
-                    active ? "bg-primary border-primary" : "bg-card border-border"
+                    active
+                      ? "bg-primary border-primary"
+                      : "bg-card border-border"
                   }`}
                 >
                   <Text
                     className={`text-xs font-medium ${
-                      active ? "text-primary-foreground font-semibold" : "text-muted-foreground"
+                      active
+                        ? "text-primary-foreground font-semibold"
+                        : "text-muted-foreground"
                     }`}
                   >
                     {item.label}
@@ -394,7 +446,10 @@ export default function CategoryDetail() {
 
         {/* Sort & Select all info */}
         <View className="flex-row items-center justify-between pt-1">
-          <Pressable onPress={toggleSelectAll} className="flex-row items-center gap-1.5">
+          <Pressable
+            onPress={toggleSelectAll}
+            className="flex-row items-center gap-1.5"
+          >
             <Icon
               name={allCurrentSelected ? "checkbox" : "square-outline"}
               size={16}
@@ -420,7 +475,9 @@ export default function CategoryDetail() {
               >
                 <Text
                   className={`text-xs font-medium ${
-                    sortOrder === s.key ? "text-foreground font-bold" : "text-muted-foreground"
+                    sortOrder === s.key
+                      ? "text-foreground font-bold"
+                      : "text-muted-foreground"
                   }`}
                 >
                   {s.label}
@@ -437,12 +494,19 @@ export default function CategoryDetail() {
           <View className="w-20 h-20 rounded-full bg-accent items-center justify-center mb-4">
             <Icon name="shield-outline" size={40} color={ThemeColors.primary} />
           </View>
-          <Text className="text-foreground font-bold text-lg text-center">Permission required</Text>
-          <Text className="text-muted-foreground text-sm text-center mt-2">
-            We need access to your {label.toLowerCase()} to discover files you can safely review and
-            clean.
+          <Text className="text-foreground font-bold text-lg text-center">
+            Permission required
           </Text>
-          <Button variant="primary" size="lg" className="mt-6" onPress={requestPermission}>
+          <Text className="text-muted-foreground text-sm text-center mt-2">
+            We need access to your {label.toLowerCase()} to discover files you
+            can safely review and clean.
+          </Text>
+          <Button
+            variant="primary"
+            size="lg"
+            className="mt-6"
+            onPress={requestPermission}
+          >
             Grant Access
           </Button>
         </View>
@@ -453,9 +517,15 @@ export default function CategoryDetail() {
       ) : items.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <View className="w-20 h-20 rounded-full bg-accent items-center justify-center mb-4">
-            <Icon name="checkmark-circle" size={44} color={StatusColors.success} />
+            <Icon
+              name="checkmark-circle"
+              size={44}
+              color={StatusColors.success}
+            />
           </View>
-          <Text className="text-foreground font-bold text-lg text-center">You're all clear! 🎉</Text>
+          <Text className="text-foreground font-bold text-lg text-center">
+            You're all clear! 🎉
+          </Text>
           <Text className="text-muted-foreground text-sm text-center mt-1">
             No {label.toLowerCase()} found matching your filters.
           </Text>
@@ -495,7 +565,8 @@ export default function CategoryDetail() {
         <View className="flex-row items-center justify-between mb-2.5">
           <View className="flex-row items-center gap-2">
             <Text className="text-foreground text-sm">
-              <Text className="font-bold text-base">{selectedCount}</Text> of {items.length} selected
+              <Text className="font-bold text-base">{selectedCount}</Text> of{" "}
+              {items.length} selected
             </Text>
             {selectedCount > 0 && (
               <Pressable
@@ -503,7 +574,9 @@ export default function CategoryDetail() {
                 hitSlop={8}
                 className="bg-muted px-2 py-0.5 rounded-full"
               >
-                <Text className="text-muted-foreground text-xs font-medium">Clear</Text>
+                <Text className="text-muted-foreground text-xs font-medium">
+                  Clear
+                </Text>
               </Pressable>
             )}
           </View>
@@ -527,7 +600,13 @@ export default function CategoryDetail() {
             variant="secondary"
             size="lg"
             fullWidth
-            leftIcon={<Icon name="checkbox-outline" size={18} color={ThemeColors.primary} />}
+            leftIcon={
+              <Icon
+                name="checkbox-outline"
+                size={18}
+                color={ThemeColors.primary}
+              />
+            }
             onPress={toggleSelectAll}
           >
             {`Select all ${items.length} items to clean`}

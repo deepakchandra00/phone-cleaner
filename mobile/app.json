@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "Phone Cleaner",
+    "name": "SmartCare: Phone Cleaner",
     "slug": "phone-cleaner",
     "version": "1.0.0",
+    "description": "AI storage cleaner: clear cache, duplicate photo compressor & find space hogs.",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./src/assets/icon.png",
@@ -81,8 +82,9 @@
       "revenueCatAndroidApiKey": "goog_xxxxxxxxxxxxxxxxxxxxx",
       "posthogKey": "",
       "sentryDsn": "",
+      "router": {},
       "eas": {
-        "projectId": "3c8e8c02-411e-48fe-8879-536bcab009d9"
+        "projectId": "d67f046d-8840-4cce-b4b6-4650a2bf96a9"
       }
     }
   }

@@ -1,6 +1,6 @@
-import * as FileSystem from "expo-file-system/legacy";
-import { AndroidStorage } from "android-storage";
 import type { StorageItem } from "@/db/schema";
+import { AndroidStorage } from "android-storage";
+import * as FileSystem from "expo-file-system/legacy";
 
 export class StorageVerifier {
   /**
@@ -9,7 +9,9 @@ export class StorageVerifier {
   static async exists(uriOrPath: string): Promise<boolean> {
     if (!uriOrPath) return false;
     try {
-      const nativeCheck = await AndroidStorage.verifyFilesExistence([uriOrPath]);
+      const nativeCheck = await AndroidStorage.verifyFilesExistence([
+        uriOrPath,
+      ]);
       if (typeof nativeCheck[uriOrPath] === "boolean") {
         return nativeCheck[uriOrPath];
       }
@@ -51,7 +53,7 @@ export class StorageVerifier {
         targets.push(target);
         targetMap.set(target, item);
       } else {
-        confirmedDeletedIds.push(item.id);
+        remainingIds.push(item.id);
       }
     }
 
@@ -69,14 +71,14 @@ export class StorageVerifier {
           const info = await FileSystem.getInfoAsync(target);
           isStillHere = info.exists;
         } catch {
-          isStillHere = false;
+          isStillHere = true;
         }
       }
 
       if (isStillHere) {
         remainingIds.push(item.id);
       } else {
-        confirmedDeletedIds.push(item.id);
+        remainingIds.push(item.id);
       }
     }
 

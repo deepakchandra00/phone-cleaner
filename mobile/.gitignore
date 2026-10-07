@@ -36,3 +36,7 @@ yarn-error.*
 
 # testing
 coverage/
+
+# Keep native regression sources (the root ignores directories named test).
+!modules/**/android/src/test/
+!modules/**/android/src/test/**

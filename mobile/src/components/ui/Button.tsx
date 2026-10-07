@@ -1,8 +1,14 @@
-import { Pressable, type PressableProps, Text, View, ActivityIndicator } from "react-native";
-import { type ReactNode, isValidElement } from "react";
 import { cn } from "@/lib/utils";
+import { type ReactNode, isValidElement } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  type PressableProps,
+  Text,
+} from "react-native";
 
-type Variant = "primary" | "secondary" | "outline" | "ghost" | "destructive" | "success";
+type Variant =
+  "primary" | "secondary" | "outline" | "ghost" | "destructive" | "success";
 type Size = "sm" | "md" | "lg" | "xl";
 
 interface ButtonProps extends Omit<PressableProps, "children"> {
@@ -26,7 +32,7 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-9 px-3 rounded-lg",
+  sm: "min-h-11 px-3 py-2 rounded-lg",
   md: "h-11 px-4 rounded-xl",
   lg: "h-14 px-6 rounded-2xl",
   xl: "h-16 px-8 rounded-2xl",
@@ -51,7 +57,8 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const isPrimary = variant === "primary" || variant === "destructive" || variant === "success";
+  const isPrimary =
+    variant === "primary" || variant === "destructive" || variant === "success";
 
   const renderChildren = () => {
     if (children == null || typeof children === "boolean") return null;
@@ -73,6 +80,11 @@ export function Button({
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityState={{
+        disabled: Boolean(disabled || loading),
+        busy: loading,
+      }}
       disabled={disabled || loading}
       className={cn(
         "flex-row items-center justify-center gap-2",
@@ -86,7 +98,13 @@ export function Button({
       {...props}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? "#fff" : "#0f172a"} size="small" />
+        <>
+          <ActivityIndicator
+            color={isPrimary ? "#fff" : "#0f172a"}
+            size="small"
+          />
+          {renderChildren()}
+        </>
       ) : (
         <>
           {leftIcon}

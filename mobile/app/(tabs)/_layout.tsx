@@ -1,7 +1,6 @@
-import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Stack, useRouter, useSegments } from "expo-router";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { Stack, useSegments } from "expo-router";
+import { View } from "react-native";
 
 const TAB_KEYS: Record<string, string> = {
   home: "home",
@@ -12,7 +11,6 @@ const TAB_KEYS: Record<string, string> = {
 };
 
 export default function TabsLayout() {
-  const insets = useSafeAreaInsets();
   const segments = useSegments();
   const last = segments[segments.length - 1] as string | undefined;
   const activeKey = (last && TAB_KEYS[last]) ?? "home";

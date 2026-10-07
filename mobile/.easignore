@@ -19,3 +19,10 @@ node_modules/react-native-worklets-core
 # IDE
 .idea
 .vscode
+
+# Regenerate native project with current permission and provider plugins.
+/android/
+/ios/
+!modules/**/android/
+!modules/**/ios/
+Archive.zip

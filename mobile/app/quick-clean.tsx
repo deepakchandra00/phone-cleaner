@@ -1,17 +1,15 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { View, Text, ScrollView, Pressable, Alert, AppState } from "react-native";
-import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
-import { Image } from "expo-image";
-import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { useAppStore } from "@/stores/useAppStore";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { formatSizeCompact } from "@/lib/format";
-import { track } from "@/lib/analytics";
-import { AndroidStorage } from "android-storage";
+import { useAppStore } from "@/stores/useAppStore";
 import { ThemeColors } from "@/theme/colors";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useShallow } from "zustand/react/shallow";
 
 export default function QuickCleanScreen() {
   const router = useRouter();
@@ -22,26 +20,27 @@ export default function QuickCleanScreen() {
     selectedGroupIds,
     toggleFile,
     toggleGroup,
-    executeCleanup,
     selectAllFiles,
     deselectAllFiles,
-    selectSmartCleanable,
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((s) => ({
+      scanResult: s.scanResult,
+      selectedFileIds: s.selectedFileIds,
+      selectedGroupIds: s.selectedGroupIds,
+      toggleFile: s.toggleFile,
+      toggleGroup: s.toggleGroup,
+      selectAllFiles: s.selectAllFiles,
+      deselectAllFiles: s.deselectAllFiles,
+    })),
+  );
 
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >({
     trash: true,
   });
 
-  const [cleaning, setCleaning] = useState(false);
-  const pendingCleanRef = useRef(false);
-
-  // Auto-select all safe cleanable items on screen mount so the user can clean with 1 tap
-  useEffect(() => {
-    if (selectedFileIds.size === 0 && selectedGroupIds.size === 0) {
-      selectSmartCleanable();
-    }
-  }, [selectSmartCleanable, selectedFileIds.size, selectedGroupIds.size]);
-
+  const selectedBytes = useAppStore((s) => s.selectedBytes);
   const toggleExpand = (key: string) => {
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -49,7 +48,12 @@ export default function QuickCleanScreen() {
   // Safe unneeded files
   const visibleCaches = useMemo(() => {
     return (scanResult?.junkFiles ?? []).filter(
-      (f) => !f.source?.includes("Trash") && !f.source?.includes("Thumbnail") && !f.name.endsWith(".apk") && (f as any).junkType !== "empty_folder" && f.source !== "Empty Folder"
+      (f) =>
+        !f.source?.includes("Trash") &&
+        !f.source?.includes("Thumbnail") &&
+        !f.name.endsWith(".apk") &&
+        (f as any).junkType !== "empty_folder" &&
+        f.source !== "Empty Folder",
     );
   }, [scanResult]);
 
@@ -59,26 +63,28 @@ export default function QuickCleanScreen() {
 
   const emptyFolders = useMemo(() => {
     return (scanResult?.junkFiles ?? []).filter(
-      (f) => f.source === "Empty Folder" || (f as any).junkType === "empty_folder"
+      (f) =>
+        f.source === "Empty Folder" || (f as any).junkType === "empty_folder",
     );
   }, [scanResult]);
 
   const thumbnails = useMemo(() => {
     return (scanResult?.junkFiles ?? []).filter(
-      (f) => f.source?.includes("Thumbnail") || (f as any).junkType === "thumbnail"
+      (f) =>
+        f.source?.includes("Thumbnail") || (f as any).junkType === "thumbnail",
     );
   }, [scanResult]);
 
   const browserData = useMemo(() => {
     return (scanResult?.junkFiles ?? []).filter(
-      (f) => f.source?.includes("Browser") || (f as any).junkType === "browser"
+      (f) => f.source?.includes("Browser") || (f as any).junkType === "browser",
     );
   }, [scanResult]);
 
   // Files to review
   const trashedMedia = useMemo(() => {
     return (scanResult?.junkFiles ?? []).filter(
-      (f) => f.source?.includes("Trash") || f.name.startsWith(".trashed-")
+      (f) => f.source?.includes("Trash") || f.name.startsWith(".trashed-"),
     );
   }, [scanResult]);
 
@@ -87,7 +93,9 @@ export default function QuickCleanScreen() {
   }, [scanResult]);
 
   const largeVideos = useMemo(() => {
-    return (scanResult?.allVideos ?? []).filter((v) => v.sizeBytes >= 20 * 1024 * 1024);
+    return (scanResult?.allVideos ?? []).filter(
+      (v) => v.sizeBytes >= 20 * 1024 * 1024,
+    );
   }, [scanResult]);
 
   // Category selection helpers
@@ -96,11 +104,9 @@ export default function QuickCleanScreen() {
     return files.every((f) => selectedFileIds.has(f.id));
   };
 
-  const isCategoryAnySelected = (files: { id: string }[]) => {
-    return files.some((f) => selectedFileIds.has(f.id));
-  };
-
-  const toggleCategorySelection = (files: { id: string; sizeBytes: number }[]) => {
+  const toggleCategorySelection = (
+    files: { id: string; sizeBytes: number }[],
+  ) => {
     if (isCategoryAllSelected(files)) {
       deselectAllFiles(files.map((f) => f.id));
     } else {
@@ -108,97 +114,9 @@ export default function QuickCleanScreen() {
     }
   };
 
-  // Selected totals
-  const selectedCount = selectedFileIds.size + selectedGroupIds.size;
-  const selectedBytes = useMemo(() => {
-    let bytes = 0;
-    if (scanResult) {
-      for (const id of selectedFileIds) {
-        const item =
-          scanResult.junkFiles.find((f) => f.id === id) ||
-          scanResult.obsoleteApks.find((f) => f.id === id) ||
-          scanResult.allVideos.find((f) => f.id === id) ||
-          scanResult.allDownloads.find((f) => f.id === id) ||
-          scanResult.whatsappFiles.find((f) => f.id === id);
-        if (item) bytes += item.sizeBytes;
-      }
-      for (const gid of selectedGroupIds) {
-        const g = scanResult.duplicateGroups.find((grp) => grp.id === gid);
-        if (g) bytes += g.recoverableBytes;
-      }
-    }
-    return bytes;
-  }, [scanResult, selectedFileIds, selectedGroupIds]);
-
-  const performCleanAction = useCallback(async () => {
-    setCleaning(true);
-    let res: { freedBytes: number; fileCount: number; missingPermission?: any } = { freedBytes: 0, fileCount: 0 };
-    try {
-      res = await executeCleanup();
-    } catch (err) {
-      console.warn("Cleanup error:", err);
-    } finally {
-      setCleaning(false);
-    }
-
-    if (res.fileCount > 0) {
-      router.replace("/success");
-      return;
-    }
-
-    if (res.missingPermission === "manage_external_storage" || !AndroidStorage.isExternalStorageManager()) {
-      Alert.alert(
-        "Storage Permission Required",
-        "To clean selected files on Android 11+, please enable 'All files access' for Phone Cleaner in Settings.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Grant Access",
-            onPress: () => {
-              pendingCleanRef.current = true;
-              AndroidStorage.requestManageAllFilesAccess();
-            },
-          },
-        ]
-      );
-    } else {
-      Alert.alert(
-        "Cleanup Incomplete",
-        "Selected items could not be deleted or were already removed by another app."
-      );
-    }
-  }, [executeCleanup, router]);
-
-  useEffect(() => {
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active" && pendingCleanRef.current) {
-        if (AndroidStorage.isExternalStorageManager()) {
-          pendingCleanRef.current = false;
-          performCleanAction();
-        }
-      }
-    });
-    return () => sub.remove();
-  }, [performCleanAction]);
-
-  const handleFinishCleaning = async () => {
-    if (selectedCount === 0) {
-      Alert.alert("Nothing Selected", "Please select at least one item to clean.");
-      return;
-    }
-
-    Alert.alert(
-      "Confirm Quick Clean",
-      `Are you sure you want to clean ${selectedCount} selected items (${formatSizeCompact(selectedBytes)})?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clean",
-          style: "destructive",
-          onPress: performCleanAction,
-        },
-      ]
-    );
+  const selectedCount = selectedFileIds.size;
+  const handleFinishCleaning = () => {
+    if (selectedCount > 0) router.push("/review");
   };
 
   return (
@@ -369,8 +287,14 @@ export default function QuickCleanScreen() {
         <CleanCategoryCard
           title="Duplicate photos"
           subtitle={`${duplicateGroups.length} groups detected`}
-          selectedBytes={duplicateGroups.reduce((s, g) => s + g.recoverableBytes, 0)}
-          checked={duplicateGroups.length > 0 && duplicateGroups.every((g) => selectedGroupIds.has(g.id))}
+          selectedBytes={duplicateGroups.reduce(
+            (s, g) => s + g.recoverableBytes,
+            0,
+          )}
+          checked={
+            duplicateGroups.length > 0 &&
+            duplicateGroups.every((g) => selectedGroupIds.has(g.id))
+          }
           onToggleCheck={() => {
             for (const g of duplicateGroups) toggleGroup(g.id);
           }}
@@ -378,9 +302,14 @@ export default function QuickCleanScreen() {
           onToggleExpand={() => toggleExpand("duplicates")}
         >
           <View className="bg-primary/10 rounded-xl p-3 mb-2 flex-row items-center gap-2">
-            <Icon name="information-circle" size={18} color={ThemeColors.primary} />
+            <Icon
+              name="information-circle"
+              size={18}
+              color={ThemeColors.primary}
+            />
             <Text className="text-primary text-xs flex-1">
-              Deep pixel scan compares photos across your gallery (takes ~10–15s extra). Your best photo is always safely kept.
+              Deep pixel scan compares photos across your gallery (takes ~10–15s
+              extra). Your best photo is always safely kept.
             </Text>
           </View>
           <Button
@@ -425,16 +354,16 @@ export default function QuickCleanScreen() {
         style={{ paddingBottom: Math.max(insets.bottom + 10, 24) }}
       >
         <Text className="text-primary font-bold text-xs uppercase tracking-wider mb-2">
-          {selectedCount} Selected ({"> "}{formatSizeCompact(selectedBytes)})
+          {selectedCount} selected · {formatSizeCompact(selectedBytes)}
         </Text>
         <Button
           variant="primary"
           size="lg"
           fullWidth
-          loading={cleaning}
+          disabled={selectedCount === 0}
           onPress={handleFinishCleaning}
         >
-          FINISH CLEANING
+          Review selected files
         </Button>
       </View>
     </View>
@@ -468,7 +397,9 @@ function CleanCategoryCard({
           onPress={onToggleCheck}
           hitSlop={8}
           className={`w-6 h-6 rounded-md items-center justify-center mr-3 border ${
-            checked ? "bg-primary border-primary" : "border-muted-foreground/40 bg-transparent"
+            checked
+              ? "bg-primary border-primary"
+              : "border-muted-foreground/40 bg-transparent"
           }`}
         >
           {checked && <Icon name="checkmark" size={16} color="#fff" />}
@@ -494,7 +425,9 @@ function CleanCategoryCard({
 
       {/* Expanded items */}
       {expanded && children && (
-        <View className="border-t border-border/60 bg-muted/20 px-4 py-3">{children}</View>
+        <View className="border-t border-border/60 bg-muted/20 px-4 py-3">
+          {children}
+        </View>
       )}
     </View>
   );
@@ -536,7 +469,11 @@ function FileRow({
               {iconBadge}
             </Text>
           ) : (
-            <Icon name={(icon as any) || "document"} size={20} color={ThemeColors.primary} />
+            <Icon
+              name={(icon as any) || "document"}
+              size={20}
+              color={ThemeColors.primary}
+            />
           )}
         </View>
       )}
@@ -546,13 +483,17 @@ function FileRow({
         <Text className="text-foreground text-sm font-medium" numberOfLines={1}>
           {name}
         </Text>
-        <Text className="text-muted-foreground text-xs mt-0.5">{formatSizeCompact(size)}</Text>
+        <Text className="text-muted-foreground text-xs mt-0.5">
+          {formatSizeCompact(size)}
+        </Text>
       </View>
 
       {/* Checkbox */}
       <View
         className={`w-5 h-5 rounded items-center justify-center border ${
-          selected ? "bg-primary border-primary" : "border-muted-foreground/40 bg-transparent"
+          selected
+            ? "bg-primary border-primary"
+            : "border-muted-foreground/40 bg-transparent"
         }`}
       >
         {selected && <Icon name="checkmark" size={13} color="#fff" />}

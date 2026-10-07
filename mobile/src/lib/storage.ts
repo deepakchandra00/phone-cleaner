@@ -16,19 +16,6 @@ class SafeStorage implements IStorage {
   private hydrationPromise: Promise<void>;
 
   constructor() {
-    try {
-      // Attempt MMKV initialization
-      const { MMKV } = require("react-native-mmkv");
-      this.mmkvInstance = new MMKV({
-        id: "phone-cleaner-storage",
-      });
-      // Test read to confirm JSI bindings work
-      this.mmkvInstance.getString("__test__");
-    } catch (e) {
-      // MMKV is not supported in Bridgeless / New Architecture mode; fall back safely
-      this.mmkvInstance = null;
-    }
-
     // Hydrate memory cache from AsyncStorage in background
     this.hydrationPromise = this.hydrateFromAsyncStorage();
   }
@@ -140,10 +127,13 @@ class SafeStorage implements IStorage {
     }
     this.memoryCache.clear();
     try {
-      AsyncStorage.getAllKeys().then((keys) => {
-        const pcKeys = keys.filter((k) => k.startsWith("pc_"));
-        if (pcKeys.length > 0) AsyncStorage.multiRemove(pcKeys).catch(() => {});
-      }).catch(() => {});
+      AsyncStorage.getAllKeys()
+        .then((keys) => {
+          const pcKeys = keys.filter((k) => k.startsWith("pc_"));
+          if (pcKeys.length > 0)
+            AsyncStorage.multiRemove(pcKeys).catch(() => {});
+        })
+        .catch(() => {});
     } catch {
       /* ignore */
     }
@@ -157,11 +147,18 @@ export const KEYS = {
   theme: "theme",
   premiumEntitlement: "premium.entitlement",
   premiumCacheTs: "premium.cacheTs",
+  photoHashVersion: "scan.photoHashVersion",
   lastScanTs: "scan.lastTs",
   totalFreedBytes: "cleanup.totalFreed",
   cleanupCount: "cleanup.count",
   analyticsEnabled: "analytics.enabled",
   scheduledScanEnabled: "scan.scheduled",
+  weeklyReminderEnabled: "reminders.weekly",
+  dailyReminderEnabled: "reminders.daily",
+  dailyReminderHour: "reminders.hour",
+  dailyReminderMinute: "reminders.minute",
+  cleanupAlertsEnabled: "reminders.cleanupAlerts",
+  lastCleanupAlertTs: "reminders.lastCleanupAlert",
 } as const;
 
 export type StorageKey = (typeof KEYS)[keyof typeof KEYS];

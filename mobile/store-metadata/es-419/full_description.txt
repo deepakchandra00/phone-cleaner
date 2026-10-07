@@ -1,0 +1,15 @@
+SmartCare te ayuda a revisar el almacenamiento accesible antes de borrar archivos.
+
+Encuentra archivos grandes y ordena videos, descargas y otros archivos por tamaño. Revisa la carpeta indexada y elige qué conservar. Los permisos pueden limitar los resultados.
+
+Compara copias exactas y fotos similares sugeridas. Conserva el original recomendado y revisa la selección. Crea copias JPEG más pequeñas, compara el resultado y guárdalas por separado. Los originales no se borran automáticamente. La compresión puede reducir la calidad y elimina metadatos EXIF/GPS de las copias nuevas.
+
+Confirma los archivos de caché compatibles antes de limpiarlos. Android no permite borrar la caché privada de todas las apps ni los datos del sistema. Abre los ajustes de cada app para revisar su caché manualmente.
+
+Revisa apps visibles, uso registrado, consumo disponible de datos móviles y Wi-Fi, y lecturas de batería. El acceso al uso requiere autorización. La información de cifrado Wi-Fi no garantiza que una red sea segura.
+
+Elige las notificaciones actuales que quieres descartar. Las notificaciones permanentes permanecen y las futuras siguen permitidas. La prueba opcional de velocidad envía tráfico a Cloudflare y puede consumir datos móviles.
+
+El análisis no borra archivos. La limpieza requiere revisión y confirmación. El análisis de duplicados y la compresión se realizan en el dispositivo. Publicidad, pagos y pruebas de velocidad tienen servicios y prácticas de privacidad independientes.
+
+La versión de Android, los permisos y los formatos pueden limitar funciones. No se promete acelerar la RAM, reparar la batería, protección VPN ni bloqueo de otras apps.

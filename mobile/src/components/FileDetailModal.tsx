@@ -1,15 +1,25 @@
-import React, { useState } from "react";
-import { View, Text, Modal, Pressable, ScrollView, Alert, Share } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { containingFolder } from "@/lib/fileLocation.ts";
+import { Button } from "@/components/ui/Button";
+import { CategoryIcons, Icon, type IconName } from "@/components/ui/Icon";
+import type { StorageItem } from "@/db/schema";
+import { formatSizeCompact } from "@/lib/format";
+import { DeleteCoordinator } from "@/services/DeleteCoordinator";
+import { CategoryColors, StatusColors, ThemeColors } from "@/theme/colors";
+import { AndroidStorage } from "android-storage";
 import { Image } from "expo-image";
 import * as Linking from "expo-linking";
-import { Icon, CategoryIcons, type IconName } from "@/components/ui/Icon";
-import { Button } from "@/components/ui/Button";
-import { AndroidStorage } from "android-storage";
-import { DeleteCoordinator } from "@/services/DeleteCoordinator";
-import { CategoryColors, ThemeColors, StatusColors } from "@/theme/colors";
-import { formatSizeCompact } from "@/lib/format";
-import type { StorageItem } from "@/db/schema";
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  Share,
+  Text,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface FileDetailModalProps {
   item: StorageItem | null;
@@ -18,10 +28,39 @@ interface FileDetailModalProps {
   onDeleted?: (deletedId: string) => void;
 }
 
-export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetailModalProps) {
+export function FileDetailModal({
+  item,
+  visible,
+  onClose,
+  onDeleted,
+}: FileDetailModalProps) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const [resolvedFile, setResolvedFile] = useState<{
+    uri: string;
+    path: string | null;
+  } | null>(null);
+  const resolvedPath =
+    resolvedFile?.uri === item?.uri ? resolvedFile?.path : item?.path;
+  useEffect(() => {
+    let active = true;
+    if (item && visible)
+      void AndroidStorage.getMediaMetadata([item.uri]).then((rows) => {
+        if (active) {
+          setResolvedFile({
+            uri: item.uri,
+            path: rows[0]?.path || item.path || null,
+          });
+          setCopied(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [item, visible]);
 
   if (!item) return null;
 
@@ -32,46 +71,45 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
     item.canPreview ||
     item.mimeType?.startsWith("image/") ||
     item.mimeType?.startsWith("video/") ||
-    /\.(jpe?g|png|webp|gif|bmp|heic|mp4|mov|mkv|3gp)$/i.test(item.name || item.uri);
+    /\.(jpe?g|png|webp|gif|bmp|heic|mp4|mov|mkv|3gp)$/i.test(
+      item.name || item.uri,
+    );
 
-  const displayLocation = item.path
-    ? item.path.replace(/^\/storage\/emulated\/0\/?/, "")
-    : item.uri.replace(/^content:\/\/media\/external\//, "Media: ");
+  const displayLocation =
+    resolvedPath || "Folder unavailable · copy file reference below";
 
   const handleCopyPath = () => {
-    const rawPath = item.path || item.uri;
+    const rawPath = resolvedPath || item.uri;
     AndroidStorage.copyToClipboard(rawPath);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleLocate = async () => {
-    try {
-      const target = item.path || item.uri;
-      const located = await AndroidStorage.locateFile(target);
-      if (!located) {
-        Alert.alert(
-          "Cannot Highlight Folder",
-          "Android prevents third-party apps from highlighting files in some system file managers. You can copy the file path or open the file directly.",
-          [
-            { text: "Copy Path", onPress: handleCopyPath },
-            { text: "Open File", onPress: handleOpen },
-            { text: "Cancel", style: "cancel" },
-          ],
-        );
-      }
-    } catch (err) {
-      console.warn("[FileDetailModal] Could not locate file:", err);
-      handleCopyPath();
+  const handleLocate = () => {
+    const folder = containingFolder(resolvedPath);
+    if (!folder) {
+      Alert.alert(
+        "Folder unavailable",
+        "Android has provided a file reference without a readable folder path. You can still open the file or copy its reference.",
+      );
+      return;
     }
+    onClose();
+    router.push({
+      pathname: "/folder",
+      params: { path: folder, fileId: item.id },
+    });
   };
 
   const handleOpen = async () => {
     try {
-      const target = item.path || item.uri;
+      const target = resolvedPath || item.uri;
       const opened = await AndroidStorage.openFile(target, item.mimeType);
       if (!opened) {
-        if (item.uri.startsWith("file://") || item.uri.startsWith("content://")) {
+        if (
+          item.uri.startsWith("file://") ||
+          item.uri.startsWith("content://")
+        ) {
           await Share.share({
             url: item.uri,
             title: item.name,
@@ -81,13 +119,19 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
           if (canOpen) {
             await Linking.openURL(item.uri);
           } else {
-            Alert.alert("Unable to open file", "No compatible app was found on your device to open this file type.");
+            Alert.alert(
+              "Unable to open file",
+              "No compatible app was found on your device to open this file type.",
+            );
           }
         }
       }
     } catch (err) {
       console.warn("[FileDetailModal] Could not open file:", err);
-      Alert.alert("Unable to open file", "No compatible application was found to open this file.");
+      Alert.alert(
+        "Unable to open file",
+        "No compatible application was found to open this file.",
+      );
     }
   };
 
@@ -108,19 +152,32 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
                 onDeleted?.(item.id);
                 onClose();
               } else {
-                Alert.alert("Delete failed", "The file could not be deleted from the device.");
+                Alert.alert(
+                  "Delete failed",
+                  "The file could not be deleted from the device.",
+                );
               }
+            } catch (err) {
+              Alert.alert(
+                "File not deleted",
+                err instanceof Error ? err.message : "Please try again.",
+              );
             } finally {
               setDeleting(false);
             }
           },
         },
-      ]
+      ],
     );
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
       <View className="flex-1 justify-end bg-black/60">
         <Pressable className="flex-1" onPress={onClose} />
         <View
@@ -129,16 +186,25 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
         >
           {/* Header */}
           <View className="flex-row items-center justify-between px-5 pt-4 pb-3 border-b border-border">
-            <Text className="text-foreground font-bold text-base">File Details</Text>
+            <Text className="text-foreground font-bold text-base">
+              File Details
+            </Text>
             <Pressable
               onPress={onClose}
               className="w-8 h-8 rounded-full bg-muted items-center justify-center active:opacity-70"
             >
-              <Icon name="close" size={18} color={ThemeColors.mutedForeground} />
+              <Icon
+                name="close"
+                size={18}
+                color={ThemeColors.mutedForeground}
+              />
             </Pressable>
           </View>
 
-          <ScrollView className="px-5 py-4" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            className="px-5 py-4"
+            showsVerticalScrollIndicator={false}
+          >
             {/* Visual Preview */}
             {isVisual ? (
               <View className="w-full h-56 rounded-2xl overflow-hidden bg-black/10 items-center justify-center mb-4 relative">
@@ -146,7 +212,10 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
                   source={{ uri: item.uri }}
                   style={{ width: "100%", height: "100%" }}
                   contentFit="contain"
-                  transition={200}
+                  transition={0}
+                  cachePolicy="disk"
+                  decodeFormat="rgb"
+                  recyclingKey={item.id}
                 />
                 {item.mimeType?.startsWith("video/") && (
                   <View className="absolute bg-black/50 rounded-full p-3 items-center justify-center">
@@ -167,7 +236,10 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
             )}
 
             {/* Title & Size */}
-            <Text className="text-foreground font-bold text-lg" numberOfLines={2}>
+            <Text
+              className="text-foreground font-bold text-lg"
+              numberOfLines={2}
+            >
               {item.name}
             </Text>
             <View className="flex-row items-center gap-2 mt-1 mb-4">
@@ -180,7 +252,9 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
               </Text>
               {item.isJunk && (
                 <View className="bg-destructive/10 px-2 py-0.5 rounded-full">
-                  <Text className="text-destructive text-xs font-semibold">Junk file</Text>
+                  <Text className="text-destructive text-xs font-semibold">
+                    Junk file
+                  </Text>
                 </View>
               )}
             </View>
@@ -190,8 +264,11 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
               <View className="flex-row justify-between items-center">
                 <Text className="text-muted-foreground text-xs">Location</Text>
                 <View className="flex-row items-center gap-2 max-w-[72%]">
-                  <Pressable onPress={handleLocate} className="flex-1 active:opacity-70">
-                    <Text className="text-primary text-xs font-medium text-right underline" numberOfLines={2}>
+                  <Pressable
+                    onPress={handleLocate}
+                    className="flex-1 active:opacity-70"
+                  >
+                    <Text className="text-primary text-xs font-medium text-right underline">
                       {displayLocation}
                     </Text>
                   </Pressable>
@@ -202,7 +279,9 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
                     <Icon
                       name={copied ? "checkmark" : "copy-outline"}
                       size={15}
-                      color={copied ? StatusColors.success : ThemeColors.primary}
+                      color={
+                        copied ? StatusColors.success : ThemeColors.primary
+                      }
                     />
                   </Pressable>
                 </View>
@@ -215,8 +294,12 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
               </View>
               {item.mimeType && (
                 <View className="flex-row justify-between">
-                  <Text className="text-muted-foreground text-xs">MIME Type</Text>
-                  <Text className="text-foreground text-xs font-medium">{item.mimeType}</Text>
+                  <Text className="text-muted-foreground text-xs">
+                    MIME Type
+                  </Text>
+                  <Text className="text-foreground text-xs font-medium">
+                    {item.mimeType}
+                  </Text>
                 </View>
               )}
               {item.junkReason && (
@@ -231,12 +314,18 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
 
             {/* Action Buttons */}
             <View className="gap-2.5">
-              <View className="flex-row gap-2">
+              <View className="gap-2">
                 <Button
                   variant="secondary"
                   size="md"
                   className="flex-1"
-                  leftIcon={<Icon name="open-outline" size={16} color={ThemeColors.primary} />}
+                  leftIcon={
+                    <Icon
+                      name="open-outline"
+                      size={16}
+                      color={ThemeColors.primary}
+                    />
+                  }
                   onPress={handleOpen}
                 >
                   Open
@@ -245,10 +334,16 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
                   variant="secondary"
                   size="md"
                   className="flex-1"
-                  leftIcon={<Icon name="folder-open-outline" size={16} color={ThemeColors.primary} />}
+                  leftIcon={
+                    <Icon
+                      name="folder-open-outline"
+                      size={16}
+                      color={ThemeColors.primary}
+                    />
+                  }
                   onPress={handleLocate}
                 >
-                  Locate
+                  Browse folder
                 </Button>
                 <Button
                   variant="outline"
@@ -258,7 +353,9 @@ export function FileDetailModal({ item, visible, onClose, onDeleted }: FileDetai
                     <Icon
                       name={copied ? "checkmark" : "copy-outline"}
                       size={16}
-                      color={copied ? StatusColors.success : ThemeColors.primary}
+                      color={
+                        copied ? StatusColors.success : ThemeColors.primary
+                      }
                     />
                   }
                   onPress={handleCopyPath}
