@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { View, Text, Pressable, ScrollView, Linking } from "react-native";
+import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
@@ -245,14 +246,22 @@ export default function Premium() {
           </Text>
           <View className="flex-row justify-center gap-4 mt-3">
             <Pressable
-              onPress={() => Linking.openURL("https://phonecleaner.app/terms")}
+              onPress={() => {
+                const url =
+                  Constants.expoConfig?.extra?.termsUrl ||
+                  "https://phonecleaner.app/terms";
+                if (url) void Linking.openURL(url).catch(() => {});
+              }}
             >
               <Text className="text-primary text-xs">Terms of Service</Text>
             </Pressable>
             <Pressable
-              onPress={() =>
-                Linking.openURL("https://phonecleaner.app/privacy")
-              }
+              onPress={() => {
+                const url =
+                  Constants.expoConfig?.extra?.privacyPolicyUrl ||
+                  "https://phonecleaner.app/privacy";
+                if (url) void Linking.openURL(url).catch(() => {});
+              }}
             >
               <Text className="text-primary text-xs">Privacy Policy</Text>
             </Pressable>

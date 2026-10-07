@@ -1,4 +1,4 @@
-package com.phonecleaner.app.androidstorage
+package com.rishi076.smartcare.androidstorage
 
 import android.app.ActivityManager
 import android.app.AppOpsManager
@@ -27,7 +27,7 @@ import androidx.core.app.NotificationManagerCompat
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.functions.Queues
 import expo.modules.kotlin.modules.ModuleDefinition
-import com.phonecleaner.app.hashworker.PhotoHasher
+import com.rishi076.smartcare.hashworker.PhotoHasher
 import java.io.InputStream
 import java.security.MessageDigest
 

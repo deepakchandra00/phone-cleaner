@@ -637,7 +637,7 @@ export default function SettingsScreen() {
             icon="star"
             label="Rate SmartCare"
             onPress={() =>
-              Linking.openURL("market://details?id=com.phonecleaner.app")
+              Linking.openURL("market://details?id=com.rishi076.smartcare")
             }
           />
         </Card>

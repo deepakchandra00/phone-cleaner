@@ -1,5 +1,5 @@
 import type { ExpoConfig, ConfigContext } from "@expo/config";
-import { withAndroidManifest } from "@expo/config-plugins";
+import { withAndroidManifest, withProjectBuildGradle } from "@expo/config-plugins";
 import { version } from "./package.json";
 
 const IS_DEV = process.env.APP_VARIANT === "development";
@@ -107,6 +107,28 @@ function withFileProvider(config: ExpoConfig): ExpoConfig {
   });
 }
 
+/**
+ * Config plugin: forces Play Billing Library 8.0.0+ across all Gradle configurations
+ * to satisfy Google Play Store latest monetization requirements.
+ */
+function withPlayBilling8(config: ExpoConfig): ExpoConfig {
+  return withProjectBuildGradle(config, (modConfig) => {
+    if (!modConfig.modResults.contents.includes("com.android.billingclient:billing")) {
+      modConfig.modResults.contents += `
+allprojects {
+  configurations.all {
+    resolutionStrategy {
+      force 'com.android.billingclient:billing:8.0.0'
+      force 'com.android.billingclient:billing-ktx:8.0.0'
+    }
+  }
+}
+`;
+    }
+    return modConfig;
+  });
+}
+
 export default ({ config }: ConfigContext): ExpoConfig => {
   const base: ExpoConfig = {
     ...config,
@@ -121,10 +143,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     assetBundlePatterns: ["**/*"],
     ios: {
       supportsTablet: false,
-      bundleIdentifier: `com.phonecleaner.app${bundleSuffix}`,
+      bundleIdentifier: `com.rishi076.smartcare${bundleSuffix}`,
     },
     android: {
-      package: `com.phonecleaner.app${bundleSuffix}`,
+      package: `com.rishi076.smartcare${bundleSuffix}`,
       adaptiveIcon: {
         foregroundImage: "./src/assets/adaptive-icon.png",
         backgroundColor: "#0F172A",
@@ -199,7 +221,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             enableProguardInReleaseBuilds: true,
             enableShrinkResourcesInReleaseBuilds: true,
             extraProguardRules: `
--keep class com.phonecleaner.app.** { *; }
+-keep class com.rishi076.smartcare.** { *; }
 -keep class com.revenuecat.purchases.** { *; }
             `,
           },
@@ -232,5 +254,5 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
   };
 
-  return withFileProvider(withAndroidQueries(base));
+  return withPlayBilling8(withFileProvider(withAndroidQueries(base)));
 };

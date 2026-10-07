@@ -1,4 +1,4 @@
-package com.phonecleaner.app.androidstorage
+package com.rishi076.smartcare.androidstorage
 
 import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager

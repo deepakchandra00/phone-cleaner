@@ -9,7 +9,7 @@
     "icon": "./src/assets/icon.png",
     "scheme": "phonecleaner",
     "android": {
-      "package": "com.phonecleaner.app",
+      "package": "com.rishi076.smartcare",
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#0F172A"
@@ -29,7 +29,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.phonecleaner.app"
+      "bundleIdentifier": "com.rishi076.smartcare"
     },
     "plugins": [
       "expo-router",
@@ -73,7 +73,7 @@
             "targetSdkVersion": 36,
             "enableProguardInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true,
-            "extraProguardRules": "\n-keep class com.phonecleaner.app.** { *; }\n-keep class com.revenuecat.purchases.** { *; }\n"
+            "extraProguardRules": "\n-keep class com.rishi076.smartcare.** { *; }\n-keep class com.revenuecat.purchases.** { *; }\n"
           }
         }
       ]

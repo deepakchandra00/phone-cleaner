@@ -1,4 +1,4 @@
-package com.phonecleaner.app.safbridge
+package com.rishi076.smartcare.safbridge
 
 import android.content.Context
 import android.net.Uri

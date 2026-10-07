@@ -1,4 +1,4 @@
-package com.phonecleaner.app.hashworker
+package com.rishi076.smartcare.hashworker
 
 import android.graphics.Bitmap
 import android.graphics.Matrix

@@ -1,4 +1,4 @@
-package com.phonecleaner.app.hashworker
+package com.rishi076.smartcare.hashworker
 
 import android.net.Uri
 import android.util.Base64

@@ -4,7 +4,7 @@
 
 Effective date: [DATE]
 Publisher/data contact: [DEVELOPER LEGAL NAME], [CONTACT ADDRESS], [SUPPORT EMAIL]
-App: SmartCare: Phone Cleaner (Android package com.phonecleaner.app)
+App: SmartCare: Phone Cleaner (Android package com.rishi076.smartcare)
 
 SmartCare helps you review accessible storage, compare photos, create compressed copies and inspect supported device information. You do not need to create an account.
 

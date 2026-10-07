@@ -22,7 +22,7 @@ Configure App content: privacy policy, Ads (“contains ads” if ads ship), app
 
 ## Release evidence required when builds resume
 
-1. Build a signed production AAB for com.phonecleaner.app, verify version/versionCode, release target SDK, 64-bit/native-page-size requirements and signing in Play Console. The existing production EAS profile targets an app bundle; this task did not run it.
+1. Build a signed production AAB for com.rishi076.smartcare, verify version/versionCode, release target SDK, 64-bit/native-page-size requirements and signing in Play Console. The existing production EAS profile targets an app bundle; this task did not run it.
 2. Verify 13k+ photos on a 256 MB-heap device: first/cached/rescan, files-tab navigation, scan while thumbnails have been viewed, partial permissions, unsupported images, failed reads and low storage. Profile Java/native/JS heap; the latest OOM is not considered resolved until repeated device runs pass.
 3. Compare duplicates against a labeled set of known copies; check protected originals, review/confirmation, denied Android deletion, compressor previews/savings and saved copies. Confirm cancelled/error scans preserve previous index/results.
 4. Test consent, production ad IDs/no-fill/offline, billing/restores and permissions on supported Android versions/manufacturers. Check native module tests and Play pre-launch report.
