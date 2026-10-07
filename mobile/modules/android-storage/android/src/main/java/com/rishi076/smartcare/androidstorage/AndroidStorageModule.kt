@@ -1301,7 +1301,31 @@ class AndroidStorageModule : Module() {
             } else {
                 val cleanPath = if (path.startsWith("file://")) Uri.parse(path).path ?: return null else path
                 val file = java.io.File(cleanPath)
-                if (file.exists() && file.isFile) file.inputStream() else null
+                if (file.exists() && file.isFile && file.canRead()) {
+                    file.inputStream()
+                } else {
+                    // Fallback to MediaStore query for Android 11+ Scoped Storage
+                    val ctx = appContext.reactContext ?: return null
+                    val projection = arrayOf(MediaStore.Images.Media._ID)
+                    val selection = "${MediaStore.Images.Media.DATA} = ?"
+                    val selectionArgs = arrayOf(cleanPath)
+                    ctx.contentResolver.query(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        null
+                    )?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val id = cursor.getLong(0)
+                            val contentUri = ContentUris.withAppendedId(
+                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                id
+                            )
+                            ctx.contentResolver.openInputStream(contentUri)
+                        } else null
+                    }
+                }
             }
         } catch (_: Exception) {
             null

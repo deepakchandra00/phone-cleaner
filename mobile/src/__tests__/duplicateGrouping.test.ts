@@ -154,3 +154,25 @@ test("13,177-photo comparison keeps exact duplicates, yields to the UI, and prot
     clearInterval(heartbeat);
   }
 });
+
+test("rapid burst shots taken within 3 seconds are detected as similar photos even without dhash", async () => {
+  const baseTime = 1712345678000;
+  const burstPhotos: ScannedFile[] = [
+    { ...file("shot1"), modifiedAt: baseTime, sizeBytes: 2500000, width: 4000, height: 3000 },
+    { ...file("shot2"), modifiedAt: baseTime + 1200, sizeBytes: 2480000, width: 4000, height: 3000 },
+    { ...file("shot3"), modifiedAt: baseTime + 2400, sizeBytes: 2520000, width: 4000, height: 3000 },
+    { ...file("other"), modifiedAt: baseTime + 100000, sizeBytes: 2500000, width: 4000, height: 3000 },
+  ];
+  const emptyHashes = new Map(
+    burstPhotos.map((f) => [f.path, { sha256: f.id, dhash: null }]),
+  );
+  const groups = await buildDuplicateGroups(burstPhotos, emptyHashes);
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].kind, "similar");
+  assert.equal(groups[0].files.length, 3);
+  assert.deepEqual(
+    groups[0].files.map((f) => f.id).sort(),
+    ["shot1", "shot2", "shot3"],
+  );
+});
+

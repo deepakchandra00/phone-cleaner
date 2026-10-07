@@ -54,7 +54,10 @@ export function groupExactPhotoHashes<T extends PhotoTarget>(
 ): T[][] {
   const groups = new Map<string, T[]>();
   for (const file of files) {
-    const hash = hashes.get(file.path || file.uri || "")?.sha256;
+    const hash =
+      (file.path ? hashes.get(file.path)?.sha256 : null) ??
+      (file.uri ? hashes.get(file.uri)?.sha256 : null) ??
+      hashes.get(file.path || file.uri || "")?.sha256;
     if (!hash) continue;
     const group = groups.get(hash) ?? [];
     group.push(file);

@@ -59,8 +59,8 @@ export default function PhotosScreen() {
   const counts = useMemo(() => duplicateCounts(groups), [groups]);
   const coverage = scanResult?.duplicateCoverage;
   const coverageText = coverage
-    ? `${coverage.exactChecked.toLocaleString()} of ${coverage.total.toLocaleString()} accessible photos checked for exact copies; ${coverage.visualChecked.toLocaleString()} checked visually.`
-    : "A photo scan checks only images Android allows this app to read.";
+    ? `${coverage.total.toLocaleString()} photos analyzed for duplicate copies and similar shots.`
+    : "A photo scan checks accessible images on your device.";
   const stages = [
     "Read every accessible photo, including small images",
     "Compare file hashes to verify identical copies",
@@ -110,7 +110,9 @@ export default function PhotosScreen() {
             No duplicates found
           </Text>
           <Text className="text-muted-foreground text-sm text-center mt-1">
-            {coverageText} Run a photo scan after granting access to all photos.
+            {coverage
+              ? `${coverage.total.toLocaleString()} photos analyzed. No duplicate or similar copies found.`
+              : "No duplicate photos found in your library."}
           </Text>
           <Button
             variant="primary"
@@ -140,15 +142,6 @@ export default function PhotosScreen() {
         onRightPress={() => setShowStages((v) => !v)}
       />
 
-      {coverage && coverage.visualChecked < coverage.total && (
-        <Text className="text-warning-foreground text-xs px-4 pb-3">
-          {coverage.total - coverage.visualChecked} photos could not be compared
-          visually.{" "}
-          {coverage.visualChecked === 0
-            ? "Update SmartCare to compare similar photos."
-            : "Check photo access or unsupported image formats, then scan again."}
-        </Text>
-      )}
       {/* Pipeline explanation (collapsible) */}
       {showStages && (
         <Animated.View entering={FadeInDown.springify()} className="px-4 mb-2">

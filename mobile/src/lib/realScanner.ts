@@ -1288,7 +1288,7 @@ async function detectDuplicates(
       for (let i = 0; i < uncachedFiles.length; i += CHUNK_SIZE) {
         const chunk = uncachedFiles.slice(i, i + CHUNK_SIZE);
         const chunkPaths = chunk
-          .map((f) => f.path || f.uri)
+          .map((f) => f.uri || f.path)
           .filter((p): p is string => Boolean(p));
         if (chunkPaths.length > 0) {
           onProgress?.(
@@ -1304,11 +1304,23 @@ async function detectDuplicates(
             const res = { path, ...hashes };
             resultMap.set(res.path, { sha256: res.sha256, dhash: res.dhash });
             const matchedFile = chunk.find(
-              (f) => (f.path || f.uri) === res.path,
+              (f) => f.path === res.path || f.uri === res.path,
             );
             if (matchedFile) {
+              if (matchedFile.path) {
+                resultMap.set(matchedFile.path, {
+                  sha256: res.sha256,
+                  dhash: res.dhash,
+                });
+              }
+              if (matchedFile.uri) {
+                resultMap.set(matchedFile.uri, {
+                  sha256: res.sha256,
+                  dhash: res.dhash,
+                });
+              }
               newlyComputed.push({
-                pathOrUri: res.path,
+                pathOrUri: matchedFile.path || matchedFile.uri || res.path,
                 sizeBytes: matchedFile.sizeBytes,
                 modifiedAt: matchedFile.modifiedAt,
                 sha256: res.sha256,

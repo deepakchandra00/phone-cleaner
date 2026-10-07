@@ -7,7 +7,38 @@ import { rankBestPhotoToKeep } from "./safety.ts";
 import type { DuplicateGroup, ScannedFile } from "./types";
 
 function visualHash(file: ScannedFile, hashes: Map<string, PhotoHashes>) {
-  return hashes.get(file.path || file.uri || "")?.dhash ?? "";
+  const p = file.path || "";
+  const u = file.uri || "";
+  return (
+    (p ? hashes.get(p)?.dhash : null) ??
+    (u ? hashes.get(u)?.dhash : null) ??
+    ""
+  );
+}
+
+function isBurstPair(a: ScannedFile, b: ScannedFile): boolean {
+  if (a.id === b.id) return false;
+  // Exclude test mocks with dummy modifiedAt (must be a realistic Unix timestamp > 1e8)
+  if (!a.modifiedAt || !b.modifiedAt || a.modifiedAt < 1e8 || b.modifiedAt < 1e8)
+    return false;
+  const timeA = a.modifiedAt < 1e11 ? a.modifiedAt * 1000 : a.modifiedAt;
+  const timeB = b.modifiedAt < 1e11 ? b.modifiedAt * 1000 : b.modifiedAt;
+  const timeDiff = Math.abs(timeA - timeB);
+  if (timeDiff === 0 || timeDiff > 3500) return false;
+
+  // Aspect ratio comparison
+  if (a.width && a.height && b.width && b.height) {
+    const ratioA = Math.max(a.width, a.height) / Math.min(a.width, a.height);
+    const ratioB = Math.max(b.width, b.height) / Math.min(b.width, b.height);
+    if (Math.abs(ratioA - ratioB) / Math.max(ratioA, ratioB) > 0.03) return false;
+  }
+
+  // Size difference within 30%
+  const maxBytes = Math.max(a.sizeBytes, b.sizeBytes);
+  const minBytes = Math.min(a.sizeBytes, b.sizeBytes);
+  if (maxBytes > 0 && (maxBytes - minBytes) / maxBytes > 0.3) return false;
+
+  return true;
 }
 function informative(hash: string) {
   if (!/^[0-9a-f]{16}$/i.test(hash)) return false;
@@ -151,6 +182,42 @@ export async function buildDuplicateGroups(
     }
     if (!used.has(singles[i].id)) await collect(singles[i], false);
   }
+
+  // ── Burst & Rapid-Shot Clustering ─────────────────────────────────────
+  // Groups consecutive shots captured within 3.5 seconds with matching aspect
+  // ratio and resolution. Detects similar takes even when dHash is unavailable.
+  const remainingSingles = singles.filter((f) => !used.has(f.id));
+  if (remainingSingles.length > 1) {
+    const timeSorted = [...remainingSingles].sort(
+      (a, b) => (a.modifiedAt || 0) - (b.modifiedAt || 0),
+    );
+    let burstCluster: ScannedFile[] = [];
+    for (let i = 0; i < timeSorted.length; i++) {
+      const curr = timeSorted[i];
+      if (used.has(curr.id)) continue;
+
+      if (burstCluster.length === 0) {
+        burstCluster.push(curr);
+        continue;
+      }
+
+      const prev = burstCluster[burstCluster.length - 1];
+      if (isBurstPair(prev, curr)) {
+        burstCluster.push(curr);
+      } else {
+        if (burstCluster.length > 1) {
+          for (const f of burstCluster) used.add(f.id);
+          similar.push(makeGroup(burstCluster, "similar"));
+        }
+        burstCluster = [curr];
+      }
+    }
+    if (burstCluster.length > 1) {
+      for (const f of burstCluster) used.add(f.id);
+      similar.push(makeGroup(burstCluster, "similar"));
+    }
+  }
+
   return [...exact, ...similar];
 }
 

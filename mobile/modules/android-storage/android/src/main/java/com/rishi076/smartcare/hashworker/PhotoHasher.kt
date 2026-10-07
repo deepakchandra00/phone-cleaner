@@ -10,7 +10,7 @@ import java.io.InputStream
 object PhotoHasher {
     const val VERSION = 2
     private const val MAX_SIDE = 128
-    private const val MAX_BYTES = MAX_SIDE * MAX_SIDE * 4
+    private const val MAX_BYTES = 512 * 512 * 4 // 1MB ceiling to accommodate driver row byte-alignment
 
     fun dHash(open: () -> InputStream?): String? {
         val owned = mutableListOf<Bitmap>()
