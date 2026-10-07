@@ -108,6 +108,30 @@ function withFileProvider(config: ExpoConfig): ExpoConfig {
 }
 
 /**
+ * Config plugin: strips ACTIVITY_RECOGNITION and health-related permissions
+ * using tools:node="remove" to prevent triggering Google Play Health Apps policy.
+ */
+function withStripHealthPermissions(config: ExpoConfig): ExpoConfig {
+  return withAndroidManifest(config, (modConfig) => {
+    const manifest = modConfig.modResults.manifest as any;
+    if (!manifest["uses-permission"]) {
+      manifest["uses-permission"] = [];
+    }
+    manifest["uses-permission"] = manifest["uses-permission"].filter(
+      (p: any) =>
+        p.$?.["android:name"] !== "android.permission.ACTIVITY_RECOGNITION",
+    );
+    manifest["uses-permission"].push({
+      $: {
+        "android:name": "android.permission.ACTIVITY_RECOGNITION",
+        "tools:node": "remove",
+      },
+    });
+    return modConfig;
+  });
+}
+
+/**
  * Config plugin: forces Play Billing Library 8.0.0+ across all Gradle configurations
  * to satisfy Google Play Store latest monetization requirements.
  */
@@ -256,5 +280,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
   };
 
-  return withPlayBilling8(withFileProvider(withAndroidQueries(base)));
+  return withStripHealthPermissions(
+    withPlayBilling8(withFileProvider(withAndroidQueries(base))),
+  );
 };
