@@ -249,7 +249,7 @@ export default function Premium() {
               onPress={() => {
                 const url =
                   Constants.expoConfig?.extra?.termsUrl ||
-                  "https://phonecleaner.app/terms";
+                  "https://fieseros.com/phone-cleaner/terms";
                 if (url) void Linking.openURL(url).catch(() => {});
               }}
             >
@@ -259,7 +259,7 @@ export default function Premium() {
               onPress={() => {
                 const url =
                   Constants.expoConfig?.extra?.privacyPolicyUrl ||
-                  "https://phonecleaner.app/privacy";
+                  "https://fieseros.com/phone-cleaner/privacy";
                 if (url) void Linking.openURL(url).catch(() => {});
               }}
             >

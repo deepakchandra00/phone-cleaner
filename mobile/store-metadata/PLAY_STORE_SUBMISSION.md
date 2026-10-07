@@ -16,7 +16,7 @@ Status: artwork and listing drafts prepared; **not ready to upload a production 
 
 ## Publisher details still required
 
-Complete developer legal identity/contact, support email, website if available, publicly hosted HTTPS privacy policy, reviewed terms, intended audience/age groups, country distribution, pricing, trademark/name review, ads and billing configuration. Set `EXPO_PUBLIC_PRIVACY_POLICY_URL` and `EXPO_PUBLIC_TERMS_URL` to the verified hosted documents. The app no longer links to an unverified example domain.
+Complete developer legal identity/contact, support email, website if available, publicly hosted HTTPS privacy policy, reviewed terms, intended audience/age groups, country distribution, pricing, trademark/name review, ads and billing configuration. Configured to `https://fieseros.com/phone-cleaner/privacy` and `https://fieseros.com/phone-cleaner/terms` (ready-to-host HTML files generated at `store-metadata/legal/privacy.html` and `terms.html`).
 
 Configure App content: privacy policy, Ads (“contains ads” if ads ship), app access (no login currently), content-rating questionnaire, target audience, Data safety and any applicable sensitive-permission declarations. Do not guess content-rating or children's-policy answers. All-files access is in source and requires a core-purpose justification and eligibility review; permissions and use must match the final release. Usage access, notification access and media permission flows need understandable disclosures.
 

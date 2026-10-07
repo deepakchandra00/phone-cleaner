@@ -79,6 +79,8 @@
       ]
     ],
     "extra": {
+      "privacyPolicyUrl": "https://fieseros.com/phone-cleaner/privacy",
+      "termsUrl": "https://fieseros.com/phone-cleaner/terms",
       "revenueCatAndroidApiKey": "goog_xxxxxxxxxxxxxxxxxxxxx",
       "posthogKey": "",
       "sentryDsn": "",

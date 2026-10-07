@@ -233,9 +233,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       privacyPolicyUrl:
         process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL ||
         config.extra?.privacyPolicyUrl ||
-        "",
+        "https://fieseros.com/phone-cleaner/privacy",
       termsUrl:
-        process.env.EXPO_PUBLIC_TERMS_URL || config.extra?.termsUrl || "",
+        process.env.EXPO_PUBLIC_TERMS_URL ||
+        config.extra?.termsUrl ||
+        "https://fieseros.com/phone-cleaner/terms",
       ...(process.env.EAS_PROJECT_ID || config.extra?.eas?.projectId
         ? {
             eas: {
