@@ -13,6 +13,7 @@
     "submit": "eas submit --platform android",
     "update": "eas update --branch production",
     "prebuild": "expo prebuild",
+    "postinstall": "node scripts/patch-ws.cjs",
     "test": "node --experimental-strip-types --test 'src/__tests__/**/*.test.ts'",
     "typecheck": "tsc --noEmit"
   },
