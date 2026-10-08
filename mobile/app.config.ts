@@ -1,6 +1,10 @@
 import type { ExpoConfig, ConfigContext } from "@expo/config";
-import { withAndroidManifest, withProjectBuildGradle } from "@expo/config-plugins";
+import {
+  withAndroidManifest,
+  withProjectBuildGradle,
+} from "@expo/config-plugins";
 import { version } from "./package.json";
+import brand from "./branding.json";
 
 const IS_DEV = process.env.APP_VARIANT === "development";
 const IS_PREVIEW = process.env.APP_VARIANT === "preview";
@@ -9,7 +13,7 @@ const appBaseName = IS_DEV
   ? "SmartCare (Dev)"
   : IS_PREVIEW
     ? "SmartCare (Beta)"
-    : "SmartCare: Phone Cleaner";
+    : brand.name;
 const bundleSuffix = IS_DEV ? ".dev" : IS_PREVIEW ? ".beta" : "";
 
 /**
@@ -137,7 +141,11 @@ function withStripHealthPermissions(config: ExpoConfig): ExpoConfig {
  */
 function withPlayBilling8(config: ExpoConfig): ExpoConfig {
   return withProjectBuildGradle(config, (modConfig) => {
-    if (!modConfig.modResults.contents.includes("com.android.billingclient:billing")) {
+    if (
+      !modConfig.modResults.contents.includes(
+        "com.android.billingclient:billing",
+      )
+    ) {
       modConfig.modResults.contents += `
 allprojects {
   configurations.all {
@@ -173,7 +181,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       package: `com.rishi076.smartcare${bundleSuffix}`,
       adaptiveIcon: {
         foregroundImage: "./src/assets/adaptive-icon.png",
-        backgroundColor: "#0F172A",
+        backgroundImage: "./src/assets/adaptive-background.png",
+        backgroundColor: brand.iconBackground,
       },
       permissions: [
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -216,7 +225,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         {
           image: "./src/assets/icon.png",
           resizeMode: "contain",
-          backgroundColor: "#0F172A",
+          backgroundColor: brand.iconBackground,
         },
       ],
       "expo-sqlite",

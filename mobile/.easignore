@@ -26,3 +26,8 @@ node_modules/react-native-worklets-core
 !modules/**/android/
 !modules/**/ios/
 Archive.zip
+
+# Store drafts/archived artwork are not app runtime assets.
+/store-metadata/
+/branding-archive/
+/SmartCare-Play-Store*.zip

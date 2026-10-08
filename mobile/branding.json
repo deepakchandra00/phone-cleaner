@@ -1,0 +1,11 @@
+{
+  "name": "SmartCare: Phone Cleaner",
+  "iconBackground": "#007A3D",
+  "primary": "#15803D",
+  "primaryDark": "#166534",
+  "primaryOnDark": "#4ADE80",
+  "background": "#F7FCF8",
+  "backgroundDark": "#061B11",
+  "cardDark": "#0C291B",
+  "master": "store-metadata/assets/brand/green-master.png"
+}

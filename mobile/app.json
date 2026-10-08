@@ -3,7 +3,7 @@
     "name": "SmartCare: Phone Cleaner",
     "slug": "phone-cleaner",
     "version": "1.0.0",
-    "description": "AI storage cleaner: clear cache, duplicate photo compressor & find space hogs.",
+    "description": "Review storage, find duplicate photos, compress JPEG copies and choose files to clean.",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./src/assets/icon.png",
@@ -12,8 +12,9 @@
       "package": "com.rishi076.smartcare",
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
-        "backgroundColor": "#0F172A"
-      }, 
+        "backgroundColor": "#007A3D",
+        "backgroundImage": "./src/assets/adaptive-background.png"
+      },
       "permissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
@@ -41,8 +42,8 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow Phone Cleaner to access your photos and videos to detect duplicates and large files.",
-          "savePhotosPermission": "Allow Phone Cleaner to save photos.",
+          "photosPermission": "Allow SmartCare to access your photos and videos to detect duplicates and large files.",
+          "savePhotosPermission": "Allow SmartCare to save photos.",
           "isAccessMediaLocationEnabled": true
         }
       ],
@@ -51,7 +52,7 @@
         {
           "image": "./src/assets/icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#0F172A"
+          "backgroundColor": "#007A3D"
         }
       ],
       "expo-sqlite",

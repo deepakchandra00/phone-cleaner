@@ -1,0 +1,21 @@
+SmartCare is a phone cleaner and storage cleaner that helps you review accessible files before deleting anything.
+
+Find space hogs
+See large files, videos and downloads sorted by size. Open the indexed containing folder to review a file's location. Only files your permissions allow are included.
+
+Duplicate photo compressor and review
+Compare exact photo copies and suggested similar photos. Keep the recommended original and manually review selections. JPEG compression creates separate smaller copies with quality and resolution controls. Preview measured savings before saving; originals are never automatically deleted. Compression can reduce image quality and removes EXIF/GPS metadata from new copies.
+
+Clear cache with review
+Review supported cache candidates before confirming cleanup. Android does not allow SmartCare to clear every other app's private cache or system data. App Manager provides a shortcut to Android Settings for manual cache review.
+
+App and device care
+Review visible installed apps, recorded unused-app suggestions and available mobile/Wi-Fi data usage after granting usage access. Read battery level, charging information and supported device readings. Wi-Fi security information describes encryption, not a guarantee that a hotspot is safe.
+
+Notification cleanup and connection tools
+Choose which apps' current dismissible notifications to clear; ongoing notifications stay and future notifications remain allowed. The optional internet-speed estimate sends test traffic to Cloudflare and may use mobile data. Review the provider information before starting.
+
+You choose what to delete
+Scanning does not delete files. Cleanup requires review and confirmation. Optional reminders help you return to storage review. Duplicate analysis and compression run on your device. Ads, billing and speed-test providers have separate network/privacy behavior.
+
+Permissions, Android versions, file formats and manufacturer restrictions can limit results. Some features require an updated native Android app. No RAM boost, battery repair, VPN protection or system-wide app lock is promised.

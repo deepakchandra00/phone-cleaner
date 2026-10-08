@@ -1,3 +1,4 @@
+import { useColorScheme } from "nativewind";
 import { cn } from "@/lib/utils";
 import { type ReactNode, isValidElement } from "react";
 import {
@@ -57,6 +58,17 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
+  const { colorScheme } = useColorScheme();
+  const foreground =
+    variant === "destructive"
+      ? "#ffffff"
+      : variant === "primary" || variant === "success"
+        ? colorScheme === "dark"
+          ? "#052e16"
+          : "#ffffff"
+        : colorScheme === "dark"
+          ? "#f0fdf4"
+          : "#123524";
   const isPrimary =
     variant === "primary" || variant === "destructive" || variant === "success";
 
@@ -70,7 +82,13 @@ export function Button({
         className={cn(
           "font-semibold",
           textSizes[size],
-          isPrimary ? "text-primary-foreground" : "text-foreground",
+          variant === "destructive"
+            ? "text-destructive-foreground"
+            : variant === "success"
+              ? "text-success-foreground"
+              : isPrimary
+                ? "text-primary-foreground"
+                : "text-foreground",
         )}
       >
         {children}
@@ -99,10 +117,7 @@ export function Button({
     >
       {loading ? (
         <>
-          <ActivityIndicator
-            color={isPrimary ? "#fff" : "#0f172a"}
-            size="small"
-          />
+          <ActivityIndicator color={foreground} size="small" />
           {renderChildren()}
         </>
       ) : (

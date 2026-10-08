@@ -1,3 +1,4 @@
+import { ThemeColors } from "@/theme/colors";
 import { NotificationObserver } from "@/components/NotificationObserver";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
@@ -46,7 +47,7 @@ export function ErrorBoundary({
     <View
       style={{
         flex: 1,
-        backgroundColor: "#0F172A",
+        backgroundColor: ThemeColors.backgroundDark,
         alignItems: "center",
         justifyContent: "center",
         padding: 24,
@@ -109,7 +110,10 @@ export default function RootLayout() {
             screenOptions={{
               headerShown: false,
               contentStyle: {
-                backgroundColor: colorScheme === "dark" ? "#020617" : "#f8fafc",
+                backgroundColor:
+                  colorScheme === "dark"
+                    ? ThemeColors.backgroundDark
+                    : ThemeColors.background,
               },
               animation: "slide_from_right",
             }}

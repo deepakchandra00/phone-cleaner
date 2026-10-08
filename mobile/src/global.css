@@ -4,52 +4,52 @@
 
 @layer base {
   :root {
-    /* Light theme — emerald/teal "clean & fresh" semantic */
-    --background: 248 250 252;
-    --foreground: 15 23 42;
+    /* SmartCare green brand; white labels on the darker green primary. */
+    --background: 247 252 248;
+    --foreground: 18 53 36;
     --card: 255 255 255;
-    --card-foreground: 15 23 42;
-    --primary: 5 150 105;
+    --card-foreground: 18 53 36;
+    --primary: 21 128 61;
     --primary-foreground: 255 255 255;
-    --secondary: 241 245 249;
-    --secondary-foreground: 15 23 42;
-    --muted: 241 245 249;
-    --muted-foreground: 100 116 139;
-    --accent: 240 253 244;
-    --accent-foreground: 6 95 70;
-    --destructive: 239 68 68;
+    --secondary: 232 245 236;
+    --secondary-foreground: 18 53 36;
+    --muted: 232 245 236;
+    --muted-foreground: 75 102 86;
+    --accent: 220 252 231;
+    --accent-foreground: 22 101 52;
+    --destructive: 220 38 38;
     --destructive-foreground: 255 255 255;
     --warning: 245 158 11;
     --warning-foreground: 146 64 14;
-    --success: 16 185 129;
+    --success: 21 128 61;
     --success-foreground: 255 255 255;
-    --border: 226 232 240;
-    --input: 226 232 240;
-    --ring: 5 150 105;
+    --border: 212 231 217;
+    --input: 212 231 217;
+    --ring: 21 128 61;
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 2 6 23;
-    --foreground: 241 245 249;
-    --card: 15 23 42;
-    --card-foreground: 241 245 249;
-    --primary: 16 185 129;
-    --primary-foreground: 2 6 23;
-    --secondary: 30 41 59;
-    --secondary-foreground: 241 245 249;
-    --muted: 30 41 59;
-    --muted-foreground: 148 163 184;
-    --accent: 12 36 30;
-    --accent-foreground: 167 243 208;
-    --destructive: 239 68 68;
+    --background: 6 27 17;
+    --foreground: 240 253 244;
+    --card: 12 41 27;
+    --card-foreground: 240 253 244;
+    --primary: 74 222 128;
+    --primary-foreground: 5 46 22;
+    --secondary: 22 60 41;
+    --secondary-foreground: 240 253 244;
+    --muted: 22 60 41;
+    --muted-foreground: 176 204 186;
+    --accent: 22 60 41;
+    --accent-foreground: 187 247 208;
+    --destructive: 220 38 38;
     --destructive-foreground: 255 255 255;
     --warning: 245 158 11;
     --warning-foreground: 254 243 199;
-    --success: 16 185 129;
-    --success-foreground: 2 6 23;
-    --border: 30 41 59;
-    --input: 30 41 59;
-    --ring: 16 185 129;
+    --success: 74 222 128;
+    --success-foreground: 5 46 22;
+    --border: 39 81 56;
+    --input: 39 81 56;
+    --ring: 74 222 128;
   }
 }
