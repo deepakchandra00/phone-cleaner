@@ -66,3 +66,23 @@ test("measured alerts enforce a size threshold and 24-hour cooldown", () => {
   assert.equal(shouldSendCleanupAlert(threshold, day, 0), true);
   assert.equal(shouldSendCleanupAlert(NaN, day, 0), false);
 });
+
+test("daily reminders provide distinct rotating titles and valid safe routes", () => {
+  const plan = reminderPlan({
+    weekly: true,
+    daily: true,
+    hour: 9,
+    minute: 0,
+  });
+  const weekdays = plan.filter((p) => p.weekday !== 1);
+  assert.equal(weekdays.length, 6);
+  // Ensure titles are distinct across the week
+  const titles = new Set(weekdays.map((p) => p.title));
+  assert.equal(titles.size, 6);
+  // Ensure every route is valid and recognized
+  for (const item of weekdays) {
+    assert.ok(notificationRoute(item.route) !== null);
+    assert.ok(item.title.length > 5);
+    assert.ok(item.body.length > 10);
+  }
+});

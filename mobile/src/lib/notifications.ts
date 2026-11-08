@@ -21,7 +21,7 @@ Notifications.setNotificationHandler({
 export function getReminderPreferences(): ReminderPreferences {
   return {
     weekly: storage.getBoolean(KEYS.weeklyReminderEnabled) ?? true,
-    daily: storage.getBoolean(KEYS.dailyReminderEnabled) ?? false,
+    daily: storage.getBoolean(KEYS.dailyReminderEnabled) ?? true,
     hour: storage.getNumber(KEYS.dailyReminderHour) ?? 9,
     minute: storage.getNumber(KEYS.dailyReminderMinute) ?? 0,
   };
@@ -88,8 +88,19 @@ export async function allowReminders(): Promise<boolean> {
     (existing.canAskAgain &&
       (await Notifications.requestPermissionsAsync()).granted);
   if (!permission) return false;
+  if (storage.getBoolean(KEYS.dailyReminderEnabled) === undefined) {
+    storage.set(KEYS.dailyReminderEnabled, true);
+  }
   await syncReminders();
   return true;
+}
+
+export async function getNotificationPermissionStatus(): Promise<{
+  granted: boolean;
+  canAskAgain: boolean;
+  status: Notifications.PermissionStatus;
+}> {
+  return await Notifications.getPermissionsAsync();
 }
 export async function sendMeasuredCleanupAlert(
   safeCacheBytes: number,

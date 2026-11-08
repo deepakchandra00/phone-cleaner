@@ -11,9 +11,13 @@ import { CategoryColors, ThemeColors } from "@/theme/colors";
 import { AndroidStorage } from "android-storage";
 import { useRouter } from "expo-router";
 import { Image } from "expo-image";
+import * as Notifications from "expo-notifications";
+import { allowReminders, syncReminders } from "@/lib/notifications";
 import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
+  AppState,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -45,6 +49,59 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [memory, setMemory] = useState(() => AndroidStorage.getMemoryInfo());
   const [preScanVisible, setPreScanVisible] = useState(false);
+  const [notificationGranted, setNotificationGranted] = useState(true);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [requestingNotifs, setRequestingNotifs] = useState(false);
+
+  const checkNotificationPermission = useCallback(async () => {
+    try {
+      const perms = await Notifications.getPermissionsAsync();
+      setNotificationGranted(perms.granted);
+      if (perms.granted) {
+        void syncReminders().catch(() => {});
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    void checkNotificationPermission();
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        void checkNotificationPermission();
+      }
+    });
+    return () => sub.remove();
+  }, [checkNotificationPermission]);
+
+  const handleEnableNotifications = async () => {
+    if (requestingNotifs) return;
+    setRequestingNotifs(true);
+    try {
+      const allowed = await allowReminders();
+      setNotificationGranted(allowed);
+      if (!allowed) {
+        Alert.alert(
+          "Notifications are disabled",
+          "Enable notifications in Android Settings to receive daily storage tips and space alerts.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Open Settings",
+              onPress: () => {
+                void Linking.openSettings();
+              },
+            },
+          ],
+        );
+      }
+    } catch {
+      Alert.alert("Unable to enable notifications", "Please try again later.");
+    } finally {
+      setRequestingNotifs(false);
+    }
+  };
 
   const onRefreshMemory = useCallback(() => {
     setMemory(AndroidStorage.getMemoryInfo());
@@ -166,6 +223,57 @@ export default function HomeScreen() {
             </View>
           </View>
         </Animated.View>
+
+        {/* Notification Permission Engagement Banner */}
+        {!notificationGranted && !bannerDismissed && (
+          <Animated.View
+            entering={FadeInDown.duration(300)}
+            className="mx-4 mt-2 p-3.5 rounded-2xl bg-primary/10 border border-primary/25"
+          >
+            <View className="flex-row items-start justify-between">
+              <View className="flex-row items-center gap-2.5 flex-1 pr-2">
+                <View className="w-9 h-9 rounded-full bg-primary/20 items-center justify-center">
+                  <Icon name="notifications" size={18} color={ThemeColors.primary} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-foreground font-semibold text-sm">
+                    Enable Daily Storage Reminders
+                  </Text>
+                  <Text className="text-xs text-muted-foreground mt-0.5 leading-4">
+                    Get daily tips and catch space hogs before they slow down your phone.
+                  </Text>
+                </View>
+              </View>
+              <Pressable
+                hitSlop={8}
+                onPress={() => setBannerDismissed(true)}
+                className="p-1 opacity-60"
+                accessibilityLabel="Dismiss for now"
+              >
+                <Icon name="close" size={16} color={ThemeColors.mutedForeground} />
+              </Pressable>
+            </View>
+
+            <View className="flex-row gap-2 mt-3">
+              <Button
+                size="sm"
+                variant="primary"
+                className="flex-1"
+                loading={requestingNotifs}
+                onPress={handleEnableNotifications}
+              >
+                Turn On Reminders
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onPress={() => setBannerDismissed(true)}
+              >
+                Not Now
+              </Button>
+            </View>
+          </Animated.View>
+        )}
 
         {/* Hero card: storage ring + cleanable headline */}
         <Animated.View

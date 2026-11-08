@@ -26,6 +26,47 @@ export interface ReminderPreferences {
   hour: number;
   minute: number;
 }
+export const DAILY_THEMES: Record<
+  number,
+  { title: string; body: string; route: NotificationRoute }
+> = {
+  1: {
+    title: "📊 Sunday Storage Summary",
+    body: "Your weekly storage check is ready. Review and choose what to clean.",
+    route: "/(tabs)/home",
+  },
+  2: {
+    title: "⚡ Start your week fresh",
+    body: "Quick storage check to keep your phone fast and clutter-free.",
+    route: "/(tabs)/home",
+  },
+  3: {
+    title: "📸 Duplicate Photo Audit",
+    body: "Find and compress similar & duplicate photos taking up space.",
+    route: "/(tabs)/scan",
+  },
+  4: {
+    title: "🧹 Cache & Junk Review",
+    body: "Temporary app files accumulate over time. Review and clear them safely.",
+    route: "/(tabs)/scan",
+  },
+  5: {
+    title: "🎬 Space Hogs Detected",
+    body: "Check for large videos and heavy downloads hiding in your storage.",
+    route: "/(tabs)/scan",
+  },
+  6: {
+    title: "💬 WhatsApp Media Clean",
+    body: "Review forwarded media and duplicate sent files before the weekend.",
+    route: "/category/whatsapp",
+  },
+  7: {
+    title: "🚀 Weekend Storage Boost",
+    body: "Free up storage for your weekend photos and new apps.",
+    route: "/(tabs)/home",
+  },
+};
+
 export function reminderPlan(prefs: ReminderPreferences) {
   const plan: {
     id: string;
@@ -50,21 +91,33 @@ export function reminderPlan(prefs: ReminderPreferences) {
     const time = parseReminderTime(
       `${prefs.hour}:${String(prefs.minute).padStart(2, "0")}`,
     ) ?? { hour: 9, minute: 0 };
-    const daily = {
-      ...time,
-      title: "Ready for a quick storage check?",
-      body: "Review your storage and choose what to clean. Nothing is deleted automatically.",
-      route: "/(tabs)/home" as const,
-    };
     // With both options enabled, Sunday has only the weekly review.
     if (prefs.weekly)
-      for (let weekday = 2; weekday <= 7; weekday++)
+      for (let weekday = 2; weekday <= 7; weekday++) {
+        const theme = DAILY_THEMES[weekday] ?? {
+          title: "Ready for a quick storage check?",
+          body: "Review your storage and choose what to clean. Nothing is deleted automatically.",
+          route: "/(tabs)/home",
+        };
         plan.push({
           id: `${REMINDER_PREFIX}daily-${weekday}`,
           weekday,
-          ...daily,
+          hour: time.hour,
+          minute: time.minute,
+          title: theme.title,
+          body: theme.body,
+          route: theme.route,
         });
-    else plan.push({ id: `${REMINDER_PREFIX}daily`, ...daily });
+      }
+    else
+      plan.push({
+        id: `${REMINDER_PREFIX}daily`,
+        hour: time.hour,
+        minute: time.minute,
+        title: "Ready for a quick storage check?",
+        body: "Review your storage and choose what to clean. Nothing is deleted automatically.",
+        route: "/(tabs)/home" as const,
+      });
   }
   return plan;
 }

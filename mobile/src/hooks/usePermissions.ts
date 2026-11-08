@@ -65,6 +65,54 @@ export function usePermissions() {
       return mapped;
     }, []);
 
+  const checkNotifications =
+    useCallback(async (): Promise<{ granted: boolean; canAskAgain: boolean }> => {
+      const { status, canAskAgain } =
+        await Notifications.getPermissionsAsync();
+      const granted = status === "granted";
+      const mapped: PermissionStatus =
+        granted ? "granted" : canAskAgain ? "denied" : "blocked";
+      setState((s) => ({ ...s, notifications: mapped }));
+      return { granted, canAskAgain };
+    }, []);
+
+  const promptNotificationsWithFallback =
+    useCallback(async (): Promise<boolean> => {
+      track("permission_request", { permission: "notifications" });
+      const current = await Notifications.getPermissionsAsync();
+      if (current.granted) {
+        setState((s) => ({ ...s, notifications: "granted" }));
+        return true;
+      }
+      if (current.canAskAgain) {
+        const { status, canAskAgain } =
+          await Notifications.requestPermissionsAsync();
+        const granted = status === "granted";
+        const mapped: PermissionStatus =
+          granted ? "granted" : canAskAgain ? "denied" : "blocked";
+        setState((s) => ({ ...s, notifications: mapped }));
+        track("permission_result", {
+          permission: "notifications",
+          result: mapped,
+        });
+        return granted;
+      }
+      Alert.alert(
+        "Notifications are off",
+        "Allow SmartCare notifications in Android Settings to receive daily storage reminders and cleanup alerts.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Open settings",
+            onPress: () => {
+              void Linking.openSettings();
+            },
+          },
+        ],
+      );
+      return false;
+    }, []);
+
   const openSystemSettings = useCallback(() => {
     Linking.openSettings();
   }, []);
@@ -113,6 +161,8 @@ export function usePermissions() {
     openSystemSettings,
     checkStorageManager,
     requestStorageManager,
+    checkNotifications,
+    promptNotificationsWithFallback,
     checkUsageAccess,
     requestUsageAccess,
   };

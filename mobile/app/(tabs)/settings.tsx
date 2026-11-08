@@ -205,8 +205,9 @@ export default function SettingsScreen() {
       setReminderBusy(false);
     }
   };
-  const saveReminderTime = async () => {
-    const time = parseReminderTime(timeInput);
+  const saveReminderTime = async (override?: string) => {
+    const raw = override ?? timeInput;
+    const time = parseReminderTime(raw);
     if (!time) {
       Alert.alert(
         "Check the time",
@@ -218,16 +219,16 @@ export default function SettingsScreen() {
     setReminderBusy(true);
     const previous = getReminderPreferences();
     try {
+      if (!notificationsAllowed && !(await requestReminderPermission())) return;
       storage.set(KEYS.dailyReminderHour, time.hour);
       storage.set(KEYS.dailyReminderMinute, time.minute);
       await syncReminders();
       setReminders(getReminderPreferences());
-      setTimeInput(
-        `${String(time.hour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}`,
-      );
+      const formatted = `${String(time.hour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}`;
+      setTimeInput(formatted);
       Alert.alert(
         "Reminder time saved",
-        "Your daily reminder time has been updated.",
+        `Your daily reminder time has been set to ${formatted}.`,
       );
     } catch {
       storage.set(KEYS.dailyReminderHour, previous.hour);
@@ -531,6 +532,40 @@ export default function SettingsScreen() {
                 >
                   Save time
                 </Button>
+              </View>
+              <View className="flex-row gap-2 mt-2.5">
+                {[
+                  { label: "Morning 09:00", value: "09:00" },
+                  { label: "Afternoon 14:00", value: "14:00" },
+                  { label: "Evening 20:00", value: "20:00" },
+                ].map((preset) => {
+                  const isSelected = timeInput === preset.value;
+                  return (
+                    <Pressable
+                      key={preset.value}
+                      disabled={reminderBusy}
+                      onPress={() => {
+                        setTimeInput(preset.value);
+                        void saveReminderTime(preset.value);
+                      }}
+                      className={`px-2.5 py-1.5 rounded-lg border ${
+                        isSelected
+                          ? "bg-primary/20 border-primary"
+                          : "bg-muted border-border"
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs ${
+                          isSelected
+                            ? "text-primary font-semibold"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {preset.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
             </View>
           )}

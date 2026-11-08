@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { usePermissions, type PermissionStatus } from "@/hooks/usePermissions";
 import { track } from "@/lib/analytics";
+import { allowReminders } from "@/lib/notifications";
 import { KEYS, storage } from "@/lib/storage";
 import { CategoryColors, ThemeColors } from "@/theme/colors";
 import { useRouter } from "expo-router";
@@ -114,6 +115,11 @@ export default function Onboarding() {
     if (mediaStatus !== "granted") {
       const status = await requestMedia();
       setMediaStatus(status);
+    }
+    try {
+      await allowReminders();
+    } catch {
+      /* ignore */
     }
     setRequesting(false);
     finish();
